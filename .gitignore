@@ -1,0 +1,77 @@
+### Environment / secrets ###
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+### Node / JS / TS ###
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+out/
+coverage/
+.turbo/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+### PHP / Composer ###
+vendor/
+composer.phar
+
+### Python ###
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+### Logs ###
+logs/
+*.log
+
+### Databases (local) ###
+*.sqlite
+*.sqlite3
+*.db
+
+### Uploads / generated content (adjust if you version these) ###
+/uploads/
+/storage/app/*
+!/storage/app/.gitkeep
+/public/storage
+
+### Cache / temp ###
+.cache/
+tmp/
+temp/
+
+### IDE / editor ###
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+### OS ###
+Thumbs.db
+Desktop.ini
+
+### Docker (local overrides) ###
+docker-compose.override.yml
+
+### Misc ###
+*.orig
+*.bak
