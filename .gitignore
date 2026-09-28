@@ -2,6 +2,12 @@
 .env
 .env.*
 !.env.example
+# Symfony env files are versioned (they hold dev-only defaults, never secrets)
+!backend/.env
+!backend/.env.*
+# ...except the local ones, which may contain real secrets
+backend/.env.local
+backend/.env.*.local
 *.pem
 *.key
 
