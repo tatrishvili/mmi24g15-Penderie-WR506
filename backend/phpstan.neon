@@ -1,0 +1,8 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/bootstrap.php
+    tmpDir: var/phpstan
