@@ -1,6 +1,18 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
+import type { ReactNode } from 'react'
 import Home from './Home.tsx'
+
+function renderHome() {
+  const page: ReactNode = (
+    <MemoryRouter>
+      <Home />
+    </MemoryRouter>
+  )
+
+  render(page)
+}
 
 describe('Home', () => {
   afterEach(() => {
@@ -17,7 +29,7 @@ describe('Home', () => {
       }),
     )
 
-    render(<Home />)
+    renderHome()
 
     expect(
       screen.getByText('Votre dressing, dans votre téléphone.', { exact: false }),
@@ -34,7 +46,7 @@ describe('Home', () => {
       }),
     )
 
-    render(<Home />)
+    renderHome()
 
     await waitFor(() => {
       expect(screen.getByTestId('api-badge')).toHaveTextContent('API en ligne (test)')
@@ -44,7 +56,7 @@ describe('Home', () => {
   it('shows the API as offline when the health endpoint fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
 
-    render(<Home />)
+    renderHome()
 
     await waitFor(() => {
       expect(screen.getByTestId('api-badge')).toHaveTextContent('API hors ligne')
