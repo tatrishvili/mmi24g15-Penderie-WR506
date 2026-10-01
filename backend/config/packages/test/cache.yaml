@@ -1,0 +1,7 @@
+# Test env: rate limiter counters live in memory (fresh per kernel boot),
+# so functional tests never inherit budgets consumed by previous tests.
+framework:
+    cache:
+        pools:
+            cache.rate_limiter:
+                adapter: cache.adapter.array

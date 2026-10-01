@@ -84,3 +84,5 @@ docker-compose.override.yml
 
 ### Private notes (never pushed) ###
 CONCEPT.md
+SESSION_CONTEXT.md
+examples/

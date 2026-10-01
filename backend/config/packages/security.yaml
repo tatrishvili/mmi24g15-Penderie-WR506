@@ -1,0 +1,63 @@
+security:
+    # Session cookie is SameSite=Lax by default (Symfony default): cross-site POSTs
+    # do not carry the cookie, which mitigates CSRF for this same-origin SPA
+    # (frontend talks to the API through the Vite /api proxy). A dedicated CSRF
+    # token endpoint can be added before production if needed.
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    providers:
+        app_user_provider:
+            id: App\Security\AppUserProvider
+
+    firewalls:
+        dev:
+            # Ensure dev tools and static assets are always allowed
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+        main:
+            pattern: ^/api
+            stateless: false
+            provider: app_user_provider
+            entry_point: App\Security\ApiEntryPoint
+
+            json_login:
+                check_path: /api/auth/login
+                username_path: email
+                password_path: password
+                success_handler: App\Security\JsonLoginSuccessHandler
+                failure_handler: App\Security\JsonLoginFailureHandler
+
+            # Built-in brute-force protection on /api/auth/login (username + IP).
+            login_throttling:
+                max_attempts: 5
+                interval: '1 minute'
+
+            # Standalone child login: household slug -> profile -> PIN (Mode C).
+            custom_authenticators:
+                - App\Security\PinAuthenticator
+
+            logout:
+                path: /api/auth/logout
+                # The JSON 204 response is set by App\Security\JsonLogoutListener
+                # on the LogoutEvent (no success_handler option in Symfony 7).
+
+    # Note: Only the *first* matching rule is applied
+    access_control:
+        - { path: ^/api/health, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/profile-pin, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/households, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: IS_AUTHENTICATED }
+
+when@test:
+    security:
+        password_hashers:
+            # Password hashers are resource-intensive by design to ensure security.
+            # In tests, it's safe to reduce their cost to improve performance.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon
