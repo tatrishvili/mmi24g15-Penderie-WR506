@@ -1,0 +1,221 @@
+# Penderie — Product specification
+
+**Status:** Working product direction after discussion on 8 October 2026. Personal-first onboarding, optional family setup, restricted child access on the child's own device using a parent-authorized username/password, and France-first/French-first localization reflect the user's stated preferences; remaining authentication and legal controls are recommendations to confirm before implementation.  
+**First market:** France. **Product languages:** French first; English must be supported by the product architecture.
+
+This is the canonical description of what Penderie is and the decisions that should guide product and code changes. Read [WORKFLOWS.md](./WORKFLOWS.md) for step-by-step user journeys, [PERMISSIONS.md](./PERMISSIONS.md) for the access matrix and sharing rules, and [README.md](./README.md) for development setup. If existing code disagrees with this specification, do not assume the code is the intended behavior: call out the gap and make an implementation plan before changing data or access rules.
+
+## 1. Product purpose
+
+Penderie is a simple, private inventory for clothes and other personal or household belongings. It helps people:
+
+1. remember what they own;
+2. find where an item is;
+3. record who an item belongs to and who borrowed it;
+4. decide whether to keep, wear, lend, share, sell, give away, or archive it.
+
+The core promise is **scan or add quickly, correct the details, and find the item later**. Penderie is not a public marketplace or a complex home-management system.
+
+## 2. Product decisions
+
+These decisions resolve earlier ambiguities. Treat them as defaults for the first useful release.
+
+### 2.1 Personal-first onboarding
+
+- A person starts registration with the minimum necessary information: email and password.
+- Before verification, store only an expiring pending registration (including a password hash and a hash of the single-use verification token); it is not yet an active account and cannot access inventory.
+- Clicking the email verification link completes registration: atomically create/activate the adult account, establish the signed-in session, create a private personal space with a default owner profile and default place, and take the user directly into the app.
+- There is no second manual approval and no need to enter credentials again after clicking the link. The only unavoidable wait is delivery/opening of the verification email.
+- Do **not** require a household/family name, first name, room layout, child, or partner during registration.
+- Use friendly default labels such as **My wardrobe** / **Mon dressing**. Let the person rename their space or add a display name later in Settings.
+- “Household” may remain an internal data-model term for now; the user-facing product should say “My space” or “My wardrobe” until they choose to add family members.
+- Family and profile management is an optional Settings area, not a mandatory onboarding step.
+
+The current database already uses a `Household` as the item scope. Preserve that boundary initially: create a private household automatically and hide the technical “household” concept in the UI. Do not redesign or migrate this model casually.
+
+### 2.2 Family is optional; children have restricted access
+
+Initial permission matrix:
+
+| Action | Parent/adult | Child |
+| --- | --- | --- |
+| View own items | Yes | Yes |
+| View child items | Yes, for children they manage | Own items only |
+| Add items | For any profile they manage | Own profile only |
+| Edit item details/location | For any profile they manage | Own items only |
+| Archive/restore | For any profile they manage | Archive own items; parent can restore |
+| Permanently delete | Confirmed parent action | No |
+| View/edit another child's or adult's private items | Per adult membership/permissions | No |
+| Change members, security, sharing, sale, lending | Per adult role | No in the first version |
+
+The child can choose an approved place/room/storage location for their own item. A parent remains able to correct the item, archive it, and revoke the child's session.
+
+- An adult can use Penderie alone indefinitely.
+- From **Settings → Family and profiles**, an adult may add a child profile, invite another adult, or manage existing members.
+- A parent can see and manage a child's wardrobe, correct or archive its items, and disable the child's access.
+- A child may sign in on their own device and add or manage **their own** items within explicit limits.
+- A child must not see another child's or an adult's private items, manage family settings, invite people, change permissions, or share/sell/lend items unless a parent explicitly enables a future capability.
+- The server—not merely the frontend—must enforce these restrictions for every endpoint.
+- A child account/profile is created or activated only by an authenticated parent/guardian. The parent can revoke its sessions and reset its access.
+
+### 2.3 A PIN is not a child's remote account password
+
+Do **not** treat a 4–6 digit PIN plus a public/guessable household code as secure sign-in for a child on the internet. Hashing the PIN protects it if the database is exposed, but does not make the PIN hard to guess. An IP-only request limit is also not enough to protect an account against distributed attempts.
+
+Recommended separation:
+
+- **Child sign-in on their own device:** a parent-authorized child credential and a restricted server-side session. Prefer a one-time, high-entropy parent-issued setup link/code, followed by a child username and password (no child email required for the first version). Parent recovery/reset and session revocation are mandatory.
+- **PIN on a parent's already trusted device:** optional convenience lock/profile switch only. Rate-limit by account/profile and device/IP, add progressive delay/lockout and monitoring, and never let it grant adult permissions.
+- Do not publish household codes or child profile lists as a security boundary. Login errors should not reveal whether a household, child, username, or PIN exists.
+- Add stronger sign-in protection, secure cookies, CSRF protection appropriate to the deployed architecture, and session rotation/revocation before production.
+
+The current standalone child PIN login is a prototype and does not meet this target yet. In particular, item endpoints currently scope records to the household; child visibility and ownership restrictions are not consistently enforced. Do not present child login as production-safe until the server-side authorization work and tests are complete.
+
+### 2.4 Verification, age assurance, and two-factor authentication
+
+These are different controls:
+
+- **Email verification** proves control of the email address. Registration should create a short-lived pending registration, send a single-use verification link, and create/activate the actual account only when that link is confirmed. Complete sign-in and personal-space setup in that same verification callback; do not require the user to register or sign in again. This is not 2FA.
+- **Two-factor authentication (2FA)** asks for an additional factor at sign-in. Plan an optional adult-account authenticator-app code (TOTP) with one-time recovery codes; passkeys can follow. Do not use SMS as the default second factor. Never make email confirmation alone count as a second factor when the same email account can reset the password.
+- **Age assurance** is a separate legal/product decision. The current “I am at least 18” checkbox is only a client-side self-declaration: it is not identity or age verification and is not sent to or enforced by the API. Do not describe it as verified age or collect a date of birth by default.
+- For the France-first launch, document the intended adult/guardian responsibility and have the actual age/child-consent process reviewed for the launch jurisdiction. Requirements vary by service and country; this document is product guidance, not legal advice. Support English text later without changing the underlying consent or age policy.
+
+Do not add more registration questions to compensate for missing security controls. Email verification, 2FA, guardian approval, and age assurance each need their own explicit workflow.
+
+### 2.5 Item data and locations
+
+One `Item` means one physical object. Its fields should be conceptually separate:
+
+- **Identity:** name, photos, brand, color, size, material, condition.
+- **Classification:** optional category and subcategory; answers “what is it?”
+- **Ownership:** owner profile; answers “whose item is it?”
+- **Current location:** optional path through a place, room, and nested storage locations; answers “where is it?”
+- **Lifecycle:** available, loaned, sold, given away, or archived. A loan is also a separate historical record, not just a text status.
+- **History:** loans, moves, wear events, and other actions are records; editing current details must not erase them.
+
+Recommended location tree:
+
+```text
+Personal space
+  └── Place (Home, holiday home, storage unit)
+       └── Room (Bedroom, dressing room, garage)
+            └── Storage location (Wardrobe → Shelf → Box)
+                 └── Item
+```
+
+The owner profile and category are not levels in the location tree. A place, room, category, and precise location should be optional; a short item name is enough to save an item.
+
+### 2.6 Scanning and batch adding
+
+- Photo recognition is assistance, not truth. Always show an editable review form and require confirmation before saving.
+- The model may suggest visible facts such as item type or color. It must not invent owner, exact location, price, purchase date, or condition that cannot be judged from a photo.
+- A single scan creates a **draft for one item**. The first reliable milestone is one photo → one reviewed item → one saved record.
+- After that works, add a batch session: scan several objects, keep each as a separate draft, and allow the user to assign or change owner, place, room, and storage location per item.
+- A “scan another in this location” action may reuse the last selected owner/location as a visible default. Never silently apply a previous room or box after the user changes context.
+- For physical moves, let the user choose a place/room/storage location first, then scan a sequence of items into that context; show the selected context and let them correct an individual item.
+- If one photograph contains several objects, do not automatically create several inventory records until multi-object detection, item boundaries, and review UX are designed and tested.
+
+### 2.7 Privacy and sharing
+
+- All spaces, profiles, items, photos, and precise storage locations are private by default.
+- A child’s items are not visible to strangers. A parent/guardian with the proper household role can manage them.
+- Only a signed-in adult with verified email and authority over the resource can create or revoke a share. A child cannot publish/share in v1; a parent/guardian must explicitly approve any external publication of a child's item or look.
+- For each share link, the owner chooses whether anyone possessing the unguessable link can view read-only without signing in, or whether a signed-in account with verified email is required. Anyone-with-link is a bearer credential and can be forwarded; it does not verify the recipient's identity.
+- Published adult looks can be viewed without signing in, but show only a deliberately selected representation. A look does not make its underlying item records public. Child looks remain private unless parent-approved.
+- Interactive capabilities such as commenting require an authenticated account with verified email plus an explicit grant. Link-only anonymous viewers cannot comment. Lending and buying require separate eligible, authenticated workflows; no public marketplace in v1.
+- Sharing is a deliberate action with a defined audience, resource scope, access mode, and separate capabilities. Visibility does not automatically grant permission to act.
+- A QR code is a lookup convenience, never an authorization credential.
+- A public or share link must be high-entropy, scoped, revocable, optionally expiring, and must not expose precise home locations by default.
+- The user can remove an item from their active wardrobe without silently destroying its loan/activity history. Prefer archive/soft delete when history matters.
+
+See [PERMISSIONS.md](./PERMISSIONS.md) for the viewer/resource matrix, decision order, child/parent exceptions, and known mismatches in the current permission code/tests.
+
+### 2.8 Language and localization
+
+- France and French are the first launch market/language.
+- The product should offer French and English in the future. Keep user-visible copy out of business logic and centralize it in translation resources from the start of new UI work.
+- Include all forms of feedback, validation, empty states, emails, and accessibility labels in localization work—not just navigation labels.
+- Locale changes presentation only; it must not alter stored domain values, permissions, dates, or API contracts.
+- Keep repository and engineering documentation in English, consistent with the repository convention.
+
+## 3. Information architecture
+
+Keep the main navigation small:
+
+- **Dressing / Items:** browse, search, filter, scan, and add.
+- **Places:** browse the places, rooms, and storage locations needed to find things.
+- **Activity:** open loans and item history when lending is implemented.
+- **Settings:** account security, language, personal-space name, optional family/profiles, child access, privacy, and deletion/export controls.
+
+Do not place family setup in registration or make a child/partner a prerequisite to use the inventory. Show family features as optional, discoverable actions inside Settings.
+
+## 4. Codebase architecture guidance
+
+The existing Symfony API + React frontend + MariaDB monorepo is a reasonable starting structure; a broad folder rewrite is not needed to make the product coherent.
+
+- Keep Symfony as the authority for authentication, validation, authorization, persistence, and business rules.
+- Keep API controllers thin: parse HTTP input, call an application/service operation, and return a stable response. Keep domain rules and access checks out of React components.
+- Keep Doctrine entities focused on persisted domain relationships; use migrations for schema changes. A database relationship is not a permission check.
+- On the frontend, keep pages for route-level flows, reusable UI in components, API calls in `src/api/`, and shared API/domain types in `src/types/`.
+- Keep localization resources separate from domain values and never persist translated labels as enum values.
+- Prefer complete vertical features over speculative abstractions: entity/migration, API, permission tests, UI, and user-facing errors together.
+- Before renaming `Household`, changing account/profile relationships, or splitting packages, write a migration/compatibility plan and ask if the product decision is not settled.
+
+## 5. Product boundaries and priorities
+
+### First useful product
+
+1. Adult account and verified email.
+2. Private personal space created automatically.
+3. Manual item creation, safe photo storage, browse/search/edit/archive.
+4. Clear optional category and current-location organization.
+5. One-item photo scan with a reliable editable result and a manual-entry fallback.
+6. Account deletion/export and secure session lifecycle.
+
+### After the core is dependable
+
+1. Parent-managed child access with server-side object-level authorization and device sessions.
+2. Adult invitation/acceptance; do not exchange another adult's password.
+3. Places → rooms → nested storage locations; multi-item scan batches.
+4. Loan/return history and reminders.
+5. Revocable sharing with explicit permissions.
+6. Controlled sale/gift flows, then outfits and wear insights.
+
+### Not first-release goals
+
+- Public marketplace, shipping, or dispute resolution.
+- Requiring a family/household name or family member to get started.
+- Guessing detailed clothing facts with AI without user review.
+- Treating a QR code, household slug, or short PIN as proof of authorization.
+- Building outfits or social sharing before the basic inventory can be trusted.
+
+## 6. Current code versus intended product
+
+The following are known differences between this specification and the repository snapshot:
+
+| Area | Current code | Required direction |
+| --- | --- | --- |
+| Registration | Email/password registration signs the user in immediately; then the app asks for a first name and household name. The “18+” checkbox is only frontend state. | Verify email; create a private space automatically; remove mandatory household naming from onboarding; decide age assurance separately. |
+| Family | Child/partner creation appears in the profile flow after a household is created. | Optional family management in Settings. Another adult should accept an invitation and use their own account. |
+| Child sign-in | A standalone 4–6 digit PIN session exists; attempts are limited by client IP. Public profile lookup uses a household slug. | Parent-managed child credential for their own device; PIN only for convenience on a trusted device; enforce per-profile permissions on every server request. |
+| Item authorization | Item list/show/update/delete are household-scoped. Items store an owner profile, but endpoint access is not consistently restricted to that owner/role. | Parent may manage child items; a child sees and changes only allowed items. Add authorization tests before child access is treated as safe. |
+| Item structure | Item entity/API currently cover basic name, brand, color, size, material, condition, status, notes, photos, and QR. Category and place → room → storage are not yet wired through item persistence and forms. | Add optional category and optional current-location relationships without blocking quick item entry. |
+| Scan | File/camera picker, guide graphic, image resize, endpoint, OpenRouter request, and form prefill exist. The native camera picker is not an in-camera live overlay. | Decide whether a guide before capture is enough for the first milestone or implement a real camera preview with overlay. In either case show real errors and reviewed drafts. |
+| Scan error behavior | A missing API key or invalid model JSON can currently become an empty, success-shaped response; the scan path can also default an unknown condition to “damaged”. | Missing configuration/provider failure/invalid response must be explicit failures, not blank successful identification or a guessed condition. |
+| Email and 2FA | No account email-verification or 2FA flow is implemented. | Email verification before activation; separate adult 2FA setup/recovery workflow. |
+| Multiple scans/locations | Current item creation is a one-item flow and the model has no room/storage path. | Prove one saved item first; then add reviewed multi-item batches with per-item owner and location. |
+
+These gaps mean “there is a screen or endpoint” must not be reported as “the user workflow is complete.” Keep this table current when implementation changes.
+
+## 7. Decision log
+
+- **2026-10-08:** Personal-first onboarding; no required family name or family-member setup during registration.
+- **2026-10-08:** Parents manage child collections; children should be able to sign in on their own device with restricted permissions.
+- **2026-10-08:** Use a parent-authorized child username/password (no child email required) for own-device sign-in; a short PIN is only a convenience unlock on a trusted device.
+- **2026-10-08:** France is the first market; English is a planned product language. Legal age/child-consent requirements need jurisdiction-specific review.
+- **2026-10-08:** Single-item scan/review/save comes before batch scanning; location is per item and optional.
+- **2026-10-08:** Only verified adults with resource authority can create/revoke shares. Owners choose anonymous read-only link access or verified-account access; interactive capabilities require a verified account.
+- **2026-10-08:** Adults may manage non-Personal items in a shared household. A child's responsible parent/guardian retains access to that child's Personal items; other peers and external viewers do not.
+- **2026-10-08:** Adult looks may be deliberately published for anonymous viewing without exposing source items; child looks require parent/guardian approval before external publication.
+
+When a decision changes, update this log and both the product specification and affected workflow docs in the same change.
