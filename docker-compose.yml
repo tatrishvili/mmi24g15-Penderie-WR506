@@ -69,7 +69,10 @@ services:
       - api
 
   frontend:
-    image: node:24-slim
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    image: penderie-frontend:dev
     container_name: penderie-frontend
     restart: unless-stopped
     user: "1000:1000"
