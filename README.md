@@ -30,7 +30,7 @@ Start with [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) for product decisions and known 
 │   ├── src/                  Application code
 │   ├── tests/                PHPUnit tests
 │   ├── migrations/           Doctrine migrations
-│   ├── phpstan.neon          Static analysis config
+│   ├── phpstan.dist.neon     Static analysis config (level 6)
 │   └── .php-cs-fixer.dist.php Coding standard config
 ├── frontend/                 React application (Vite dev server)
 │   ├── src/                  Components, pages, tests

@@ -1,0 +1,19 @@
+includes:
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-doctrine/rules.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-symfony/rules.neon
+
+parameters:
+    level: 6
+    paths:
+        - bin
+        - config
+        - migrations
+        - src
+        - tests
+    excludePaths:
+        - tests/bootstrap.php
+    tmpDir: var/phpstan
+    symfony:
+        containerXmlPath: %currentWorkingDirectory%/var/cache/test/App_KernelTestDebugContainer.xml

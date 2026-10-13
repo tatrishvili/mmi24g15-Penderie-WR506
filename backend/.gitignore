@@ -18,3 +18,8 @@
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+###> phpstan/phpstan ###
+# phpstan.dist.neon is the shared config; phpstan.neon holds local overrides
+/phpstan.neon
+###< phpstan/phpstan ###

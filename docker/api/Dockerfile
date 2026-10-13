@@ -19,6 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gd \
     && rm -rf /var/lib/apt/lists/*
 
+RUN pecl install pcov && docker-php-ext-enable pcov
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 RUN { \
