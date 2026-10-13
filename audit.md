@@ -390,12 +390,56 @@ Local and CI run **the same checks** — `make qa` is the local mirror of the pi
 
 ## 11. Evidence
 
+Everything above was executed, not assumed. Three kinds of proof:
+
+### a) Reproducible commands (anyone can re-run them)
+
+```bash
+make qa      # runs every backend and front-end check in one go
+make coverage
+make lighthouse
+```
+
+Transcript of the verification run (a clean checkout of `develop`):
+
+```text
+PHPStan (level 6 + symfony/doctrine + container)   [OK] No errors
+PHP-CS-Fixer                                       Found 0 of 35 files that can be fixed
+php bin/console lint:container --env=test           [OK] all services are injected with values
+                                                      that are compatible with their type declarations
+php bin/console lint:yaml config                   [OK] All 15 YAML files contain valid syntax
+PHPUnit                                             OK (120 tests, 235 assertions)
+composer audit                                      No security vulnerability advisories found
+oxlint                                              Found 0 warnings and 0 errors
+tsc -b                                              (no errors)
+vitest                                              20 passed (5 files, incl. 3 axe tests)
+vite build                                          ✓ built
+lhci collect + assert                               All results processed (budgets passed)
+```
+
+### b) Continuous integration (the same commands, run by GitHub on every push)
+
+| Run | Result |
+| --- | --- |
+| [PR #4 — this audit](https://github.com/tatrishvili/mmi24g15-Penderie-WR506/pull/4) | Backend ✅ · Frontend ✅ |
+| [PR #5 — the toolchain](https://github.com/tatrishvili/mmi24g15-Penderie-WR506/pull/5) | Backend ✅ · Frontend ✅ · Lighthouse ✅ · Snyk ✅ |
+| [All workflow runs](https://github.com/tatrishvili/mmi24g15-Penderie-WR506/actions) | Full history |
+
+A red check blocks the merge: the quality gate is enforced by the pipeline, not by memory.
+
+### c) Files in this repository
+
 | Evidence | Where |
 | --- | --- |
 | This audit | `audit.md` (repository root) |
 | Quality gate commands | `Makefile` → `make help` |
 | Pipeline definition | `.github/workflows/ci.yml`, `snyk.yml`, `release.yml` |
 | Pull request checklist | `.github/PULL_REQUEST_TEMPLATE.md` |
-| Lighthouse HTML reports | `frontend/lighthouse-report/` (`make lighthouse`, git-ignored) and the CI artifact `lighthouse-report` |
+| Lighthouse HTML reports | CI artifact `lighthouse-report`, or `make lighthouse` → `frontend/lighthouse-report/` |
 | PHPStan configuration | `backend/phpstan.dist.neon` |
 | Accessibility tests | `frontend/src/test/a11y.ts`, `frontend/src/pages/Accessibility.test.tsx` |
+| Coverage report | `make coverage` (baseline in [§8](#8-testability-and-reliability-next-sessions)) |
+
+> Test counts in [§8](#8-testability-and-reliability-next-sessions) were measured on the full
+> working tree during this session (150 tests / 637 assertions). On `develop`, before the
+> pending feature branch is merged, the suite reports 120 tests / 235 assertions.
