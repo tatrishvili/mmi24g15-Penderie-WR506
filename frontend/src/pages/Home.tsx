@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 type HealthState =
   { status: 'loading' } | { status: 'online'; environment: string } | { status: 'offline' }
@@ -73,6 +74,22 @@ export default function Home() {
             Scannez un vêtement, Penderie l’enregistre, le range et vous dit exactement où il est —
             et à qui vous l’avez prêté.
           </p>
+          <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
+            <Link
+              to="/inscription"
+              className="btn btn-primary"
+              style={{ width: 'auto', flex: '1 1 200px' }}
+            >
+              Créer mon foyer
+            </Link>
+            <Link
+              to="/connexion"
+              className="btn btn-secondary"
+              style={{ width: 'auto', flex: '1 1 200px' }}
+            >
+              Se connecter
+            </Link>
+          </div>
         </section>
 
         <section className="grid">

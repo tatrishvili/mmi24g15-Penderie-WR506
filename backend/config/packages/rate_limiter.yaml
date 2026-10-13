@@ -1,0 +1,12 @@
+framework:
+    # Public household listing (slug -> profiles) for the standalone PIN login UI.
+    # Generous budget: one call per slug lookup, but still slows down enumeration.
+    rate_limiter:
+        pin:
+            policy: 'fixed_window'
+            limit: 5
+            interval: '1 minute'
+        household_profiles:
+            policy: 'fixed_window'
+            limit: 60
+            interval: '1 minute'

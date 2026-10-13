@@ -6,3 +6,9 @@ parameters:
     excludePaths:
         - tests/bootstrap.php
     tmpDir: var/phpstan
+    ignoreErrors:
+        # Doctrine assigns auto-generated ids at flush time, PHPStan cannot see it.
+        - identifier: property.unusedType
+          message: '#Property App\\Entity\\[A-Za-z]+::\$id \(int\|null\) is never assigned int#'
+          paths:
+            - src/Entity

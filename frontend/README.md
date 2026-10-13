@@ -1,32 +1,24 @@
-# React + TypeScript + Vite
+# Penderie frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The frontend is a React + TypeScript application built with Vite. Product behavior and language/security requirements are documented in the repository-root [PRODUCT_SPEC.md](../PRODUCT_SPEC.md) and [WORKFLOWS.md](../WORKFLOWS.md).
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+From this directory:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+For the full Docker-based setup and backend commands, see the repository-root [README.md](../README.md).
+
+## Frontend conventions
+
+- Route API calls through the existing `src/api/` modules and shared client.
+- Keep user-visible text ready for French and English localization; do not couple domain/API values to translated labels.
+- Frontend visibility is not authorization. The backend must enforce account, household, profile, and item permissions.
+- Scan results are drafts. Show failures and require user review before saving an item.
+- Add or update focused Vitest coverage for user-visible behavior and denied/empty/error states.

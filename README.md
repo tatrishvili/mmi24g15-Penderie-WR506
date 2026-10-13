@@ -8,6 +8,8 @@ the details, then find it, lend it, share it or sell it to people you trust.
 This repository contains the **development environment** (Docker) and the first working slice of the product:
 a Symfony API and a React front end, wired together and covered by CI.
 
+Start with [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) for product decisions and known gaps, [WORKFLOWS.md](./WORKFLOWS.md) for user journeys, and [PERMISSIONS.md](./PERMISSIONS.md) before changing access control. Repository agents should also read [.github/copilot-instructions.md](./.github/copilot-instructions.md).
+
 ---
 
 ## Stack
@@ -33,8 +35,12 @@ a Symfony API and a React front end, wired together and covered by CI.
 ├── frontend/                 React application (Vite dev server)
 │   ├── src/                  Components, pages, tests
 │   └── vite.config.ts        Dev server + /api proxy + Vitest config
+├── PRODUCT_SPEC.md           Product decisions and domain boundaries
+├── WORKFLOWS.md              Intended user journeys and implementation order
+├── PERMISSIONS.md            Access matrix and sharing policy
 ├── docker/                   Dockerfile + nginx configuration
 ├── docker-compose.yml        Local environment definition
+├── .github/copilot-instructions.md  Project-specific agent guidance
 └── .github/workflows/ci.yml  Continuous integration
 ```
 
@@ -113,7 +119,12 @@ feature/*  →  develop  →  release/* / pre-production/*  →  main
 
 ## Roadmap
 
-1. ✅ Development environment (Docker, API, front end, CI)
-2. 🔜 Item scanning: photo → base64 → LLM vision API → prefilled item form
-3. 🔜 Wardrobe, rooms, storage locations and people
-4. 🔜 Lending, condition tracking, sharing and outfit proposals
+The repository has working slices for the development environment, basic authentication/profile flows, item CRUD/photos, and a photo-scan prototype. These are not all production-ready; see the implementation-gap table in [PRODUCT_SPEC.md](./PRODUCT_SPEC.md).
+
+Recommended next steps:
+
+1. Personal-first registration, email verification, and automatic private-space setup.
+2. Finish and test item ownership/privacy, then wire categories and place → room → storage through the API and UI.
+3. Make single-item scanning report real provider/configuration failures and save only reviewed results.
+4. Implement parent-authorized child access with server-enforced item permissions before enabling child sign-in.
+5. Add adult invitations, batch scanning, lending, and sharing in that order.
