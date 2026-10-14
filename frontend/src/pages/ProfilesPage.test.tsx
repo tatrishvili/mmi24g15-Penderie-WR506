@@ -25,9 +25,11 @@ function meWith(profiles: unknown[], activeId: number | null) {
   return {
     status: 200,
     body: {
+      households: [HOUSEHOLD],
       household: HOUSEHOLD,
       profiles,
       places: PLACES,
+      activeHouseholdId: 1,
       activeProfileId: activeId,
       activeProfile: active,
       user: { id: 1, email: 'camille@example.com' },
@@ -149,7 +151,7 @@ describe('ProfilesPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Enfant/ }))
     fireEvent.change(screen.getByLabelText('Prénom de l’enfant'), { target: { value: 'Léo' } })
-    fireEvent.change(screen.getByLabelText(/Code PIN \(4 à 6 chiffres\)/), {
+    fireEvent.change(screen.getByLabelText(/Code PIN pour cet appareil \(optionnel\)/), {
       target: { value: '1234' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter l’enfant' }))
@@ -170,10 +172,130 @@ describe('ProfilesPage', () => {
     expect(screen.queryByRole('button', { name: 'Conjoint' })).not.toBeInTheDocument()
   })
 
+  it('shows the foyer setup when the fresh account has no household yet', async () => {
+    stubFetch((url) =>
+      url.endsWith('/api/auth/me')
+        ? {
+            status: 200,
+            body: {
+              households: [],
+              household: null,
+              profiles: [],
+              places: [],
+              activeHouseholdId: null,
+              activeProfileId: null,
+              activeProfile: null,
+              user: { id: 1, email: 'camille@example.com' },
+            },
+          }
+        : { status: 404, body: {} },
+    )
+    renderProfiles()
+
+    expect(await screen.findByText('Créez votre foyer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Votre prénom')).toBeInTheDocument()
+    expect(screen.getByLabelText('Nom du foyer')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Enfant/ })).not.toBeInTheDocument()
+  })
+
+  it('creates the foyer then lists the adult profile', async () => {
+    let meCalls = 0
+    let created = false
+
+    stubFetch((url) => {
+      if (url.endsWith('/api/auth/me')) {
+        meCalls += 1
+        if (created) return meWith([PARENT], 1)
+        return {
+          status: 200,
+          body: {
+            households: [],
+            household: null,
+            profiles: [],
+            places: [],
+            activeHouseholdId: null,
+            activeProfileId: null,
+            activeProfile: null,
+            user: { id: 1, email: 'camille@example.com' },
+          },
+        }
+      }
+      if (url.endsWith('/api/auth/households')) {
+        created = true
+        return {
+          status: 201,
+          body: {
+            household: HOUSEHOLD,
+            profile: PARENT,
+            place: PLACES[0],
+            activeHouseholdId: 1,
+            activeProfileId: 1,
+          },
+        }
+      }
+      return { status: 404, body: {} }
+    })
+    renderProfiles()
+
+    fireEvent.change(await screen.findByLabelText('Votre prénom'), { target: { value: 'Camille' } })
+    fireEvent.change(screen.getByLabelText('Nom du foyer'), {
+      target: { value: 'Famille Moreau' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Créer mon foyer' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Qui entre ?')).toBeInTheDocument()
+    })
+    expect(screen.getByText('Camille')).toBeInTheDocument()
+  })
+
+  it('lets the user pick a foyer when several exist but none is active', async () => {
+    const LYON = { id: 2, name: 'Appartement Lyon', slug: 'appartement-lyon' }
+    let meCalls = 0
+    let selected: number | null = null
+
+    stubFetch((url) => {
+      if (url.endsWith('/api/auth/me')) {
+        meCalls += 1
+        if (selected === null) {
+          return {
+            status: 200,
+            body: {
+              households: [HOUSEHOLD, LYON],
+              household: null,
+              profiles: [],
+              places: [],
+              activeHouseholdId: null,
+              activeProfileId: null,
+              activeProfile: null,
+              user: { id: 1, email: 'camille@example.com' },
+            },
+          }
+        }
+        return meWith([PARENT], 1)
+      }
+      if (url.endsWith('/api/auth/households/2/select')) {
+        selected = 2
+        return { status: 200, body: { household: LYON, activeHouseholdId: 2, activeProfileId: 1 } }
+      }
+      return { status: 404, body: {} }
+    })
+    renderProfiles()
+
+    expect(await screen.findByText('Choisissez un foyer')).toBeInTheDocument()
+    expect(screen.getByText('Appartement Lyon')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Appartement Lyon/ }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Qui entre ?')).toBeInTheDocument()
+    })
+  })
+
   it('redirects anonymous users to the login page', async () => {
     stubFetch(() => unauthorized())
     renderProfiles()
 
-    expect(await screen.findByRole('tab', { name: 'E-mail' })).toBeInTheDocument()
+    expect(await screen.findByLabelText('E-mail')).toBeInTheDocument()
   })
 })

@@ -53,8 +53,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_healthy
     environment:
       COMPOSER_MEMORY_LIMIT: -1
+      MAILER_DSN: ${MAILER_DSN:-smtp://mailpit:1025}
+      MAILER_FROM_ADDRESS: ${MAILER_FROM_ADDRESS:-no-reply@penderie.local}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:5173}
 
   nginx:
     image: nginx:alpine
@@ -69,7 +74,10 @@ services:
       - api
 
   frontend:
-    image: node:24-slim
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    image: penderie-frontend:dev
     container_name: penderie-frontend
     restart: unless-stopped
     user: "1000:1000"
@@ -87,6 +95,13 @@ services:
       - ./frontend:/app
     depends_on:
       - nginx
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: penderie-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
 
 volumes:
   db_data:

@@ -15,6 +15,7 @@ Read [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) for the product/domain model and [WORK
 6. A child can manage their own permitted items, but cannot manage household membership, security, sharing, sale, or lending in the first version.
 7. A published outfit/look is a separate, deliberately published presentation. It does not make the underlying item records public.
 8. Never treat a household slug, item ID, QR code, or short PIN as proof of authorization.
+9. Friendship requires an accepted request between verified adult accounts; it is a relationship, not a resource grant or household membership.
 
 ## 2. Access level is not a capability
 
@@ -87,6 +88,8 @@ For both modes:
 | **Link viewer** | An actor presenting a valid link. This is an access mechanism, **not** an identity or relationship. They may also be a friend, follower, or stranger. Apply both the link rule and any identity/verification rule. |
 
 Do not use “adult sub-account” as a synonym for another person's credentials. Each adult has their own account; household membership grants an adult role within a space.
+
+Friend requests are limited to adult accounts and do not grant any resource visibility. The recipient must accept; either party may remove the relationship. A child profile cannot create, accept, or manage requests. Every later friend-only share must independently verify the relationship and apply its own explicit scope/capabilities.
 
 ## 5. Resource visibility matrix
 

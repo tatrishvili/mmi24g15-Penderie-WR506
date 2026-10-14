@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Household;
+use App\Entity\HouseholdMember;
 use App\Entity\Profile;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,9 +15,11 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /**
- * Resolves who is acting on the current request from the security token
- * (a User after e-mail login, a Profile after PIN login) plus the session's
- * active profile id (set by profile switching).
+ * Resolves the signed-in account and selected household/profile from the
+ * security token and session. PINs only unlock profiles inside a User session.
+ *
+ * A User can belong to several households: the ACTIVE one lives in the
+ * session (chosen with /households/{id}/select), never on the User.
  */
 final class CurrentActor
 {
@@ -27,19 +30,52 @@ final class CurrentActor
     ) {
     }
 
-    public function household(): ?Household
+    public function tokenUser(): ?object
     {
-        $user = $this->securityUser();
-
-        if ($user instanceof User) {
-            return $user->getHousehold();
-        }
+        $user = $this->tokens->getToken()?->getUser();
 
         if ($user instanceof Profile) {
-            return $user->getHousehold();
+            throw new UnauthorizedHttpException('', 'This profile sign-in is no longer supported.');
         }
 
-        return null;
+        return $user;
+    }
+
+    /**
+     * @throws AccessDeniedHttpException when no account holder is authenticated
+     */
+    public function requireUser(): User
+    {
+        $user = $this->tokenUser();
+
+        if (!$user instanceof User) {
+            throw new AccessDeniedHttpException('Only an account holder can perform this action.');
+        }
+
+        return $user;
+    }
+
+    public function household(): ?Household
+    {
+        $user = $this->tokenUser();
+
+        if (!$user instanceof User) {
+            return null;
+        }
+
+        $householdId = $this->requests->getSession()->get('penderie.active_household_id');
+
+        if (!\is_int($householdId)) {
+            return null;
+        }
+
+        $household = $this->em->getRepository(Household::class)->find($householdId);
+
+        if (!$household instanceof Household || !$this->isMember($user, $household)) {
+            return null;
+        }
+
+        return $household;
     }
 
     public function requireHousehold(): Household
@@ -47,26 +83,58 @@ final class CurrentActor
         $household = $this->household();
 
         if (null === $household) {
-            throw new UnauthorizedHttpException('', 'Authentication required.');
+            throw new UnauthorizedHttpException('', 'No active household. Pick or create a foyer first.');
         }
 
         return $household;
     }
 
+    public function isMember(User $user, Household $household): bool
+    {
+        return null !== $this->em->getRepository(HouseholdMember::class)->findOneBy([
+            'user' => $user,
+            'household' => $household,
+        ]);
+    }
+
     /**
-     * The active profile: the PIN-authenticated profile itself, or the profile
-     * selected with /profiles/{id}/switch. Null when an adult logged in with
-     * e-mail but has not picked a profile yet.
+     * @return list<Household>
+     */
+    public function households(): array
+    {
+        $user = $this->tokenUser();
+
+        if ($user instanceof User) {
+            return $this->householdsOf($user);
+        }
+
+        return [];
+    }
+
+    /**
+     * @return list<Household>
+     */
+    private function householdsOf(User $user): array
+    {
+        $members = $this->em->getRepository(HouseholdMember::class)->findBy(['user' => $user], ['id' => 'ASC']);
+
+        return array_map(static fn (HouseholdMember $member): Household => $member->getHousehold(), $members);
+    }
+
+    /**
+     * The active profile selected inside the ACTIVE household.
      */
     public function profile(): ?Profile
     {
-        $user = $this->securityUser();
-
-        if ($user instanceof Profile) {
-            return $user;
-        }
+        $user = $this->tokenUser();
 
         if (!$user instanceof User) {
+            return null;
+        }
+
+        $household = $this->household();
+
+        if (null === $household) {
             return null;
         }
 
@@ -78,7 +146,7 @@ final class CurrentActor
 
         $profile = $this->em->getRepository(Profile::class)->find($profileId);
 
-        if (!$profile instanceof Profile || $profile->getHousehold()->getId() !== $user->getHousehold()->getId()) {
+        if (!$profile instanceof Profile || $profile->getHousehold()->getId() !== $household->getId()) {
             return null;
         }
 
@@ -86,15 +154,16 @@ final class CurrentActor
     }
 
     /**
-     * Returns an adult profile allowed to manage the household (create profiles,
-     * switch freely): the active profile when it is an adult, otherwise the
-     * logged-in user's own parent/partner profile.
+     * Returns an adult profile allowed to manage the ACTIVE household: the active
+     * profile when it is an adult, otherwise the logged-in user's own
+     * parent/partner profile in that household.
      *
      * @throws AccessDeniedHttpException when the actor is a child
      */
     public function requireAdultProfile(): Profile
     {
-        $user = $this->securityUser();
+        $user = $this->tokenUser();
+        $household = $this->household();
 
         $active = $this->profile();
 
@@ -102,8 +171,8 @@ final class CurrentActor
             return $active;
         }
 
-        if ($user instanceof User) {
-            $own = $this->em->getRepository(Profile::class)->findOneBy(['user' => $user]);
+        if ($user instanceof User && null !== $household) {
+            $own = $this->em->getRepository(Profile::class)->findOneBy(['user' => $user, 'household' => $household]);
 
             if ($own instanceof Profile && $own->isAdult()) {
                 return $own;
@@ -111,10 +180,5 @@ final class CurrentActor
         }
 
         throw new AccessDeniedHttpException('Only an adult profile can perform this action.');
-    }
-
-    private function securityUser(): ?object
-    {
-        return $this->tokens->getToken()?->getUser();
     }
 }

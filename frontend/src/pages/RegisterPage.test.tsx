@@ -1,51 +1,11 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext.tsx'
-import ProfilesPage from '../pages/ProfilesPage.tsx'
 import RegisterPage from '../pages/RegisterPage.tsx'
 import { jsonBody, stubFetch, unauthorized } from '../test/http.ts'
 
 const ME_ANON = unauthorized()
-
-const REGISTER_OK = {
-  status: 201,
-  body: {
-    user: { id: 1, email: 'camille@example.com' },
-    household: { id: 1, name: 'Famille Moreau', slug: 'famille-moreau' },
-    profile: {
-      id: 1,
-      name: 'Camille',
-      role: 'parent',
-      avatarColor: null,
-      hasPin: false,
-      householdId: 1,
-    },
-    place: { id: 1, name: 'Maison', isDefault: true },
-    activeProfileId: 1,
-  },
-}
-
-const ME_PARENT = {
-  status: 200,
-  body: {
-    household: { id: 1, name: 'Famille Moreau', slug: 'famille-moreau' },
-    profiles: [
-      { id: 1, name: 'Camille', role: 'parent', avatarColor: null, hasPin: false, householdId: 1 },
-    ],
-    places: [{ id: 1, name: 'Maison', isDefault: true }],
-    activeProfileId: 1,
-    activeProfile: {
-      id: 1,
-      name: 'Camille',
-      role: 'parent',
-      avatarColor: null,
-      hasPin: false,
-      householdId: 1,
-    },
-    user: { id: 1, email: 'camille@example.com' },
-  },
-}
 
 function renderRegister() {
   render(
@@ -53,11 +13,27 @@ function renderRegister() {
       <AuthProvider>
         <Routes>
           <Route path="/inscription" element={<RegisterPage />} />
-          <Route path="/profils" element={<ProfilesPage />} />
+          <Route path="/dressing" element={<p>Dressing</p>} />
         </Routes>
       </AuthProvider>
     </MemoryRouter>,
   )
+}
+
+async function fillRequiredFields(email = 'camille@example.com') {
+  fireEvent.change(await screen.findByLabelText('Nom d’utilisateur'), {
+    target: { value: ' Camille_Moreau ' },
+  })
+  fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: email } })
+  fireEvent.change(screen.getByLabelText('Date de naissance'), {
+    target: { value: '1990-05-12' },
+  })
+  fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères/), {
+    target: { value: 'secret123' },
+  })
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), {
+    target: { value: 'secret123' },
+  })
 }
 
 describe('RegisterPage', () => {
@@ -65,63 +41,35 @@ describe('RegisterPage', () => {
     cleanup()
   })
 
-  it('renders the household creation form', async () => {
+  it('renders the registration form', async () => {
     stubFetch((url) => (url.endsWith('/api/auth/me') ? ME_ANON : { status: 404, body: {} }))
     renderRegister()
 
-    expect(await screen.findByLabelText('E-mail')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Nom d’utilisateur')).toBeInTheDocument()
+    expect(screen.getByLabelText('E-mail')).toBeInTheDocument()
+    expect(screen.getByLabelText('Date de naissance')).toHaveAttribute('type', 'date')
     expect(screen.getByLabelText(/Mot de passe \(8 caractères/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Nom du foyer')).toBeInTheDocument()
-    expect(screen.getByLabelText('Votre prénom')).toBeInTheDocument()
+    expect(screen.getByLabelText('Confirmer le mot de passe')).toBeInTheDocument()
+    expect(screen.getByText(/pas une vérification officielle/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Votre prenom')).not.toBeInTheDocument()
   })
 
-  it('warns when the password confirmation does not match', async () => {
-    stubFetch(() => ME_ANON)
-    renderRegister()
-
-    fireEvent.change(await screen.findByLabelText(/Mot de passe \(8 caractères/), {
-      target: { value: 'secret123' },
-    })
-    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), {
-      target: { value: 'different' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Créer mon foyer' }))
-
-    expect(
-      await screen.findByText('La confirmation ne correspond pas au mot de passe.'),
-    ).toBeInTheDocument()
-  })
-
-  it('registers the household then lands on the profiles page', async () => {
-    let meCalls = 0
-
+  it('asks the user to check their email after registering', async () => {
     stubFetch((url) => {
-      if (url.endsWith('/api/auth/register')) return REGISTER_OK
-      if (url.endsWith('/api/auth/me')) {
-        meCalls += 1
-        return meCalls === 1 ? ME_ANON : ME_PARENT
+      if (url.endsWith('/api/auth/register')) {
+        return { status: 202, body: { message: 'Verification email sent.' } }
       }
+      if (url.endsWith('/api/auth/me')) return ME_ANON
       return { status: 404, body: {} }
     })
     renderRegister()
 
-    fireEvent.change(await screen.findByLabelText('E-mail'), {
-      target: { value: 'camille@example.com' },
-    })
-    fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères/), {
-      target: { value: 'secret123' },
-    })
-    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), {
-      target: { value: 'secret123' },
-    })
-    fireEvent.change(screen.getByLabelText('Nom du foyer'), { target: { value: 'Famille Moreau' } })
-    fireEvent.change(screen.getByLabelText('Votre prénom'), { target: { value: 'Camille' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Créer mon foyer' }))
+    await fillRequiredFields()
+    fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }))
 
-    await waitFor(() => {
-      expect(screen.getByText('Qui entre ?')).toBeInTheDocument()
-    })
-    expect(screen.getByText('Camille')).toBeInTheDocument()
+    expect(await screen.findByText('Vérifiez votre e-mail')).toBeInTheDocument()
+    expect(screen.getByText(/camille@example.com/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Renvoyer le lien' })).toBeInTheDocument()
   })
 
   it('shows server-side validation errors on the right fields', async () => {
@@ -142,54 +90,36 @@ describe('RegisterPage', () => {
     })
     renderRegister()
 
-    fireEvent.change(await screen.findByLabelText('E-mail'), { target: { value: 'bad' } })
-    fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères/), {
-      target: { value: 'secret123' },
-    })
-    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), {
-      target: { value: 'secret123' },
-    })
-    fireEvent.change(screen.getByLabelText('Nom du foyer'), { target: { value: 'Fam' } })
-    fireEvent.change(screen.getByLabelText('Votre prénom'), { target: { value: 'C' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Créer mon foyer' }))
+    await fillRequiredFields('bad')
+    fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }))
 
     expect(await screen.findByText('E-mail is not valid.')).toBeInTheDocument()
   })
 
   it('sends the trimmed payload to the API', async () => {
     let sent: Record<string, unknown> = {}
-    let meCalls = 0
 
     stubFetch((url, init) => {
       if (url.endsWith('/api/auth/register')) {
         sent = init === undefined ? {} : jsonBody(init)
-        return REGISTER_OK
+        return { status: 202, body: { message: 'Verification email sent.' } }
       }
-      if (url.endsWith('/api/auth/me')) {
-        meCalls += 1
-        return meCalls === 1 ? ME_ANON : ME_PARENT
-      }
+      if (url.endsWith('/api/auth/me')) return ME_ANON
       return { status: 404, body: {} }
     })
     renderRegister()
 
-    fireEvent.change(await screen.findByLabelText('E-mail'), {
-      target: { value: '  camille@example.com ' },
-    })
-    fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères/), {
-      target: { value: 'secret123' },
-    })
-    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), {
-      target: { value: 'secret123' },
-    })
-    fireEvent.change(screen.getByLabelText('Nom du foyer'), { target: { value: 'Famille Moreau' } })
-    fireEvent.change(screen.getByLabelText('Votre prénom'), { target: { value: 'Camille' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Créer mon foyer' }))
+    await fillRequiredFields('  camille@example.com ')
+    fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }))
 
-    await waitFor(() => {
-      expect(screen.getByText('Qui entre ?')).toBeInTheDocument()
-    })
+    expect(await screen.findByText('Vérifiez votre e-mail')).toBeInTheDocument()
+    expect(sent['username']).toBe('camille_moreau')
     expect(sent['email']).toBe('camille@example.com')
-    expect(sent['householdName']).toBe('Famille Moreau')
+    expect(sent['birthDate']).toBe('1990-05-12')
+    expect(sent['password']).toBe('secret123')
+    expect(sent['passwordConfirm']).toBe('secret123')
+    expect(sent['firstName']).toBeUndefined()
+    expect(sent['householdName']).toBeUndefined()
+    expect(sent['placeName']).toBeUndefined()
   })
 })

@@ -30,7 +30,7 @@ Start with [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) for product decisions and known 
 │   ├── src/                  Application code
 │   ├── tests/                PHPUnit tests
 │   ├── migrations/           Doctrine migrations
-│   ├── phpstan.neon          Static analysis config
+│   ├── phpstan.dist.neon     Static analysis config (level 6)
 │   └── .php-cs-fixer.dist.php Coding standard config
 ├── frontend/                 React application (Vite dev server)
 │   ├── src/                  Components, pages, tests
@@ -62,15 +62,88 @@ Then open:
 | http://localhost:5173            | Front end (Vite dev server, proxies `/api`)      |
 | http://localhost:8000/api/health | API health check (JSON)                          |
 | 127.0.0.1:3306                   | MariaDB (`penderie` / `penderie`, db `penderie`)  |
+| http://localhost:8025            | Mailpit inbox for local verification emails       |
 
 The whole chain — browser → Vite → nginx → PHP-FPM → MariaDB — is containerised; nothing needs to be
 installed on the host except Docker.
+
+Registration emails are captured locally by Mailpit; no external email account is needed for development.
+For deployment, set `MAILER_DSN` to the Symfony Resend transport
+(`resend+api://<API_KEY>@default`), `MAILER_FROM_ADDRESS` to an address on your verified sending domain,
+and `PUBLIC_APP_URL` to the public front-end origin. Keep provider credentials in an untracked environment
+file or deployment secret store, never in source control.
+
+## Repeatable local smoke test
+
+The following test login is for a disposable **local development** database only. It is not a seeded account;
+create it through registration the first time. Do not use this password for a real account or deployment.
+
+- **Email:** `penderie.test.20261009@example.com`
+- **Password:** `PenderieTest!2026`
+- **Username:** `penderie_test`
+- **Date of birth for the adult test account:** `1990-05-12`
+
+1. Start the development stack:
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+2. Apply any migrations that have not yet run:
+
+   ```bash
+   docker compose exec -T api php bin/console doctrine:migrations:migrate --no-interaction
+   ```
+
+   The place/room/nested-storage migration (`Version20261009130000`) and registration username/date-of-birth
+   migration (`Version20261012180000`), the friend-request/account-verification migrations
+   (`Version20261013100000` and `Version20261013110000`), and the one-way follow migration
+   (`Version20261013120000`) are applied to the current local development database.
+   Run the command again after pulling future schema changes.
+
+3. Open http://localhost:5173. Register with the test email, password, username, and date of birth above. If
+   this account was already registered in the persistent local database, go straight to **Sign in** instead.
+   If it was registered before username/date-of-birth fields were added, older accounts are not retroactively
+   assigned a username or birth date. A verified account without a username can choose one once from **Mon
+   compte**; use that username (not its email) for friend requests.
+   Email stays the login identifier; username is a unique account handle. The date of birth is self-declared
+   and only gates adult registration (18+); it is not official age verification. To test the under-18
+   rejection, use a date less than 18 years ago; the API should reject it without sending a verification
+   email.
+4. Open Mailpit at http://localhost:8025, find the verification email for that address, and follow its link.
+   The account is created and signed in only after email verification. Mailpit is local; no paid mail provider
+   or external mailbox is needed.
+5. Open **Lieux**. Add a place (the default **Maison** is already available), then add a room. Under that
+   room choose a preset such as **Dressing**, **Salon**, or **Garage** (or enter a custom name). Add a
+   rangement such as **Penderie**; use **Dans un rangement existant** to add a nested shelf or
+   box such as **Boîte hiver**.
+6. To test child profiles, sign in as the adult, open **Profils**, and add a child. The PIN is optional and
+   only unlocks that profile on the already-authenticated device; it is not a child sign-in password. Child
+   sign-in on another device is intentionally unavailable until item-level permissions are enforced.
+7. Open **Amis** to send friend requests by username. Requests require acceptance; friendship does not share
+   inventory. Only verified adult accounts can send or accept them. To test both sides, register and verify
+   another disposable adult account with a different username.
+8. Add an item manually or open **Scanner un article**. In the item form, select the room and optionally
+   its rangement/box. Saving without a location is also supported. Confirm the item appears in the inventory
+   with its place → room → storage path.
+9. The scanner requests camera access when opened. Allow the browser permission to use the live preview and
+   capture button; the gallery picker remains available too. If camera permission is denied or unavailable,
+   use the gallery or retry after changing browser permissions. Camera access requires HTTPS or localhost.
+10. Photo analysis is optional. A configured free vision provider may be rate-limited or unavailable; in that
+   case the captured photo is kept and the screen offers retry or manual entry. No paid provider is required
+   to test item creation and location assignment.
+
+The local registration email and password are ordinary test credentials, not a database fixture. The account
+and its inventory remain in the local database until that development database is reset. Never store personal
+items in this test space.
 
 ## Common commands
 
 ```bash
 # Backend (executed inside the PHP container)
 docker compose exec api composer install
+docker compose exec -T api php bin/console doctrine:migrations:migrate --no-interaction
+docker compose exec -T api php bin/console doctrine:schema:validate
 docker compose exec api composer cs:check    # coding standard
 docker compose exec api composer cs:fix      # fix coding standard
 docker compose exec api composer stan        # static analysis
@@ -94,6 +167,7 @@ npm run build       # type check + production build
 | `backend/.env`           | Symfony configuration (committed, **dev-only** values)         |
 | `backend/.env.local`     | Local secrets — **never committed**                            |
 | `OPENROUTER_API_KEY`     | Reserved for the item-scanning feature, lives in `backend/.env.local` |
+| `MAILER_DSN`, `MAILER_FROM_ADDRESS` | Email provider and verified sender; configure in deployment secrets for real delivery |
 
 ## Git workflow (Git Flow)
 
@@ -119,12 +193,11 @@ feature/*  →  develop  →  release/* / pre-production/*  →  main
 
 ## Roadmap
 
-The repository has working slices for the development environment, basic authentication/profile flows, item CRUD/photos, and a photo-scan prototype. These are not all production-ready; see the implementation-gap table in [PRODUCT_SPEC.md](./PRODUCT_SPEC.md).
-
 Recommended next steps:
 
-1. Personal-first registration, email verification, and automatic private-space setup.
-2. Finish and test item ownership/privacy, then wire categories and place → room → storage through the API and UI.
-3. Make single-item scanning report real provider/configuration failures and save only reviewed results.
-4. Implement parent-authorized child access with server-enforced item permissions before enabling child sign-in.
-5. Add adult invitations, batch scanning, lending, and sharing in that order.
+1. Review and complete server-side object-level permissions for child/profile access and sharing before enabling those workflows.
+2. Configure production email delivery and implement adult 2FA with recovery.
+3. Improve the single-item scan experience and provider validation while preserving explicit errors and manual entry.
+4. Add reviewed batch scanning, then invitations, lending, and sharing with their full permission and history flows.
+
+The current working slices and known security/product gaps are tracked in [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) and [WORKFLOWS.md](./WORKFLOWS.md).

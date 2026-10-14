@@ -3,6 +3,7 @@ export type ProfileRole = 'parent' | 'partner' | 'child'
 export interface UserSummary {
   id: number
   email: string
+  username?: string | null
 }
 
 export interface HouseholdSummary {
@@ -27,42 +28,57 @@ export interface PlaceSummary {
 }
 
 export interface RegisterPayload {
+  username: string
   email: string
+  birthDate: string
   password: string
   passwordConfirm: string
-  householdName: string
-  firstName: string
-  placeName?: string
 }
 
 export interface RegisterResult {
-  user: UserSummary
-  household: HouseholdSummary
-  profile: ProfileSummary
-  place: PlaceSummary
-  activeProfileId: number
+  message: string
 }
 
 export interface LoginResult {
   user: UserSummary
-  household: HouseholdSummary
+  households: HouseholdSummary[]
+  household: HouseholdSummary | null
   profiles: ProfileSummary[]
-  activeProfileId: null
+  places: PlaceSummary[]
+  activeHouseholdId: number | null
+  activeProfileId: number | null
+  activeProfile: ProfileSummary | null
 }
 
 export interface MeResult {
-  household: HouseholdSummary
+  households: HouseholdSummary[]
+  household: HouseholdSummary | null
   profiles: ProfileSummary[]
   places: PlaceSummary[]
+  activeHouseholdId: number | null
   activeProfileId: number | null
   activeProfile: ProfileSummary | null
   user?: UserSummary
 }
 
+export interface CreateHouseholdPayload {
+  householdName: string
+  firstName: string
+  placeName?: string
+}
+
+export interface CreateHouseholdResult {
+  household: HouseholdSummary
+  profile: ProfileSummary
+  place: PlaceSummary
+  activeHouseholdId: number
+  activeProfileId: number
+}
+
 export interface CreateChildPayload {
   role: 'child'
   name: string
-  pin: string
+  pin?: string
   avatarColor?: string
 }
 
@@ -73,11 +89,6 @@ export interface CreatePartnerPayload {
   password: string
   pin?: string
   avatarColor?: string
-}
-
-export interface HouseholdProfilesResult {
-  household: { name: string; slug: string }
-  profiles: ProfileSummary[]
 }
 
 export function roleLabel(role: ProfileRole): string {

@@ -36,7 +36,12 @@ final class AuthResponse
      */
     public static function userPayload(User $user): array
     {
-        return ['id' => $user->getId(), 'email' => $user->getEmail()];
+        return [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'firstName' => $user->getFirstName(),
+            'username' => $user->getUsername(),
+        ];
     }
 
     /**

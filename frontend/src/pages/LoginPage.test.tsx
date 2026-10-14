@@ -95,75 +95,11 @@ describe('LoginPage', () => {
     expect(await screen.findByText('Invalid e-mail or password.')).toBeInTheDocument()
   })
 
-  it('enters with a household code, profile and PIN', async () => {
-    let meCalls = 0
-
-    stubFetch((url) => {
-      if (url.endsWith('/api/auth/me')) {
-        meCalls += 1
-        return meCalls === 1 ? ME_ANON : ME_PARENT
-      }
-      if (url.includes('/api/auth/households/')) {
-        return {
-          status: 200,
-          body: {
-            household: { name: 'Famille Moreau', slug: 'famille-moreau' },
-            profiles: [
-              {
-                id: 1,
-                name: 'Camille',
-                role: 'parent',
-                avatarColor: null,
-                hasPin: false,
-                householdId: 1,
-              },
-              {
-                id: 2,
-                name: 'Léo',
-                role: 'child',
-                avatarColor: null,
-                hasPin: true,
-                householdId: 1,
-              },
-            ],
-          },
-        }
-      }
-      if (url.endsWith('/api/auth/profile-pin')) {
-        return {
-          status: 200,
-          body: {
-            profile: {
-              id: 2,
-              name: 'Léo',
-              role: 'child',
-              avatarColor: null,
-              hasPin: true,
-              householdId: 1,
-            },
-            household: { id: 1, name: 'Famille Moreau', slug: 'famille-moreau' },
-            activeProfileId: 2,
-          },
-        }
-      }
-      return { status: 404, body: {} }
-    })
+  it('does not expose public child PIN sign-in', async () => {
+    stubFetch(() => ME_ANON)
     renderLogin()
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Entrer avec un code' }))
-    fireEvent.change(screen.getByLabelText('Code du foyer'), {
-      target: { value: 'famille-moreau' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Trouver mon foyer' }))
-
-    expect(await screen.findByText('Léo')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: /Léo/ }))
-    fireEvent.change(screen.getByLabelText(/Code PIN/), { target: { value: '1234' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Entrer' }))
-
-    await waitFor(() => {
-      expect(screen.getByText('Qui entre ?')).toBeInTheDocument()
-    })
+    expect(await screen.findByText(/Les enfants ne peuvent pas encore se connecter/)).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Entrer avec un code' })).not.toBeInTheDocument()
   })
 })
