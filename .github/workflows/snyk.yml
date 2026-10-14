@@ -1,0 +1,77 @@
+# ----------------------------------------------------------------------------
+#  Snyk — dependency vulnerability scanning (https://snyk.io)
+#
+#  Requires the SNYK_TOKEN repository secret:
+#    1. create a free account on https://snyk.io
+#    2. Snyk → Account settings → API token
+#    3. GitHub → Settings → Secrets and variables → Actions → New secret
+#       name: SNYK_TOKEN
+#
+#  Until the secret exists the job reports "skipped" instead of failing, so
+#  the pipeline stays green on a fresh clone.
+# ----------------------------------------------------------------------------
+
+name: Snyk
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+      - "release/**"
+      - "pre-production/**"
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snyk:
+    name: Snyk (dependencies)
+    runs-on: ubuntu-24.04
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+    steps:
+      - name: Is Snyk configured?
+        id: snyk
+        run: |
+          if [ -n "$SNYK_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SNYK_TOKEN is not set - Snyk scan skipped. Add the secret to activate it."
+          fi
+
+      - name: Checkout
+        if: steps.snyk.outputs.enabled == 'true'
+        uses: actions/checkout@v7
+
+      - name: Set up PHP 8.4
+        if: steps.snyk.outputs.enabled == 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node.js 24
+        if: steps.snyk.outputs.enabled == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Install the Snyk CLI
+        if: steps.snyk.outputs.enabled == 'true'
+        run: npm install --global snyk@latest
+
+      - name: Snyk Open Source (backend — PHP)
+        if: steps.snyk.outputs.enabled == 'true'
+        run: snyk test --file=backend/composer.json --severity-threshold=high
+
+      - name: Snyk Open Source (frontend — JavaScript)
+        if: steps.snyk.outputs.enabled == 'true'
+        working-directory: frontend
+        run: snyk test --file=package-lock.json --severity-threshold=high
