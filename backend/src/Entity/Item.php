@@ -61,7 +61,7 @@ class Item
     #[ORM\Column(length: 120, nullable: true)]
     private ?string $material = null;
 
-    #[ORM\Column(type: 'string', enumType: ItemCondition::class)]
+    #[ORM\Column(name: '`condition`', type: 'string', enumType: ItemCondition::class)]
     private ItemCondition $condition;
 
     #[ORM\Column(type: 'string', enumType: ItemStatus::class)]
