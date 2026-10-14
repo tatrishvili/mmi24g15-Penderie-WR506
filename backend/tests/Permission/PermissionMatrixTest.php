@@ -313,4 +313,42 @@ final class PermissionMatrixTest extends TestCase
         $this->assertTrue($decision->allows(AccessLevel::View));
         $this->assertFalse($decision->allows(AccessLevel::Edit));
     }
+
+    public function testChildSeesNoStructureClosedByCustomStatus(): void
+    {
+        $this->assertSame(
+            AccessLevel::Denied,
+            $this->level(ResourceType::Storage, ResourceStatus::Custom, ViewerRelation::HouseholdChild),
+        );
+        $this->assertSame(
+            AccessLevel::View,
+            $this->level(ResourceType::Room, ResourceStatus::Public, ViewerRelation::HouseholdChild),
+        );
+    }
+
+    public function testChildOnLookFollowsTheLookVisibilityStatus(): void
+    {
+        $this->assertSame(
+            AccessLevel::Denied,
+            $this->level(ResourceType::Look, ResourceStatus::Private, ViewerRelation::HouseholdChild),
+        );
+        $this->assertSame(
+            AccessLevel::Denied,
+            $this->level(ResourceType::Look, ResourceStatus::Custom, ViewerRelation::HouseholdChild),
+        );
+        $this->assertSame(
+            AccessLevel::View,
+            $this->level(ResourceType::Look, ResourceStatus::Public, ViewerRelation::HouseholdChild),
+        );
+    }
+
+    public function testMaxLevelCapsLoansAndSalesAtView(): void
+    {
+        $this->assertSame(AccessLevel::View, ResourceType::Loan->maxLevel());
+        $this->assertSame(AccessLevel::View, ResourceType::Sale->maxLevel());
+
+        foreach ([ResourceType::Item, ResourceType::Category, ResourceType::Storage, ResourceType::Room, ResourceType::Home, ResourceType::Look] as $type) {
+            $this->assertSame(AccessLevel::Edit, $type->maxLevel());
+        }
+    }
 }
