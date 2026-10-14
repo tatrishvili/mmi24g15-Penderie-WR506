@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
  * request stays inside the active foyer) and owned by a Profile (Matrix v3:
  * a child only ever sees their own objects).
  */
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: \App\Repository\ItemRepository::class)]
 #[ORM\Table(name: 'item')]
 class Item
 {

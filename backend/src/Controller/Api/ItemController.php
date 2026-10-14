@@ -8,6 +8,7 @@ use App\Dto\CreateItemDto;
 use App\Dto\UpdateItemDto;
 use App\Entity\Item;
 use App\Entity\ItemPhoto;
+use App\Repository\ItemRepository;
 use App\Service\CurrentActor;
 use App\Service\ItemService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -27,6 +28,7 @@ final class ItemController extends AbstractController
         private ItemService $items,
         private CurrentActor $actor,
         private EntityManagerInterface $em,
+        private ItemRepository $repository,
     ) {
     }
 
@@ -40,33 +42,11 @@ final class ItemController extends AbstractController
         $page = max(1, (int) $request->query->get('page', 1));
         $perPage = min(100, max(1, (int) $request->query->get('perPage', 20)));
 
-        $qb = $this->em->createQueryBuilder()
-            ->select('i')
-            ->from(Item::class, 'i')
-            ->where('i.household = :household')
-            ->setParameter('household', $household)
-            ->orderBy('i.id', 'DESC');
-
-        if ('' !== $query) {
-            $qb->andWhere('i.name LIKE :q OR i.brand LIKE :q OR i.color LIKE :q')
-                ->setParameter('q', '%'.$query.'%');
-        }
-
-        if ('' !== $status) {
-            $qb->andWhere('i.status = :status')->setParameter('status', $status);
-        }
-
-        $total = (int) (clone $qb)->select('COUNT(i.id)')->getQuery()->getSingleScalarResult();
-
-        /** @var list<Item> $found */
-        $found = $qb->setFirstResult(($page - 1) * $perPage)
-            ->setMaxResults($perPage)
-            ->getQuery()
-            ->getResult();
+        $result = $this->repository->searchInHousehold($household, $query, $status, $page, $perPage);
 
         return new JsonResponse([
-            'items' => array_map([ItemService::class, 'itemPayload'], $found),
-            'total' => $total,
+            'items' => array_map([ItemService::class, 'itemPayload'], $result['items']),
+            'total' => $result['total'],
             'page' => $page,
             'perPage' => $perPage,
         ]);
