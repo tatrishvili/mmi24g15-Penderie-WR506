@@ -24,7 +24,7 @@
 | **Snyk** (https://snyk.io) | Security flaws and CI integration | Vulnerability monitoring beyond Composer's list | 🟡 workflow ready, needs the `SNYK_TOKEN` secret |
 | **GitHub CodeQL** | Static security analysis of PHP/JS | Native GitHub security tab | ❌ unavailable: the repository is **private on the free plan** (API returns `404`, GitHub Advanced Security required) |
 | **PHPUnit** | Unit and functional behaviour | Safety net for every refactoring | ✅ 150 tests / 637 assertions |
-| **oxlint + tsc + Vitest** | Front-end lint, types, behaviour | Same guarantees on the React side | ✅ 44 tests in 11 files |
+| **oxlint + tsc + Vitest** | Front-end lint, types, behaviour | Same guarantees on the React side | ✅ 46 tests in 11 files |
 | **axe-core (jest-axe)** | Automatic accessibility rules | Makes A11Y regressions fail the build | ✅ 4 page-level tests |
 | **Lighthouse** | Performance, accessibility, best practices, SEO | Assisted visual/performance inspection | ✅ 100 / 100 / 100 / 100 |
 | **Manual inspection** | Responsibilities, duplication, organisation, readability | Develops a critical eye on what tools cannot see | ✅ [§3.3](#33-organisation-of-controllers-and-services), [§7](#7-user-experience-ux) |
@@ -190,7 +190,7 @@ just like a unit test:
 | Registration form | Every field has a label, no violation |
 | Inventory (authenticated route) | No violation |
 
-`make fe-test` → **44 tests passing** (4 of them accessibility).
+`make fe-test` → **46 tests passing** (4 of them accessibility).
 
 **Lighthouse** (see [§6](#6-eco-design-and-performance)) audits the real production build:
 **accessibility 100/100**.
@@ -311,12 +311,12 @@ campaign, and again once the PHPUnit + Cypress campaigns were complete:
 | Indicator | Baseline | After the test campaign |
 | --- | --- | --- |
 | Backend tests | 150 tests / 637 assertions | **226 tests / 1,019 assertions** |
-| Front-end tests | 44 tests | 44 tests (Vitest) |
+| Front-end tests | 44 tests | 46 tests (Vitest) |
 | Line coverage (`src`) | 85.96 % (1,267 / 1,474) | **95.65 % (1,717 / 1,795)** |
 | Business layer (Service · Permission · Entity · Dto · Enum · Repository) | — | **100.00 % (977 / 977)** |
 | Method coverage | 69.75 % (196 / 281) | 91.30 % (273 / 299) |
 | Class coverage | 26.83 % (11 / 41) | 78.00 % (39 / 50) |
-| End-to-end (Cypress) | ❌ not started | ✅ **12 tests / 5 specs** (`make test-e2e`) |
+| End-to-end (Cypress) | ❌ not started | ✅ **13 tests / 5 specs** (`make test-e2e`) |
 
 Justification of every test choice lives in **`coverage.md`**.
 
@@ -350,8 +350,9 @@ Justification of every test choice lives in **`coverage.md`**.
 **Scenarios automated since:** happy path registration → verification → login; anonymous 401
 matrix and 403/404 isolation (PHPUnit functional); item created with and without a location;
 Cypress end-to-end journey (register, verify by e-mail via Mailpit, household + profile,
-add an item, search). *Lending an item remains API-only — the UI exposes no status change
-control yet (documented gap in `coverage.md`).*
+add an item, search, **lend an item and take it back**). The lend control was added to the
+dressing list (« Prêter » / « Récupérer », `PATCH /api/items/{id}`) and is covered by a Vitest
+unit test plus the Cypress journey.
 
 ---
 
@@ -391,7 +392,7 @@ Local and CI run **the same checks** — `make qa` is the local mirror of the pi
 | 15 | Process | No PR template | medium | ✅ added |
 | 16 | Process | Long, error-prone commands | medium | ✅ Makefile |
 | 17 | Tests | Coverage baseline unknown | high | ✅ campaign done: 95.65 % global, 100 % métier |
-| 18 | Tests | No end-to-end campaign | high | ✅ Cypress: 12 tests, 5 parcours (`make test-e2e`) |
+| 18 | Tests | No end-to-end campaign | high | ✅ Cypress: 13 tests, 5 parcours (`make test-e2e`) |
 
 ---
 

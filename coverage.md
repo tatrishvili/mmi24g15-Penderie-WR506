@@ -38,7 +38,7 @@ make qa                                     # cs + PHPStan 6 + tests + front
 ```
 
 Résultat du 14/10 (après campagne) : `make qa` **vert**,
-**226 tests / 1019 assertions** backend + **44 tests** frontend (Vitest, hors PHPUnit).
+**226 tests / 1019 assertions** backend + **46 tests** frontend (Vitest, hors PHPUnit).
 
 Répartition par niveau :
 
@@ -194,8 +194,8 @@ C'est le seul niveau qui exécute le JavaScript de la SPA (React 19).
 | Commande | `make test-e2e` (ou `npm run test:e2e`) : efface le rate-limiter de l'inscription puis lance `cypress run` |
 | Configuration | `cypress.config.js` à la racine — `baseUrl: http://frontend:5173` (nom de service Compose) |
 | Données | `make fixtures` en amont (compte démo + 10 articles) ; nouvelles inscriptions à e-mail unique par run ; e-mails lus dans **Mailpit** (`http://mailpit:8025/api/v1/...`) |
-| Sélecteurs | `#id` existants + textes français stables — **aucun attribut `data-cy` ajouté**, l'application n'a pas été modifiée pour les tests |
-| Résultat | **12 tests / 5 specs, tous verts en ~2 min** |
+| Sélecteurs | `#id` existants + textes français stables — l'UI de prêt a été ajoutée **avant** les tests E2E (voir ci-dessous), sans attributs `data-cy` |
+| Résultat | **13 tests / 5 specs, tous verts en ~2 min** |
 
 ### Parcours couverts (100 % des parcours métiers de l'interface)
 
@@ -205,13 +205,23 @@ C'est le seul niveau qui exécute le JavaScript de la SPA (React 19).
 | `auth-register.cy.js` | Inscription → « Vérifiez votre e-mail » ; confirmation de mot de passe incorrecte ; **vérification via le lien reçu dans Mailpit** |
 | `auth-login.cy.js` | Mot de passe refusé ; connexion du compte démo → foyer → profil → `Pull noir` visible ; déconnexion puis verrouillage des routes |
 | `household.cy.js` | Parcours complet : inscription → vérification Mailpit → **foyer auto-créé** (`AuthService::verifyEmail`) → profil → dressing vide |
-| `items.cy.js` | Recherche d'articles (+ résultat vide) ; **création d'un article** via la saisie manuelle du scanner (appel LLM intercepté) ; refus d'un article sans nom |
+| `items.cy.js` | Recherche d'articles (+ résultat vide) ; **création d'un article** via la saisie manuelle du scanner (appel LLM intercepté) ; refus d'un article sans nom ; **prêt d'un article** (`Disponible` → `Prêté`) puis **récupération** (`Prêté` → `Disponible`) |
+
+### Prêt d'un article : de l'API à l'E2E
+
+L'API (`PATCH /api/items/{id}` avec `status`) et le client TypeScript (`updateItem`) existaient
+déjà, et le cycle `disponible ⇄ loue` était couvert par les tests PHPUnit fonctionnels
+(`ItemLifecycleTest`) — mais **aucun contrôle n'existait dans l'interface** : le parcours
+« prêter un vêtement » était donc **non testable** de bout en bout. L'UI a été ajoutée puis testée
+à chaque niveau :
+
+| Niveau | Test | Ce qu'il vérifie |
+|---|---|---|
+| Unit (Vitest) | `ItemsPage.test.tsx` | Clic sur « Prêter » → `PATCH` envoyé avec `status: 'loue'` → ligne passée à « Prêté » → « Récupérer » → `status: 'disponible'` ; erreur API 403 affichée en `role="alert"` |
+| E2E (Cypress) | `items.cy.js` | Parcours réel : bouton « Prêter » sur `Pull noir` → statut « Prêté » → « Récupérer » → « Disponible » (cycle auto-restaurateur : les fixtures repartent à l'état initial, re-runs verts sans `make fixtures`) |
 
 ### Écarts connus (E2E)
 
-- **Prêter / changer le statut d'un article** : pas d'interface (champ `status` absent du formulaire,
-  aucun bouton de prêt dans la liste) → **non testable en E2E**, alors que l'API le supporte.
-  C'est une lacune produit, pas de test.
 - Mode interactif `cypress open` : indisponible sans affichage (headless) — le runner est
   `cypress run` dans le conteneur ; les vidéos (`cypress/videos/`) servent de preuve visuelle.
 - Le rate-limiter d'inscription (5/h par IP) est remis à zéro par `make test-e2e`
@@ -232,7 +242,7 @@ C'est le seul niveau qui exécute le JavaScript de la SPA (React 19).
    doublons, pas de la détection de bug. Elles restent un bon candidat si un
    correcteur exige 100 % *global*.
 2. **JavaScript** : PHPUnit ne l'exécute pas → désormais couvert côté E2E par Cypress (§7).
-3. **Frontend Vitest** (44 tests, 11 fichiers, dont 3 axe a11y) : rapporté par
+3. **Frontend Vitest** (46 tests, 11 fichiers, dont 3 axe a11y) : rapporté par
    `make fe-test`, hors périmètre de ce livrable, toujours vert.
 4. Les 78 lignes restantes restent du câblage contrôleur/sécurité/fixtures — les parcours
    métier correspondants sont eux aussi exercés de bout en bout par Cypress (§7).
@@ -241,9 +251,9 @@ C'est le seul niveau qui exécute le JavaScript de la SPA (React 19).
 
 ## 8. Définition of done (plan de tests)
 
-- [x] `make qa` vert (cs + PHPStan niveau 6 + 226 tests + 44 front)
+- [x] `make qa` vert (cs + PHPStan niveau 6 + 226 tests + 46 front)
 - [x] Une attente volontairement cassée produit bien un FAILURE (puis restauré)
 - [x] Couverture remesurée : 85,96 % → **95,65 %** global, **100 % métier**
 - [x] Compteurs de tests mis à jour (226 backend / 1019 assertions)
 - [x] Tests unitaires + d'intégration ajoutés sur `feature/test`
-- [x] Campagne Cypress E2E : 12 tests / 5 parcours verts (`make test-e2e`)
+- [x] Campagne Cypress E2E : 13 tests / 5 parcours verts (`make test-e2e`)
