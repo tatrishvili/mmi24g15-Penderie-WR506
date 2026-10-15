@@ -36,4 +36,19 @@ describe('Dressing : recherche et ajout d’article', () => {
     })
     cy.contains('h2', 'Nouvel article').should('be.visible')
   })
+
+  it('prête un article disponible puis le récupère', () => {
+    cy.loginDemo()
+    cy.visit('/dressing')
+
+    // Self-restoring cycle: fixtures ship "Pull noir" as available, and the
+    // test returns it to available so re-runs stay green without fixtures reset.
+    // The list reloads after each status change, so re-query by item text.
+    cy.contains('li', 'Pull noir').contains('Disponible')
+    cy.contains('li', 'Pull noir').contains('button', 'Prêter').click()
+    cy.contains('li', 'Pull noir').contains('Prêté')
+    cy.contains('li', 'Pull noir').contains('button', 'Récupérer').click()
+    cy.contains('li', 'Pull noir').contains('Disponible')
+    cy.contains('li', 'Pull noir').contains('button', 'Prêter')
+  })
 })

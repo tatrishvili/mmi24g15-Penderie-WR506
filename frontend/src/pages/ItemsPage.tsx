@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ScanLine, Search } from 'lucide-react'
-import { listItems } from '../api/items.ts'
+import { listItems, updateItem } from '../api/items.ts'
 import { ApiError } from '../api/client.ts'
-import type { ItemSummary } from '../types/item.ts'
-import { conditionLabel } from '../types/item.ts'
+import type { ItemStatus, ItemSummary } from '../types/item.ts'
+import { conditionLabel, statusLabel } from '../types/item.ts'
 
 /**
  * "Mon dressing" — searchable list of the active foyer's items,
@@ -17,6 +17,8 @@ export default function ItemsPage() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [busyId, setBusyId] = useState<number | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(async (q: string, signal?: AbortSignal) => {
     setLoading(true)
@@ -47,6 +49,20 @@ export default function ItemsPage() {
   function onSearch(event: FormEvent) {
     event.preventDefault()
     void load(query.trim())
+  }
+
+  async function changeStatus(item: ItemSummary, status: ItemStatus): Promise<void> {
+    setBusyId(item.id)
+    setActionError(null)
+
+    try {
+      await updateItem(item.id, { status })
+      await load(query.trim())
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Une erreur inattendue est survenue.')
+    } finally {
+      setBusyId(null)
+    }
   }
 
   const thumb = (item: ItemSummary): string | null => {
@@ -82,6 +98,12 @@ export default function ItemsPage() {
         {error !== null && (
           <p role="alert" className="form-error" style={{ marginTop: 12 }}>
             {error}
+          </p>
+        )}
+
+        {actionError !== null && (
+          <p role="alert" className="form-error" style={{ marginTop: 12 }}>
+            {actionError}
           </p>
         )}
 
@@ -136,6 +158,31 @@ export default function ItemsPage() {
                       {' · '}
                       {conditionLabel(item.condition)}
                     </span>
+                  </span>
+                  <span className="item-actions">
+                    <span className="item-status" data-status={item.status}>
+                      {statusLabel(item.status)}
+                    </span>
+                    {item.status === 'disponible' && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-inline"
+                        disabled={busyId === item.id}
+                        onClick={() => void changeStatus(item, 'loue')}
+                      >
+                        Prêter
+                      </button>
+                    )}
+                    {item.status === 'loue' && (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-inline"
+                        disabled={busyId === item.id}
+                        onClick={() => void changeStatus(item, 'disponible')}
+                      >
+                        Récupérer
+                      </button>
+                    )}
                   </span>
                 </li>
               ))}

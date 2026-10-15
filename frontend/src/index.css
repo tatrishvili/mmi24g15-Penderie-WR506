@@ -385,6 +385,35 @@ p {
   flex-shrink: 0;
 }
 
+.item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.item-status {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.item-status[data-status='loue'] {
+  color: var(--bordeaux);
+}
+
+.item-status[data-status='disponible'] {
+  color: var(--gris-rose);
+}
+
+.btn-inline {
+  width: auto;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+
 .pin-pad {
   margin-top: 16px;
   padding-top: 16px;
