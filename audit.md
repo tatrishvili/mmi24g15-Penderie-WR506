@@ -3,7 +3,8 @@
 > Session: linters, PHPStan and code quality.
 > This document records the quality toolchain set up in this repository, what each tool
 > observed, the findings it produced, what was fixed, and what is deliberately deferred
-> to the next sessions (test coverage, end-to-end tests).
+> (test coverage and end-to-end campaigns have since been executed — see [§8](#8-testability-and-reliability-next-sessions)
+> and `coverage.md`).
 
 - **Repository:** `tatrishvili/mmi24g15-Penderie-WR506`
 - **Stack:** Symfony 7.4 / PHP 8.4 (API) · React 19 / TypeScript (front end)
@@ -302,18 +303,22 @@ Weak points:
 
 ---
 
-## 8. Testability and reliability (next sessions)
+## 8. Testability and reliability
 
-Baseline measured with the new coverage driver (`pcov`, `make coverage`):
+Baseline measured with the coverage driver (`pcov`, `make coverage`) at the start of the
+campaign, and again once the PHPUnit + Cypress campaigns were complete:
 
-| Indicator | Value |
-| --- | --- |
-| Backend tests | **150 tests / 637 assertions** in 10 files (1,608 lines) |
-| Front-end tests | **44 tests** in 11 files |
-| Line coverage (`src`) | **85.96 %** (1,267 / 1,474) |
-| Method coverage | 69.75 % (196 / 281) |
-| Class coverage | 26.83 % (11 / 41) |
-| End-to-end (Cypress) | ❌ not started |
+| Indicator | Baseline | After the test campaign |
+| --- | --- | --- |
+| Backend tests | 150 tests / 637 assertions | **226 tests / 1,019 assertions** |
+| Front-end tests | 44 tests | 44 tests (Vitest) |
+| Line coverage (`src`) | 85.96 % (1,267 / 1,474) | **95.65 % (1,717 / 1,795)** |
+| Business layer (Service · Permission · Entity · Dto · Enum · Repository) | — | **100.00 % (977 / 977)** |
+| Method coverage | 69.75 % (196 / 281) | 91.30 % (273 / 299) |
+| Class coverage | 26.83 % (11 / 41) | 78.00 % (39 / 50) |
+| End-to-end (Cypress) | ❌ not started | ✅ **12 tests / 5 specs** (`make test-e2e`) |
+
+Justification of every test choice lives in **`coverage.md`**.
 
 **Critical functions** (priority order for the coverage campaign):
 
@@ -342,9 +347,11 @@ Baseline measured with the new coverage driver (`pcov`, `make coverage`):
 | OpenRouter vision API | Must be mocked: never call a paid provider in CI; test the failure path explicitly |
 | Fixtures | The development account is documented in `README.md` but is **not** a fixture — a dedicated fixture campaign is needed for `coverage.md` |
 
-**Scenarios to automate next:** happy path registration → verification → login; denied access
-attempts for each resource of `PERMISSIONS.md`; item created with and without a location;
-Cypress end-to-end journey (register, verify by e-mail via Mailpit, add an item, lend it).
+**Scenarios automated since:** happy path registration → verification → login; anonymous 401
+matrix and 403/404 isolation (PHPUnit functional); item created with and without a location;
+Cypress end-to-end journey (register, verify by e-mail via Mailpit, household + profile,
+add an item, search). *Lending an item remains API-only — the UI exposes no status change
+control yet (documented gap in `coverage.md`).*
 
 ---
 
@@ -383,8 +390,8 @@ Local and CI run **the same checks** — `make qa` is the local mirror of the pi
 | 14 | Perf | No performance budget in CI | medium | ✅ Lighthouse job + assertions |
 | 15 | Process | No PR template | medium | ✅ added |
 | 16 | Process | Long, error-prone commands | medium | ✅ Makefile |
-| 17 | Tests | Coverage baseline unknown | high | ✅ baseline measured (85.96 % lines) |
-| 18 | Tests | No end-to-end campaign | high | ⬜ next session (Cypress) |
+| 17 | Tests | Coverage baseline unknown | high | ✅ campaign done: 95.65 % global, 100 % métier |
+| 18 | Tests | No end-to-end campaign | high | ✅ Cypress: 12 tests, 5 parcours (`make test-e2e`) |
 
 ---
 
