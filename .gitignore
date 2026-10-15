@@ -11,6 +11,10 @@ backend/.env.*.local
 *.pem
 *.key
 
+### Cypress (e2e) ###
+cypress/videos/
+cypress/screenshots/
+
 ### Node / JS / TS ###
 node_modules/
 dist/

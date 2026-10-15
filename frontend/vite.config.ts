@@ -8,6 +8,9 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
+    // Let the Cypress e2e container reach the dev server through the
+    // Docker Compose service name (Vite's default host check would 403 it).
+    allowedHosts: ['frontend'],
     proxy: {
       '/api': {
         target: process.env.API_PROXY_TARGET ?? 'http://localhost:8000',
