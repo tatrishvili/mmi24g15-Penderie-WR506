@@ -514,6 +514,15 @@ p {
   text-decoration: underline;
 }
 
+/* % padding resolves against the viewport, not the 402px box: once the column
+   caps, pin the gutter so wide screens keep the mobile inset (39px). */
+@media (min-width: 403px) {
+  .register {
+    padding-left: 39px;
+    padding-right: 39px;
+  }
+}
+
 .btn {
   min-height: 48px;
   padding: 12px 20px;
