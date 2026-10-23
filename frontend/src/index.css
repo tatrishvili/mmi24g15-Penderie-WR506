@@ -373,7 +373,7 @@ p {
   min-height: 100vh;
   max-width: 402px;
   margin: 0 auto;
-  padding: 76px 9.7% 40px;
+  padding: 81px 9.7% 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -381,8 +381,8 @@ p {
 }
 
 .register__title {
-  font-size: 34px;
-  line-height: 1.1;
+  font-size: 40px;
+  line-height: 0.78;
   color: var(--bordeaux-title);
 }
 
@@ -391,7 +391,7 @@ p {
 }
 
 .register__intro {
-  margin-top: 42px;
+  margin-top: 50px;
   max-width: 300px;
   font-size: 15px;
   line-height: 1.4;
