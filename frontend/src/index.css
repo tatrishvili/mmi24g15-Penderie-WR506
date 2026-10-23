@@ -402,14 +402,14 @@ p {
   gap: 24px;
 }
 
-.register__group {
+.pill-group {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.register__field {
+.pill-field {
   position: relative;
   display: flex;
   align-items: center;
@@ -419,7 +419,7 @@ p {
   border-radius: 20px;
 }
 
-.register__icon {
+.pill-field__icon {
   flex: 0 0 auto;
   width: 20px;
   height: 20px;
@@ -427,7 +427,7 @@ p {
   margin-right: 14px;
 }
 
-.register__input {
+.pill-field__input {
   flex: 1;
   min-width: 0;
   padding: 12px 0;
@@ -439,26 +439,26 @@ p {
   text-align: left;
 }
 
-.register__input::placeholder {
+.pill-field__input::placeholder {
   color: var(--gris-texte);
   opacity: 0.55;
 }
 
-.register__input:focus {
+.pill-field__input:focus {
   outline: 2px solid var(--bordeaux);
   outline-offset: 2px;
 }
 
-.register__input[type='date']:not(:focus):invalid::-webkit-datetime-edit {
+.pill-field__input[type='date']:not(:focus):invalid::-webkit-datetime-edit {
   color: transparent;
 }
 
-.register__input::-webkit-calendar-picker-indicator {
+.pill-field__input::-webkit-calendar-picker-indicator {
   opacity: 0.45;
   cursor: pointer;
 }
 
-.register__placeholder {
+.pill-field__placeholder {
   position: absolute;
   left: 50px;
   font-size: 16px;

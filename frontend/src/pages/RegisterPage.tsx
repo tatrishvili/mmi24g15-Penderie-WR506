@@ -113,15 +113,15 @@ export default function RegisterPage() {
               </p>
             )}
 
-            <div className="register__group">
-              <div className="register__field">
-                <img src={profilIcon} alt="" className="register__icon" />
+            <div className="pill-group">
+              <div className="pill-field">
+                <img src={profilIcon} alt="" className="pill-field__icon" />
                 <label className="sr-only" htmlFor="register-username">
                   {copy.usernameLabel}
                 </label>
                 <input
                   id="register-username"
-                  className="register__input"
+                  className="pill-field__input"
                   type="text"
                   autoComplete="username"
                   placeholder={copy.usernamePlaceholder}
@@ -137,15 +137,15 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <div className="register__group">
-              <div className="register__field">
-                <img src={mailIcon} alt="" className="register__icon" />
+            <div className="pill-group">
+              <div className="pill-field">
+                <img src={mailIcon} alt="" className="pill-field__icon" />
                 <label className="sr-only" htmlFor="register-email">
                   {copy.emailLabel}
                 </label>
                 <input
                   id="register-email"
-                  className="register__input"
+                  className="pill-field__input"
                   type="email"
                   autoComplete="email"
                   placeholder={copy.emailPlaceholder}
@@ -159,15 +159,15 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <div className="register__group">
-              <div className="register__field">
-                <img src={calendarIcon} alt="" className="register__icon" />
+            <div className="pill-group">
+              <div className="pill-field">
+                <img src={calendarIcon} alt="" className="pill-field__icon" />
                 <label className="sr-only" htmlFor="register-birth-date">
                   {copy.birthDateLabel}
                 </label>
                 <input
                   id="register-birth-date"
-                  className="register__input"
+                  className="pill-field__input"
                   type="date"
                   autoComplete="bday"
                   placeholder={copy.birthDatePlaceholder}
@@ -178,7 +178,7 @@ export default function RegisterPage() {
                   required
                 />
                 {birthDate === '' && !birthDateFocused && (
-                  <span className="register__placeholder" aria-hidden="true">
+                  <span className="pill-field__placeholder" aria-hidden="true">
                     {copy.birthDatePlaceholder}
                   </span>
                 )}
@@ -189,15 +189,15 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <div className="register__group">
-              <div className="register__field">
-                <img src={passwordIcon} alt="" className="register__icon" />
+            <div className="pill-group">
+              <div className="pill-field">
+                <img src={passwordIcon} alt="" className="pill-field__icon" />
                 <label className="sr-only" htmlFor="register-password">
                   {copy.passwordLabel}
                 </label>
                 <input
                   id="register-password"
-                  className="register__input"
+                  className="pill-field__input"
                   type="password"
                   autoComplete="new-password"
                   placeholder={copy.passwordPlaceholder}
