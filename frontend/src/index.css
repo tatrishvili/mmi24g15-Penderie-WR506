@@ -259,6 +259,10 @@ p {
   .login__title {
     font-size: 44px;
   }
+
+  .verify__title {
+    font-size: 44px;
+  }
 }
 
 /* ---------- auth ---------- */
@@ -490,21 +494,6 @@ p {
   font-size: 19px;
 }
 
-.register__panel {
-  width: 100%;
-  margin-top: 32px;
-  background: var(--white);
-  border: 1px solid var(--rose-poudre);
-  border-radius: var(--radius-card);
-  padding: 24px 20px;
-  box-shadow: 0 12px 32px rgba(115, 24, 45, 0.08);
-}
-
-.register__panel h1 {
-  font-size: 24px;
-  text-align: center;
-}
-
 .register__switch {
   margin-top: 35px;
   font-size: 15px;
@@ -630,6 +619,92 @@ p {
 }
 
 .login__switch a {
+  color: var(--bordeaux);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* ---------- email verification ---------- */
+
+.verify {
+  min-height: 100vh;
+  max-width: 402px;
+  margin: 0 auto;
+  padding: 83px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.verify__title {
+  font-size: 40px;
+  line-height: 0.78;
+  color: var(--bordeaux-title);
+}
+
+.verify__title span {
+  display: block;
+}
+
+.verify__card {
+  margin-top: 98px;
+  width: 100%;
+  background: var(--rose-blush);
+  border-radius: var(--radius-card);
+  padding: 22px 24px;
+  text-align: left;
+  color: var(--gris-texte);
+}
+
+.verify__card p {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.verify__email {
+  color: var(--bordeaux);
+  font-weight: 700;
+}
+
+.verify__mascot {
+  margin-top: 12px;
+  width: 148px;
+  height: 120px;
+  align-self: flex-start;
+}
+
+.verify__form {
+  margin-top: 70px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  align-items: center;
+}
+
+.btn.verify__action {
+  width: 100%;
+  max-width: 297px;
+  min-height: 74px;
+  font-size: 19px;
+}
+
+.verify__notice {
+  margin-top: 16px;
+  font-size: 15px;
+  color: var(--gris-texte);
+}
+
+.verify__switch {
+  margin-top: 76px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #3d3232;
+}
+
+.verify__switch a {
+  display: block;
   color: var(--bordeaux);
   font-weight: 700;
   text-decoration: underline;

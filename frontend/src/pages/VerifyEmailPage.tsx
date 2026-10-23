@@ -1,19 +1,27 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
+import { getCopy } from '../i18n/copy.ts'
+import cuteIcon from '../images/icons/cute_icon_email_verif.svg'
+import mailIcon from '../images/icons/mail_icon.svg'
 
 export default function VerifyEmailPage() {
   const { verifyEmail, resendVerification } = useAuth()
+  const copy = getCopy().verify
   const [searchParams] = useSearchParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const token = searchParams.get('token')
-  const [email, setEmail] = useState('')
+  const stateEmail = (location.state as { email?: string } | null)?.email ?? null
+  const [email, setEmail] = useState(stateEmail ?? '')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [resending, setResending] = useState(false)
+
+  const sent = token === null && stateEmail !== null
 
   async function onVerify() {
     if (token === null) return
@@ -26,9 +34,7 @@ export default function VerifyEmailPage() {
       navigate('/dressing', { replace: true })
     } catch (cause) {
       setError(
-        cause instanceof ApiError
-          ? 'Ce lien est invalide ou a expiré. Vous pouvez demander un nouveau lien ci-dessous.'
-          : 'Impossible de confirmer votre adresse pour le moment. Réessayez.',
+        cause instanceof ApiError ? copy.expiredError : copy.genericError,
       )
     } finally {
       setSubmitting(false)
@@ -42,70 +48,98 @@ export default function VerifyEmailPage() {
 
     try {
       await resendVerification(email.trim())
-      setNotice(
-        'Si une inscription en attente existe pour cette adresse, un nouveau lien sera envoyé. Attendez au moins une minute entre deux demandes.',
-      )
+      setNotice(copy.resendSuccess)
     } catch {
-      setNotice('Impossible de traiter la demande pour le moment. Réessayez plus tard.')
+      setNotice(copy.resendFailure)
     } finally {
       setResending(false)
     }
   }
 
   return (
-    <div className="auth-page">
-      <span className="auth-brand">Penderie</span>
-      <div className="auth-card">
-        <h1>Confirmer votre adresse e-mail</h1>
-        {error !== null && (
-          <p role="alert" className="form-error">
-            {error}
-          </p>
-        )}
-        {token !== null && (
+    <div className="verify">
+      <h1 className="verify__title">
+        {copy.titleLines.map((line, index) => (
+          <Fragment key={line}>
+            {index > 0 && ' '}
+            <span>{line}</span>
+          </Fragment>
+        ))}
+      </h1>
+
+      {error !== null && (
+        <p role="alert" className="form-error">
+          {error}
+        </p>
+      )}
+
+      <div className="verify__card">
+        {sent && (
           <>
-            <p className="auth-sub">
-              Confirmez cette adresse pour créer votre compte. Votre mot de passe n'est jamais envoyé par e-mail.
-            </p>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={onVerify}
-              disabled={submitting}
-            >
-              {submitting ? 'Confirmation en cours…' : 'Confirmer et créer mon compte'}
-            </button>
+            <p>{copy.sentLead}</p>
+            <p className="verify__email">{stateEmail}</p>
+            <p>{copy.sentInstruction}</p>
           </>
         )}
-        {(token === null || error !== null) && (
-          <form className="auth-form" onSubmit={onResend}>
-            <p className="auth-sub">
-              {token === null
-                ? 'Le lien ne contient pas de jeton de confirmation. Saisissez votre adresse pour demander un nouveau lien.'
-                : 'Vous pouvez demander un nouveau lien de confirmation.'}
-            </p>
-            <div className="field">
-              <label htmlFor="verification-email">E-mail</label>
-              <input
-                id="verification-email"
-                className="input"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="btn btn-primary" disabled={resending}>
-              {resending ? 'Envoi en cours…' : 'Renvoyer le lien'}
-            </button>
-            {notice !== null && <p role="status">{notice}</p>}
-          </form>
-        )}
-        <p className="auth-switch">
-          <Link to="/connexion">Retour à la connexion</Link>
-        </p>
+        {!sent && token !== null && error === null && <p>{copy.tokenNotice}</p>}
+        {!sent && token === null && <p>{copy.noTokenLead}</p>}
       </div>
+
+      <img src={cuteIcon} alt="" className="verify__mascot" />
+
+      {token !== null && error === null ? (
+        <div className="verify__form">
+          <button
+            type="button"
+            className="btn btn-primary verify__action"
+            onClick={onVerify}
+            disabled={submitting}
+          >
+            {submitting ? copy.confirmingButton : copy.confirmButton}
+          </button>
+        </div>
+      ) : (
+        <form className="verify__form" onSubmit={onResend}>
+          {stateEmail === null && (
+            <div className="pill-group">
+              <div className="pill-field">
+                <img src={mailIcon} alt="" className="pill-field__icon" />
+                <label className="sr-only" htmlFor="verification-email">
+                  {copy.emailLabel}
+                </label>
+                <input
+                  id="verification-email"
+                  className="pill-field__input"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
+          <button type="submit" className="btn btn-primary verify__action" disabled={resending}>
+            {resending ? copy.resendingButton : copy.resendButton}
+          </button>
+        </form>
+      )}
+
+      {notice !== null && (
+        <p role="status" className="verify__notice">
+          {notice}
+        </p>
+      )}
+
+      {token === null ? (
+        <p className="verify__switch">
+          {copy.switchPrompt} <Link to="/connexion">{copy.switchLink}</Link>
+        </p>
+      ) : (
+        <p className="verify__switch">
+          <Link to="/connexion">{copy.backToLogin}</Link>
+        </p>
+      )}
     </div>
   )
 }

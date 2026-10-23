@@ -42,6 +42,25 @@ export interface AppCopy {
     switchPrompt: string
     switchLink: string
   }
+  verify: {
+    titleLines: string[]
+    sentLead: string
+    sentInstruction: string
+    tokenNotice: string
+    noTokenLead: string
+    expiredError: string
+    genericError: string
+    emailLabel: string
+    confirmButton: string
+    confirmingButton: string
+    resendButton: string
+    resendingButton: string
+    resendSuccess: string
+    resendFailure: string
+    switchPrompt: string
+    switchLink: string
+    backToLogin: string
+  }
   profiles: {
     pinLabel: string
     pinNote: string
@@ -149,6 +168,28 @@ const copies: Record<'fr' | 'en', AppCopy> = {
       switchPrompt: 'vous n’avez pas de compte ?',
       switchLink: 'S’inscrire',
     },
+    verify: {
+      titleLines: ['Vérifiez votre', 'e-mail'],
+      sentLead: 'Un e-mail de confirmation a été envoyé à :',
+      sentInstruction: 'Cliquez sur le lien reçu pour activer votre compte.',
+      tokenNotice:
+        'Confirmez cette adresse pour créer votre compte. Votre mot de passe n’est jamais envoyé par e-mail.',
+      noTokenLead:
+        'Le lien ne contient pas de jeton de confirmation. Saisissez votre adresse pour demander un nouveau lien.',
+      expiredError: 'Ce lien est invalide ou a expiré. Vous pouvez demander un nouveau lien ci-dessous.',
+      genericError: 'Impossible de confirmer votre adresse pour le moment. Réessayez.',
+      emailLabel: 'E-mail',
+      confirmButton: 'Confirmer et créer mon compte',
+      confirmingButton: 'Confirmation en cours…',
+      resendButton: 'Renvoyer le lien',
+      resendingButton: 'Envoi en cours…',
+      resendSuccess:
+        'Si une inscription en attente existe pour cette adresse, un nouveau lien sera envoyé. Attendez au moins une minute entre deux demandes.',
+      resendFailure: 'Impossible de traiter la demande pour le moment. Réessayez plus tard.',
+      switchPrompt: 'vous avez déjà un compte ?',
+      switchLink: 'Se connecter',
+      backToLogin: 'Retour à la connexion',
+    },
     profiles: {
       pinLabel: 'Code PIN pour cet appareil (optionnel)',
       pinNote: 'Ce code protège le changement de profil sur cet appareil. Il ne permet pas une connexion sur un autre appareil.',
@@ -253,6 +294,28 @@ const copies: Record<'fr' | 'en', AppCopy> = {
       submit: 'Sign in',
       switchPrompt: 'no account yet?',
       switchLink: 'Sign up',
+    },
+    verify: {
+      titleLines: ['Check your', 'e-mail'],
+      sentLead: 'A confirmation e-mail has been sent to:',
+      sentInstruction: 'Click the link we sent you to activate your account.',
+      tokenNotice:
+        'Confirm this address to create your account. Your password is never sent by e-mail.',
+      noTokenLead:
+        'This link contains no confirmation token. Enter your address to request a new link.',
+      expiredError: 'This link is invalid or has expired. You can request a new one below.',
+      genericError: 'We could not confirm your address right now. Try again.',
+      emailLabel: 'E-mail',
+      confirmButton: 'Confirm and create my account',
+      confirmingButton: 'Confirming…',
+      resendButton: 'Resend the link',
+      resendingButton: 'Sending…',
+      resendSuccess:
+        'If a pending registration exists for this address, a new link will be sent. Wait at least one minute between requests.',
+      resendFailure: 'We could not process your request right now. Try again later.',
+      switchPrompt: 'already have an account?',
+      switchLink: 'Sign in',
+      backToLogin: 'Back to sign in',
     },
     profiles: {
       pinLabel: 'PIN for this device (optional)',

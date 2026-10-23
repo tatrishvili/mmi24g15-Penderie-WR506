@@ -14,7 +14,7 @@ Token: `--font: 'Baloo Chettan 2', system-ui, 'Segoe UI', Roboto, sans-serif`
 | Element | Weight | Size (mobile) | Size (≥900px) | Line height | Color |
 | --- | --- | --- | --- | --- | --- |
 | `h1` | 700 | 34px | 44px | 1.1 | `--bordeaux-title` |
-| Sign-in title (`.login__title`) | 700 | 40px | 44px | 1.1 | `--bordeaux-title` |
+| Auth titles (`.register__title` / `.login__title` / `.verify__title`) | 700 | 40px | 44px | 0.78 stacked / 1.1 single-line | `--bordeaux-title` |
 | `h2` | 700 | 24px | 30px | 1.2 | `--bordeaux-title` |
 | `h3` | 600 | 19px | 22px | 1.3 | `--bordeaux-title` |
 | `p` (body) | 400 | 17px | 18px | 1.55 | `--gris-texte` |
@@ -67,6 +67,11 @@ use white text on `--creme` or `--rose-*`.
 - **Sign-in screen** (`.login*`): 40px title (44 ≥900px), 18px subtitle, 103×83 mascot
   (`cute_icon.svg`), pill fields, options row (24px custom checkbox + bordeaux text link), CTA
   inset `calc(100% - 27px)` (297×74 like the register), 17px account switch.
+- **Email verification screen** (`.verify*`): 40px title, rose-blush card (20px radius, 16px text,
+  address in bordeaux bold), 148×120 left-aligned mascot (`cute_icon_email_verif.svg`), 297×74
+  full-width CTA, account switch. After registering, the page receives the real address via router
+  state (`navigate('/verifier-email', { state: { email } })`) — the address in the wireframe is
+  only a placeholder.
 - **Badge** (`.badge--pending|--online|--offline`): reserved for connection status only.
 
 ## Layout & assets
