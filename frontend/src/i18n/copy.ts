@@ -29,6 +29,19 @@ export interface AppCopy {
     switchPrompt: string
     switchLink: string
   }
+  login: {
+    title: string
+    subtitle: string
+    emailLabel: string
+    passwordLabel: string
+    emailPlaceholder: string
+    passwordPlaceholder: string
+    rememberMe: string
+    forgotPassword: string
+    submit: string
+    switchPrompt: string
+    switchLink: string
+  }
   profiles: {
     pinLabel: string
     pinNote: string
@@ -123,6 +136,19 @@ const copies: Record<'fr' | 'en', AppCopy> = {
       switchPrompt: 'vous avez déjà un compte ?',
       switchLink: 'Se connecter',
     },
+    login: {
+      title: 'Se connecter',
+      subtitle: 'Ravi de vous revoir !',
+      emailLabel: 'E-mail',
+      passwordLabel: 'Mot de passe',
+      emailPlaceholder: 'E-mail',
+      passwordPlaceholder: 'Mot de passe',
+      rememberMe: 'Se souvenir de moi',
+      forgotPassword: 'Mot de passe oublié ?',
+      submit: 'Se connecter',
+      switchPrompt: 'vous n’avez pas de compte ?',
+      switchLink: 'S’inscrire',
+    },
     profiles: {
       pinLabel: 'Code PIN pour cet appareil (optionnel)',
       pinNote: 'Ce code protège le changement de profil sur cet appareil. Il ne permet pas une connexion sur un autre appareil.',
@@ -214,6 +240,19 @@ const copies: Record<'fr' | 'en', AppCopy> = {
       submit: 'Sign up',
       switchPrompt: 'already have an account?',
       switchLink: 'Sign in',
+    },
+    login: {
+      title: 'Sign in',
+      subtitle: 'Welcome back!',
+      emailLabel: 'E-mail',
+      passwordLabel: 'Password',
+      emailPlaceholder: 'E-mail',
+      passwordPlaceholder: 'Password',
+      rememberMe: 'Remember me',
+      forgotPassword: 'Forgot password?',
+      submit: 'Sign in',
+      switchPrompt: 'no account yet?',
+      switchLink: 'Sign up',
     },
     profiles: {
       pinLabel: 'PIN for this device (optional)',

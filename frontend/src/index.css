@@ -255,6 +255,10 @@ p {
   .register__title {
     font-size: 44px;
   }
+
+  .login__title {
+    font-size: 44px;
+  }
 }
 
 /* ---------- auth ---------- */
@@ -514,10 +518,128 @@ p {
   text-decoration: underline;
 }
 
+/* ---------- login ---------- */
+
+.login {
+  min-height: 100vh;
+  max-width: 402px;
+  margin: 0 auto;
+  padding: 123px 9.7% 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.login__title {
+  font-size: 40px;
+  line-height: 1.1;
+  color: var(--bordeaux-title);
+}
+
+.login__subtitle {
+  margin-top: 37px;
+  font-size: 18px;
+  color: var(--gris-texte);
+}
+
+.login__mascot {
+  margin-top: 17px;
+  width: 103px;
+  height: 83px;
+}
+
+.login__form {
+  margin-top: 17px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.login__options {
+  margin-top: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.login__remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--gris-texte);
+  cursor: pointer;
+}
+
+.login__remember input {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  flex: 0 0 auto;
+  background: var(--white);
+  border: 1px solid var(--rose-poudre);
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+}
+
+.login__remember input::after {
+  content: '';
+  width: 13px;
+  height: 13px;
+  transform: scale(0);
+  transition: transform 120ms ease-in-out;
+  background: var(--bordeaux);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+.login__remember input:checked::after {
+  transform: scale(1);
+}
+
+.login__remember input:focus-visible {
+  outline: 2px solid var(--bordeaux);
+  outline-offset: 2px;
+}
+
+.login__forgot {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bordeaux);
+  text-decoration: underline;
+}
+
+.btn.login__submit {
+  align-self: center;
+  margin-top: 96px;
+  width: calc(100% - 27px);
+  min-height: 74px;
+  font-size: 19px;
+}
+
+.login__switch {
+  margin-top: 50px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #3d3232;
+}
+
+.login__switch a {
+  color: var(--bordeaux);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 /* % padding resolves against the viewport, not the 402px box: once the column
    caps, pin the gutter so wide screens keep the mobile inset (39px). */
 @media (min-width: 403px) {
-  .register {
+  .register,
+  .login {
     padding-left: 39px;
     padding-right: 39px;
   }

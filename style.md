@@ -14,6 +14,7 @@ Token: `--font: 'Baloo Chettan 2', system-ui, 'Segoe UI', Roboto, sans-serif`
 | Element | Weight | Size (mobile) | Size (≥900px) | Line height | Color |
 | --- | --- | --- | --- | --- | --- |
 | `h1` | 700 | 34px | 44px | 1.1 | `--bordeaux-title` |
+| Sign-in title (`.login__title`) | 700 | 40px | 44px | 1.1 | `--bordeaux-title` |
 | `h2` | 700 | 24px | 30px | 1.2 | `--bordeaux-title` |
 | `h3` | 600 | 19px | 22px | 1.3 | `--bordeaux-title` |
 | `p` (body) | 400 | 17px | 18px | 1.55 | `--gris-texte` |
@@ -58,17 +59,25 @@ use white text on `--creme` or `--rose-*`.
 - **Onboarding screen** (`.welcome*`): full-height photo with a curved creme mask (SVG path in
   `Home.tsx`), white logo over the photo, centered title/tagline, step dots (active `--bordeaux`,
   inactive `--rose-sable`), CTA + sign-in link.
-- **Registration screen** (`.register*`): centered title/intro, white pill fields with left icons
-  (SVG assets in `frontend/src/images/icons/`), sr-only labels + placeholders, terms line, full
+- **Pill field** (`.pill-group` > `.pill-field` + `.pill-field__icon` / `__input` / `__placeholder`):
+  shared white pill input row with a left icon, sr-only label and placeholder; used by both auth
+  screens.
+- **Registration screen** (`.register*`): centered title/intro, pill fields, terms line, full
   width CTA, sign-in switch.
+- **Sign-in screen** (`.login*`): 40px title (44 ≥900px), 18px subtitle, 103×83 mascot
+  (`cute_icon.svg`), pill fields, options row (24px custom checkbox + bordeaux text link), CTA
+  inset `calc(100% - 27px)` (297×74 like the register), 17px account switch.
 - **Badge** (`.badge--pending|--online|--offline`): reserved for connection status only.
 
 ## Layout & assets
 
 - Mobile-first at ~390px; `max-width: 480px` centered shell for the welcome screen, `900px` for
   the app pages. Desktop enhancement kicks in at ≥900px (larger type, sidebar nav).
-- Page shells: `.welcome` (onboarding), `.auth-page` (sign-in / register), `.app-shell` (signed-in
-  tabs). Do not invent new shells — extend these.
+- Page shells: `.welcome` (onboarding), `.register` / `.login` (auth screens), `.auth-page`
+  (verification and other app pages), `.app-shell` (signed-in tabs). Do not invent new shells —
+  extend these.
+- The auth shells cap at `max-width: 402px`; percentage padding resolves against the viewport, so
+  a `min-width: 403px` media block pins their gutter to 39px on wider screens.
 - Wireframes live in `frontend/src/Wireframes/<Page>.png`; image assets in `frontend/src/images/`.
   A new screen starts from its wireframe: sample colors from it, reuse tokens from this table, and
   only introduce a new token when no existing one fits.
