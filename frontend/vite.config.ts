@@ -22,5 +22,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // This dev VM has ~4GB RAM; more forks than this starves worker startup.
+    maxWorkers: 4,
+    // Cold transform caches on this machine make 5s flaky; 15s keeps `make qa` deterministic.
+    testTimeout: 15000,
+    hookTimeout: 15000,
   },
 })
