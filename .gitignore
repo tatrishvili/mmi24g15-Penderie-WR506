@@ -78,6 +78,7 @@ temp/
 ### OS ###
 Thumbs.db
 Desktop.ini
+*:Zone.Identifier
 
 ### Docker (local overrides) ###
 docker-compose.override.yml
@@ -90,3 +91,9 @@ docker-compose.override.yml
 CONCEPT.md
 SESSION_CONTEXT.md
 examples/
+# Exam revision session of 15/10/2026 — local study material only
+EXAM.html
+AI_BRIEF_TESTS.md
+EXAM_DECROUPE.md
+STUDY_GUIDE.md
+TESTS_PLAN.md

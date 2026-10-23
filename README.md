@@ -38,6 +38,7 @@ Start with [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) for product decisions and known 
 ├── PRODUCT_SPEC.md           Product decisions and domain boundaries
 ├── WORKFLOWS.md              Intended user journeys and implementation order
 ├── PERMISSIONS.md            Access matrix and sharing policy
+├── style.md                  Front-end design system (colors, typography)
 ├── docker/                   Dockerfile + nginx configuration
 ├── docker-compose.yml        Local environment definition
 ├── .github/copilot-instructions.md  Project-specific agent guidance
