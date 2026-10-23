@@ -1,108 +1,56 @@
-import { useEffect, useState } from 'react'
+import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
+import { getCopy } from '../i18n/copy.ts'
+import heroPhoto from '../images/penderie-home-page.jpg'
+import logo from '../images/penderie-logo.png'
 
-type HealthState =
-  { status: 'loading' } | { status: 'online'; environment: string } | { status: 'offline' }
+const CURVE_VIEWBOX = '0 0 402 874'
 
-const PROMISES = [
-  {
-    title: 'Qu’est-ce que je possède ?',
-    text: 'Retrouvez tous vos vêtements et objets en un seul endroit.',
-  },
-  {
-    title: 'Où est-ce ?',
-    text: 'Chaque objet a sa pièce, son armoire, son carton, sa place exacte.',
-  },
-  {
-    title: 'À qui l’ai-je prêté ?',
-    text: 'Gardez la trace de vos prêts : qui, quoi, depuis quand.',
-  },
-  {
-    title: 'Qu’est-ce que j’en fais ?',
-    text: 'Porter, conserver, prêter, donner ou vendre en confiance.',
-  },
-]
+const CURVE_PATH =
+  'M0,430C3.3,427.5 13.3,419.8 20,415C26.7,410.2 33.3,405 40,401C46.7,397 53.3,393.8 60,391C66.7,388.2 73.3,386.2 80,384C86.7,381.8 93.3,379.7 100,378C106.7,376.3 113.3,375.2 120,374C126.7,372.8 133.3,371.7 140,371C146.7,370.3 153.3,370.3 160,370C166.7,369.7 173.3,369.8 180,369C186.7,368.2 193.3,366.5 200,365C206.7,363.5 213.3,362.2 220,360C226.7,357.8 233.3,354.8 240,352C246.7,349.2 253.3,346.3 260,343C266.7,339.7 273.3,336 280,332C286.7,328 293.3,323.5 300,319C306.7,314.5 313.3,310 320,305C326.7,300 333.3,294.5 340,289C346.7,283.5 353.3,278.2 360,272C366.7,265.8 373.3,258.9 380,252C386.7,245.1 396.5,234.2 402,230L402,874L0,874Z'
 
 export default function Home() {
-  const [health, setHealth] = useState<HealthState>({ status: 'loading' })
-
-  useEffect(() => {
-    let cancelled = false
-
-    fetch('/api/health')
-      .then((response) =>
-        response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`)),
-      )
-      .then((data: { status?: string; environment?: string }) => {
-        if (!cancelled && data.status === 'ok') {
-          setHealth({ status: 'online', environment: data.environment ?? 'unknown' })
-        } else if (!cancelled) {
-          setHealth({ status: 'offline' })
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setHealth({ status: 'offline' })
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const badge =
-    health.status === 'loading'
-      ? { label: 'API : connexion…', className: 'badge badge--pending' }
-      : health.status === 'online'
-        ? { label: `API en ligne (${health.environment})`, className: 'badge badge--online' }
-        : { label: 'API hors ligne', className: 'badge badge--offline' }
+  const copy = getCopy().home
 
   return (
-    <div className="page">
-      <header className="header">
-        <span className="brand">Penderie</span>
-        <span data-testid="api-badge" className={badge.className}>
-          {badge.label}
-        </span>
-      </header>
+    <section className="welcome">
+      <img src={heroPhoto} alt="" className="welcome__photo" />
+      <svg
+        className="welcome__curve"
+        viewBox={CURVE_VIEWBOX}
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path d={CURVE_PATH} />
+      </svg>
+      <img src={logo} alt="Penderie" className="welcome__logo" />
 
-      <main className="main">
-        <section className="hero">
-          <h1>Votre dressing, dans votre téléphone.</h1>
-          <p>
-            Scannez un vêtement, Penderie l’enregistre, le range et vous dit exactement où il est —
-            et à qui vous l’avez prêté.
-          </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-            <Link
-              to="/inscription"
-              className="btn btn-primary"
-              style={{ width: 'auto', flex: '1 1 200px' }}
-            >
-              Créer mon foyer
-            </Link>
-            <Link
-              to="/connexion"
-              className="btn btn-secondary"
-              style={{ width: 'auto', flex: '1 1 200px' }}
-            >
-              Se connecter
-            </Link>
-          </div>
-        </section>
-
-        <section className="grid">
-          {PROMISES.map((promise) => (
-            <article key={promise.title} className="card">
-              <h2>{promise.title}</h2>
-              <p>{promise.text}</p>
-            </article>
+      <div className="welcome__body">
+        <h1 className="welcome__title">
+          {copy.titleLines.map((line, index) => (
+            <Fragment key={line}>
+              {index > 0 && ' '}
+              <span>{line}</span>
+            </Fragment>
           ))}
-        </section>
-      </main>
+        </h1>
+        <p className="welcome__tagline">{copy.tagline}</p>
 
-      <footer className="footer">Environnement de développement — étape Setup</footer>
-    </div>
+        <div className="welcome__foot">
+          <div className="welcome__dots" role="img" aria-label={copy.stepLabel}>
+            <span className="dot dot--active" />
+            <span className="dot" />
+            <span className="dot" />
+          </div>
+          <Link to="/inscription" className="btn btn-primary welcome__next">
+            {copy.next}
+          </Link>
+          <Link to="/connexion" className="welcome__signin">
+            {copy.signIn}
+          </Link>
+        </div>
+      </div>
+    </section>
   )
 }

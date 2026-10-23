@@ -1,27 +1,29 @@
-/* Penderie design system — extracted from examples/image 6.png (wireframe).
+/* Penderie design system — see style.md. Colors sampled from frontend/src/Wireframes/.
    Mobile-first: base styles target ~390px, enhanced for larger screens. */
 
 :root {
-  --bordeaux: #681f2d;
+  --bordeaux: #73182d;
+  --bordeaux-title: #631a25;
   --bordeaux-deep: #521825;
   --rose-poudre: #fad9e0;
   --rose-blush: #f8e8e5;
-  --creme: #fff9f5;
+  --rose-sable: #eed2c4;
+  --creme: #fcf7f4;
   --gris-rose: #c88a9a;
-  --gris-texte: #6b5b5f;
+  --bleu-lien: #56658a;
+  --gris-texte: #5a4c4c;
   --white: #ffffff;
   --green: #2f9e44;
   --red: #c92a2a;
   --red-soft: #fff5f5;
 
-  --font-title: 'Playfair Display', Georgia, serif;
-  --font-ui: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font: 'Baloo Chettan 2', system-ui, 'Segoe UI', Roboto, sans-serif;
 
   --radius-card: 20px;
   --radius-input: 12px;
   --tap: 44px;
 
-  font-family: var(--font-ui);
+  font-family: var(--font);
   color: var(--gris-texte);
   background: var(--creme);
   font-synthesis: none;
@@ -41,18 +43,56 @@ body {
 h1,
 h2 {
   margin: 0;
-  font-family: var(--font-title);
-  font-weight: 600;
+  font-family: var(--font);
+  font-weight: 700;
   letter-spacing: 0;
-  color: var(--bordeaux);
+  color: var(--bordeaux-title);
+}
+
+h1 {
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+h3 {
+  margin: 0;
+  font-family: var(--font);
+  font-weight: 600;
+  color: var(--bordeaux-title);
+  font-size: 19px;
+  line-height: 1.3;
 }
 
 p {
   margin: 0;
+  font-size: 17px;
   line-height: 1.55;
 }
 
-/* ---------- landing (existing Home) ---------- */
+@media (min-width: 900px) {
+  h1 {
+    font-size: 44px;
+  }
+
+  h2 {
+    font-size: 30px;
+  }
+
+  h3 {
+    font-size: 22px;
+  }
+
+  p {
+    font-size: 18px;
+  }
+}
+
+/* ---------- landing (welcome / onboarding) ---------- */
 
 .page {
   max-width: 900px;
@@ -60,61 +100,11 @@ p {
   padding: 32px 20px 48px;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
 .brand {
-  font-family: var(--font-title);
+  font-family: var(--font);
   font-size: 24px;
   font-weight: 700;
   color: var(--bordeaux);
-}
-
-.badge {
-  font-size: 13px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
-.badge--pending {
-  background: var(--rose-blush);
-  color: var(--gris-texte);
-  border-color: var(--gris-rose);
-}
-
-.badge--online {
-  background: #ebfbee;
-  color: var(--green);
-  border-color: #b2f2bb;
-}
-
-.badge--offline {
-  background: var(--red-soft);
-  color: var(--red);
-  border-color: #ffc9c9;
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  margin-top: 48px;
-}
-
-.hero h1 {
-  font-size: clamp(30px, 5vw, 44px);
-}
-
-.hero p {
-  margin-top: 16px;
-  max-width: 620px;
-  font-size: 18px;
 }
 
 .grid {
@@ -128,7 +118,7 @@ p {
   border: 1px solid var(--rose-poudre);
   border-radius: var(--radius-card);
   padding: 20px;
-  box-shadow: 0 8px 24px rgba(104, 31, 45, 0.06);
+  box-shadow: 0 8px 24px rgba(115, 24, 45, 0.06);
 }
 
 .card h2 {
@@ -140,10 +130,131 @@ p {
   font-size: 15px;
 }
 
-.footer {
-  margin-top: 56px;
-  font-size: 13px;
+.welcome {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.welcome__photo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 49.2%;
+  object-fit: cover;
+  object-position: 40% 40%;
+  z-index: 0;
+}
+
+.welcome__curve {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.welcome__curve path {
+  fill: var(--creme);
+}
+
+.welcome__logo {
+  position: absolute;
+  top: 15.4%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(39.6%, 190px);
+  height: auto;
+  z-index: 2;
+  filter: brightness(0) invert(1);
+}
+
+.welcome__body {
+  position: absolute;
+  inset: 45.8% 0 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  padding: 0 12.7% 50px;
+}
+
+.welcome__title {
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--bordeaux-title);
+}
+
+.welcome__title span {
+  display: block;
+}
+
+.welcome__tagline {
+  margin-top: 34px;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--gris-texte);
+}
+
+.welcome__foot {
+  margin-top: auto;
+  padding-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.welcome__dots {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--rose-sable);
+}
+
+.dot--active {
+  background: var(--bordeaux);
+}
+
+.btn.welcome__next {
+  margin-top: 28px;
+  min-height: 68px;
+  font-size: 19px;
+}
+
+.welcome__signin {
+  margin-top: 16px;
+  min-height: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bordeaux);
+  text-decoration: none;
+}
+
+.welcome__signin:hover,
+.welcome__signin:focus-visible {
+  text-decoration: underline;
+}
+
+@media (min-width: 900px) {
+  .welcome__title {
+    font-size: 44px;
+  }
+
+  .register__title {
+    font-size: 44px;
+  }
 }
 
 /* ---------- auth ---------- */
@@ -159,7 +270,7 @@ p {
 }
 
 .auth-brand {
-  font-family: var(--font-title);
+  font-family: var(--font);
   font-size: 34px;
   font-weight: 700;
   color: var(--bordeaux);
@@ -250,6 +361,157 @@ p {
   border-radius: var(--radius-input);
   padding: 10px 14px;
   font-size: 14px;
+}
+
+/* ---------- register ---------- */
+
+.register {
+  min-height: 100vh;
+  max-width: 402px;
+  margin: 0 auto;
+  padding: 76px 9.7% 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.register__title {
+  font-size: 34px;
+  line-height: 1.1;
+  color: var(--bordeaux-title);
+}
+
+.register__title span {
+  display: block;
+}
+
+.register__intro {
+  margin-top: 42px;
+  max-width: 300px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--gris-texte);
+}
+
+.register__form {
+  margin-top: 36px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.register__group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.register__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 49px;
+  padding: 0 16px;
+  background: var(--white);
+  border-radius: 20px;
+}
+
+.register__icon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  margin-right: 14px;
+}
+
+.register__input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  color: var(--gris-texte);
+  text-align: left;
+}
+
+.register__input::placeholder {
+  color: var(--gris-texte);
+  opacity: 0.55;
+}
+
+.register__input:focus {
+  outline: 2px solid var(--bordeaux);
+  outline-offset: 2px;
+}
+
+.register__input[type='date']:not(:focus):invalid::-webkit-datetime-edit {
+  color: transparent;
+}
+
+.register__input::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.register__placeholder {
+  position: absolute;
+  left: 50px;
+  font-size: 16px;
+  color: var(--gris-texte);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.register__terms {
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--gris-texte);
+}
+
+.register__terms-link {
+  color: var(--bleu-lien);
+}
+
+.btn.register__submit {
+  align-self: center;
+  margin-top: 25px;
+  width: calc(100% - 27px);
+  min-height: 74px;
+  font-size: 19px;
+}
+
+.register__panel {
+  width: 100%;
+  margin-top: 32px;
+  background: var(--white);
+  border: 1px solid var(--rose-poudre);
+  border-radius: var(--radius-card);
+  padding: 24px 20px;
+  box-shadow: 0 12px 32px rgba(115, 24, 45, 0.08);
+}
+
+.register__panel h1 {
+  font-size: 24px;
+  text-align: center;
+}
+
+.register__switch {
+  margin-top: 35px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #3d3232;
+}
+
+.register__switch a {
+  color: var(--bordeaux);
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .btn {
@@ -894,7 +1156,7 @@ p {
   border-radius: 50%;
   background: var(--rose-blush);
   color: var(--bordeaux);
-  font-family: var(--font-ui);
+  font-family: var(--font);
   font-size: 13px;
 }
 

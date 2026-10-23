@@ -31,11 +31,6 @@ describe('Accessibility (axe-core)', () => {
   })
 
   it('landing page: no violations', async () => {
-    stubFetch((url) =>
-      url.endsWith('/api/health')
-        ? { status: 200, body: { status: 'ok' } }
-        : { status: 404, body: {} },
-    )
     const { container } = render(
       <MemoryRouter>
         <Home />
@@ -43,7 +38,7 @@ describe('Accessibility (axe-core)', () => {
     )
 
     expect(
-      await screen.findByText('Votre dressing, dans votre téléphone.', { exact: false }),
+      await screen.findByRole('heading', { name: 'Bienvenue chez Penderie' }),
     ).toBeInTheDocument()
 
     await expectNoA11yViolations(container)

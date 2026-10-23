@@ -4,6 +4,31 @@ export interface AppCopy {
   nav: {
     friends: string
   }
+  home: {
+    titleLines: string[]
+    tagline: string
+    next: string
+    signIn: string
+    stepLabel: string
+  }
+  register: {
+    titleLines: string[]
+    intro: string
+    usernameLabel: string
+    emailLabel: string
+    birthDateLabel: string
+    passwordLabel: string
+    usernamePlaceholder: string
+    emailPlaceholder: string
+    birthDatePlaceholder: string
+    passwordPlaceholder: string
+    birthDateHint: string
+    termsLead: string
+    termsLink: string
+    submit: string
+    switchPrompt: string
+    switchLink: string
+  }
   profiles: {
     pinLabel: string
     pinNote: string
@@ -71,6 +96,33 @@ const copies: Record<'fr' | 'en', AppCopy> = {
     childSignInNotice: 'Les enfants ne peuvent pas encore se connecter depuis un autre appareil. Un parent peut ouvrir leur profil sur un appareil déjà connecté.',
     unexpectedError: 'Une erreur inattendue est survenue.',
     nav: { friends: 'Amis' },
+    home: {
+      titleLines: ['Bienvenue', 'chez Penderie'],
+      tagline:
+        'Ajoutez tous vos vêtements, accessoires et objets. Scannez, organisez, et retrouvez tout en un coup d’œil.',
+      next: 'Suivant',
+      signIn: 'Se connecter',
+      stepLabel: 'Étape 1 sur 3',
+    },
+    register: {
+      titleLines: ['Créez votre', 'compte'],
+      intro: 'Créez votre espace Penderie et ajoutez les membres de votre famille en quelques clics',
+      usernameLabel: 'Nom d’utilisateur',
+      emailLabel: 'E-mail',
+      birthDateLabel: 'Date de naissance',
+      passwordLabel: 'Mot de passe (8 caractères minimum)',
+      usernamePlaceholder: 'Nom d’utilisateur',
+      emailPlaceholder: 'Mail',
+      birthDatePlaceholder: 'Date de naissance',
+      passwordPlaceholder: 'Mot de passe',
+      birthDateHint:
+        'Cette date est déclarative, pas une vérification officielle. L’inscription adulte est réservée aux personnes de 18 ans ou plus ; les mineurs doivent utiliser un profil créé par un parent.',
+      termsLead: 'En créant le compte vous acceptez les',
+      termsLink: 'conditions utilisateurs',
+      submit: "S'inscrire",
+      switchPrompt: 'vous avez déjà un compte ?',
+      switchLink: 'Se connecter',
+    },
     profiles: {
       pinLabel: 'Code PIN pour cet appareil (optionnel)',
       pinNote: 'Ce code protège le changement de profil sur cet appareil. Il ne permet pas une connexion sur un autre appareil.',
@@ -136,6 +188,33 @@ const copies: Record<'fr' | 'en', AppCopy> = {
     childSignInNotice: 'Children cannot sign in from another device yet. A parent can open their profile on an already signed-in device.',
     unexpectedError: 'Something unexpected happened.',
     nav: { friends: 'Friends' },
+    home: {
+      titleLines: ['Welcome to', 'Penderie'],
+      tagline:
+        'Add all your clothes, accessories and objects. Scan, organize, and find everything at a glance.',
+      next: 'Next',
+      signIn: 'Sign in',
+      stepLabel: 'Step 1 of 3',
+    },
+    register: {
+      titleLines: ['Create your', 'account'],
+      intro: 'Create your Penderie space and add your family members in a few clicks',
+      usernameLabel: 'Username',
+      emailLabel: 'E-mail',
+      birthDateLabel: 'Date of birth',
+      passwordLabel: 'Password (8 characters minimum)',
+      usernamePlaceholder: 'Username',
+      emailPlaceholder: 'Mail',
+      birthDatePlaceholder: 'Date of birth',
+      passwordPlaceholder: 'Password',
+      birthDateHint:
+        'This date is self-declared, not an official verification. Adult registration is for people aged 18 or over; minors must use a profile created by a parent.',
+      termsLead: 'By creating the account you accept the',
+      termsLink: 'terms of use',
+      submit: 'Sign up',
+      switchPrompt: 'already have an account?',
+      switchLink: 'Sign in',
+    },
     profiles: {
       pinLabel: 'PIN for this device (optional)',
       pinNote: 'This PIN protects profile switching on this device. It cannot be used to sign in on another device.',
