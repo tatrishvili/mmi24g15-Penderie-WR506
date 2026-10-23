@@ -3,6 +3,11 @@ import type { FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
+import { getCopy } from '../i18n/copy.ts'
+import calendarIcon from '../images/icons/calendar_icon.svg'
+import mailIcon from '../images/icons/mail_icon.svg'
+import passwordIcon from '../images/icons/password_icon.svg'
+import profilIcon from '../images/icons/profil_icon.svg'
 
 function fieldMessage(violations: Record<string, string>, keys: string[]): string | null {
   for (const key of keys) {
@@ -13,11 +18,12 @@ function fieldMessage(violations: Record<string, string>, keys: string[]): strin
 
 export default function RegisterPage() {
   const { status, register, resendVerification } = useAuth()
+  const copy = getCopy().register
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [birthDate, setBirthDate] = useState('')
+  const [birthDateFocused, setBirthDateFocused] = useState(false)
   const [password, setPassword] = useState('')
-  const [passwordConfirm, setPasswordConfirm] = useState('')
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
   const [resendNotice, setResendNotice] = useState<string | null>(null)
   const [resending, setResending] = useState(false)
@@ -33,12 +39,6 @@ export default function RegisterPage() {
     event.preventDefault()
     setViolations({})
     setGlobalError(null)
-
-    if (password !== passwordConfirm) {
-      setViolations({ passwordConfirm: 'La confirmation ne correspond pas au mot de passe.' })
-      return
-    }
-
     setSubmitting(true)
 
     try {
@@ -47,7 +47,7 @@ export default function RegisterPage() {
         email: email.trim(),
         birthDate,
         password,
-        passwordConfirm,
+        passwordConfirm: password,
       })
       setSubmittedEmail(email.trim())
     } catch (error) {
@@ -84,139 +84,152 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="auth-page">
-      <span className="auth-brand">Penderie</span>
-      <p className="auth-tagline">Tout ce que vous possedez, au meme endroit.</p>
+    <div className="register">
+      {submittedEmail !== null ? (
+        <div className="register__panel">
+          <h1>Vérifiez votre e-mail</h1>
+          <p className="auth-sub">
+            Consultez <strong>{submittedEmail}</strong> pour confirmer votre adresse et créer votre
+            compte. Si l'adresse peut être utilisée, un lien de confirmation a été envoyé.
+          </p>
+          {resendNotice !== null && <p role="status">{resendNotice}</p>}
+          <button type="button" className="btn btn-secondary" onClick={onResend} disabled={resending}>
+            {resending ? 'Envoi en cours…' : 'Renvoyer le lien'}
+          </button>
+        </div>
+      ) : (
+        <>
+          <h1 className="register__title">
+            {copy.titleLines.map((line) => (
+              <span key={line}>{line}</span>
+            ))}
+          </h1>
+          <p className="register__intro">{copy.intro}</p>
 
-      <div className="auth-card">
-        {submittedEmail !== null ? (
-          <>
-            <h1>Vérifiez votre e-mail</h1>
-            <p className="auth-sub">
-              Consultez <strong>{submittedEmail}</strong> pour confirmer votre adresse et créer votre compte.
-              Si l'adresse peut être utilisée, un lien de confirmation a été envoyé.
-            </p>
-            {resendNotice !== null && <p role="status">{resendNotice}</p>}
-            <button type="button" className="btn btn-secondary" onClick={onResend} disabled={resending}>
-              {resending ? 'Envoi en cours…' : 'Renvoyer le lien'}
-            </button>
-          </>
-        ) : (
-          <>
-            <h1>Inscription</h1>
-            <p className="auth-sub">
-              Choisissez votre nom d’utilisateur, indiquez votre date de naissance et confirmez votre e-mail pour créer votre compte.
-            </p>
+          <form className="register__form" onSubmit={onSubmit} noValidate>
+            {globalError !== null && (
+              <p role="alert" className="form-error">
+                {globalError}
+              </p>
+            )}
 
-            <form className="auth-form" onSubmit={onSubmit} noValidate>
-              {globalError !== null && (
-                <p role="alert" className="form-error">
-                  {globalError}
-                </p>
-              )}
-
-              <div className="field">
-                <label htmlFor="register-username">Nom d’utilisateur</label>
+            <div className="register__group">
+              <div className="register__field">
+                <img src={profilIcon} alt="" className="register__icon" />
+                <label className="sr-only" htmlFor="register-username">
+                  {copy.usernameLabel}
+                </label>
                 <input
                   id="register-username"
-                  className="input"
+                  className="register__input"
                   type="text"
                   autoComplete="username"
+                  placeholder={copy.usernamePlaceholder}
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
                   minLength={3}
                   maxLength={30}
                   required
                 />
-                <span className="auth-sub">Unique, de 3 à 30 lettres, chiffres ou tirets bas (_).</span>
-                {fieldMessage(violations, ['username']) !== null && (
-                  <span className="field-error">{fieldMessage(violations, ['username'])}</span>
-                )}
               </div>
+              {fieldMessage(violations, ['username']) !== null && (
+                <span className="field-error">{fieldMessage(violations, ['username'])}</span>
+              )}
+            </div>
 
-              <div className="field">
-                <label htmlFor="register-email">E-mail</label>
+            <div className="register__group">
+              <div className="register__field">
+                <img src={mailIcon} alt="" className="register__icon" />
+                <label className="sr-only" htmlFor="register-email">
+                  {copy.emailLabel}
+                </label>
                 <input
                   id="register-email"
-                  className="input"
+                  className="register__input"
                   type="email"
                   autoComplete="email"
+                  placeholder={copy.emailPlaceholder}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   required
                 />
-                {fieldMessage(violations, ['email']) !== null && (
-                  <span className="field-error">{fieldMessage(violations, ['email'])}</span>
-                )}
               </div>
+              {fieldMessage(violations, ['email']) !== null && (
+                <span className="field-error">{fieldMessage(violations, ['email'])}</span>
+              )}
+            </div>
 
-              <div className="field">
-                <label htmlFor="register-birth-date">Date de naissance</label>
+            <div className="register__group">
+              <div className="register__field">
+                <img src={calendarIcon} alt="" className="register__icon" />
+                <label className="sr-only" htmlFor="register-birth-date">
+                  {copy.birthDateLabel}
+                </label>
                 <input
                   id="register-birth-date"
-                  className="input"
+                  className="register__input"
                   type="date"
                   autoComplete="bday"
+                  placeholder={copy.birthDatePlaceholder}
                   value={birthDate}
                   onChange={(event) => setBirthDate(event.target.value)}
+                  onFocus={() => setBirthDateFocused(true)}
+                  onBlur={() => setBirthDateFocused(false)}
                   required
                 />
-                <span className="auth-sub">
-                  Cette date est déclarative, pas une vérification officielle. L’inscription adulte est réservée aux personnes de 18 ans ou plus; les mineurs doivent utiliser un profil créé par un parent.
-                </span>
-                {fieldMessage(violations, ['birthDate']) !== null && (
-                  <span className="field-error">{fieldMessage(violations, ['birthDate'])}</span>
+                {birthDate === '' && !birthDateFocused && (
+                  <span className="register__placeholder" aria-hidden="true">
+                    {copy.birthDatePlaceholder}
+                  </span>
                 )}
               </div>
+              <span className="sr-only">{copy.birthDateHint}</span>
+              {fieldMessage(violations, ['birthDate']) !== null && (
+                <span className="field-error">{fieldMessage(violations, ['birthDate'])}</span>
+              )}
+            </div>
 
-              <div className="field">
-                <label htmlFor="register-password">Mot de passe (8 caractères minimum)</label>
+            <div className="register__group">
+              <div className="register__field">
+                <img src={passwordIcon} alt="" className="register__icon" />
+                <label className="sr-only" htmlFor="register-password">
+                  {copy.passwordLabel}
+                </label>
                 <input
                   id="register-password"
-                  className="input"
+                  className="register__input"
                   type="password"
                   autoComplete="new-password"
+                  placeholder={copy.passwordPlaceholder}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
                   minLength={8}
                 />
-                {fieldMessage(violations, ['password']) !== null && (
-                  <span className="field-error">{fieldMessage(violations, ['password'])}</span>
-                )}
               </div>
+              {fieldMessage(violations, ['password']) !== null && (
+                <span className="field-error">{fieldMessage(violations, ['password'])}</span>
+              )}
+            </div>
 
-              <div className="field">
-                <label htmlFor="register-password-confirm">Confirmer le mot de passe</label>
-                <input
-                  id="register-password-confirm"
-                  className="input"
-                  type="password"
-                  autoComplete="new-password"
-                  value={passwordConfirm}
-                  onChange={(event) => setPasswordConfirm(event.target.value)}
-                  required
-                />
-                {fieldMessage(violations, ['passwordConfirm']) !== null && (
-                  <span className="field-error">{fieldMessage(violations, ['passwordConfirm'])}</span>
-                )}
-              </div>
+            <p className="register__terms">
+              {copy.termsLead} <span className="register__terms-link">{copy.termsLink}</span>
+            </p>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={submitting || status === 'loading'}
-              >
-                {submitting ? 'Inscription en cours…' : "S'inscrire"}
-              </button>
-            </form>
-          </>
-        )}
+            <button
+              type="submit"
+              className="btn btn-primary register__submit"
+              disabled={submitting || status === 'loading'}
+            >
+              {submitting ? 'Inscription en cours…' : copy.submit}
+            </button>
+          </form>
+        </>
+      )}
 
-        <p className="auth-switch">
-          Deja un compte ? <Link to="/connexion">Se connecter</Link>
-        </p>
-      </div>
+      <p className="register__switch">
+        {copy.switchPrompt} <Link to="/connexion">{copy.switchLink}</Link>
+      </p>
     </div>
   )
 }

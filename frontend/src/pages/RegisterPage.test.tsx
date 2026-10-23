@@ -31,9 +31,6 @@ async function fillRequiredFields(email = 'camille@example.com') {
   fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères/), {
     target: { value: 'secret123' },
   })
-  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), {
-    target: { value: 'secret123' },
-  })
 }
 
 describe('RegisterPage', () => {
@@ -49,7 +46,6 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument()
     expect(screen.getByLabelText('Date de naissance')).toHaveAttribute('type', 'date')
     expect(screen.getByLabelText(/Mot de passe \(8 caractères/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Confirmer le mot de passe')).toBeInTheDocument()
     expect(screen.getByText(/pas une vérification officielle/)).toBeInTheDocument()
     expect(screen.queryByLabelText('Votre prenom')).not.toBeInTheDocument()
   })
