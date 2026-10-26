@@ -27,16 +27,17 @@ describe('Home', () => {
     expect(container.querySelector('.welcome__buddie')).toBeInTheDocument()
   })
 
-  it('links to registration and sign-in', () => {
+  it('links to the next onboarding step and to sign-in', () => {
     renderHome()
 
-    expect(screen.getByRole('link', { name: 'Suivant' })).toHaveAttribute('href', '/inscription')
+    expect(screen.getByRole('link', { name: 'Suivant' })).toHaveAttribute('href', '/onboarding/2')
     expect(screen.getByRole('link', { name: 'Se connecter' })).toHaveAttribute('href', '/connexion')
   })
 
   it('marks the first onboarding step', () => {
-    renderHome()
+    const { container } = renderHome()
 
-    expect(screen.getByRole('img', { name: 'Étape 1 sur 3' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Étape 1 sur 4' })).toBeInTheDocument()
+    expect(container.querySelectorAll('.dot')).toHaveLength(4)
   })
 })

@@ -11,6 +11,38 @@ export interface AppCopy {
     signIn: string
     stepLabel: string
   }
+  onboard: {
+    next: string
+    signIn: string
+    organise: {
+      titleLine: string
+      introLines: string[]
+      tabs: string[]
+      rooms: string[]
+      stepLabel: string
+    }
+    lend: {
+      titleLines: string[]
+      itemName: string
+      status: string
+      since: string
+      borrower: string
+      chips: string[]
+      bodyLines: string[]
+      timeline: string[]
+      stepLabel: string
+    }
+    look: {
+      titleLines: string[]
+      bodyLines: string[]
+      temperature: string
+      today: string
+      like: string
+      skip: string
+      caption: string
+      stepLabel: string
+    }
+  }
   register: {
     titleLines: string[]
     intro: string
@@ -134,7 +166,50 @@ const copies: Record<'fr' | 'en', AppCopy> = {
         'Ajoutez tous vos vêtements, accessoires et objets. Scannez, organisez, et retrouvez tout en un coup d’œil.',
       next: 'Suivant',
       signIn: 'Se connecter',
-      stepLabel: 'Étape 1 sur 3',
+      stepLabel: 'Étape 1 sur 4',
+    },
+    onboard: {
+      next: 'Suivant',
+      signIn: 'Se connecter',
+      organise: {
+        titleLine: 'Tout à sa place',
+        introLines: [
+          'Retrouvez facilement chaque vêtement',
+          'et chaque objet grâce à un rangement organisé',
+          'par pièce, personne et emplacement.',
+        ],
+        tabs: ['Pièces', 'Personnes', 'Emplacement'],
+        rooms: ['Dressing', 'Chambre', 'Bureau', 'Salon', 'Garage', 'Cuisine'],
+        stepLabel: 'Étape 2 sur 4',
+      },
+      lend: {
+        titleLines: ['Prêtez vos affaires', 'sans jamais oublier'],
+        itemName: 'veste beige',
+        status: 'Prêtée',
+        since: 'Depuis le 12 septembre',
+        borrower: 'Sophie',
+        chips: ['Taille S', 'état parfait'],
+        bodyLines: [
+          'Je sais toujours qui possède mes affaires.',
+          'Recevez les demandes de vos proches et gardez',
+          'toujours une trace de vos prêts.',
+        ],
+        timeline: ['Demande reçue', 'Accepté', 'En prêt'],
+        stepLabel: 'Étape 3 sur 4',
+      },
+      look: {
+        titleLines: ['Des looks', 'chaque jour'],
+        bodyLines: [
+          'Penderie vous aide à créer des tenues adaptées',
+          'à votre style, à la météo et à vos envies.',
+        ],
+        temperature: '18°',
+        today: 'Aujourd’hui',
+        like: 'J’aime',
+        skip: 'Pas pour moi',
+        caption: 'Choisissez le style qui vous correspond le mieux',
+        stepLabel: 'Étape 4 sur 4',
+      },
     },
     register: {
       titleLines: ['Créez votre', 'compte'],
@@ -261,7 +336,50 @@ const copies: Record<'fr' | 'en', AppCopy> = {
         'Add all your clothes, accessories and objects. Scan, organize, and find everything at a glance.',
       next: 'Next',
       signIn: 'Sign in',
-      stepLabel: 'Step 1 of 3',
+      stepLabel: 'Step 1 of 4',
+    },
+    onboard: {
+      next: 'Next',
+      signIn: 'Sign in',
+      organise: {
+        titleLine: 'Everything in its place',
+        introLines: [
+          'Find every garment and every object easily',
+          'thanks to storage organized by room,',
+          'person and place',
+        ],
+        tabs: ['Rooms', 'People', 'Places'],
+        rooms: ['Closet', 'Bedroom', 'Office', 'Living room', 'Garage', 'Kitchen'],
+        stepLabel: 'Step 2 of 4',
+      },
+      lend: {
+        titleLines: ['Lend your things', 'without ever forgetting'],
+        itemName: 'beige jacket',
+        status: 'Lent',
+        since: 'Since 12 September',
+        borrower: 'Sophie',
+        chips: ['Size S', 'perfect condition'],
+        bodyLines: [
+          'I always know who owns my things.',
+          'Receive requests from your loved ones and',
+          'always keep a record of your loans.',
+        ],
+        timeline: ['Request received', 'Accepted', 'On loan'],
+        stepLabel: 'Step 3 of 4',
+      },
+      look: {
+        titleLines: ['New looks', 'every day'],
+        bodyLines: [
+          'Penderie helps you create outfits that match',
+          'your style, the weather and your mood.',
+        ],
+        temperature: '18°',
+        today: 'Today',
+        like: 'I like it',
+        skip: 'Not for me',
+        caption: 'Pick the style that suits you best',
+        stepLabel: 'Step 4 of 4',
+      },
     },
     register: {
       titleLines: ['Create your', 'account'],

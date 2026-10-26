@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { Link } from 'react-router-dom'
+import OnboardingFoot from '../components/OnboardingFoot.tsx'
 import { getCopy } from '../i18n/copy.ts'
 import buddie from '../images/icons/home_page_buddie.svg'
 
@@ -51,19 +51,13 @@ export default function Home() {
         </div>
         <p className="welcome__tagline">{copy.tagline}</p>
 
-        <div className="welcome__foot">
-          <div className="welcome__dots" role="img" aria-label={copy.stepLabel}>
-            <span className="dot dot--active" />
-            <span className="dot" />
-            <span className="dot" />
-          </div>
-          <Link to="/inscription" className="btn btn-primary welcome__next">
-            {copy.next}
-          </Link>
-          <Link to="/connexion" className="welcome__signin">
-            {copy.signIn}
-          </Link>
-        </div>
+        <OnboardingFoot
+          step={1}
+          stepLabel={copy.stepLabel}
+          nextLabel={copy.next}
+          nextTo="/onboarding/2"
+          signInLabel={copy.signIn}
+        />
       </div>
     </section>
   )
