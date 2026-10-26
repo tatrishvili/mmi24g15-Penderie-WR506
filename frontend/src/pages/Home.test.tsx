@@ -11,7 +11,7 @@ function renderHome() {
     </MemoryRouter>
   )
 
-  render(page)
+  return render(page)
 }
 
 describe('Home', () => {
@@ -20,11 +20,11 @@ describe('Home', () => {
   })
 
   it('renders the welcome onboarding screen', () => {
-    renderHome()
+    const { container } = renderHome()
 
     expect(screen.getByRole('heading', { name: 'Bienvenue chez Penderie' })).toBeInTheDocument()
     expect(screen.getByText(/Ajoutez tous vos vêtements/)).toBeInTheDocument()
-    expect(screen.getByAltText('Penderie')).toBeInTheDocument()
+    expect(container.querySelector('.welcome__buddie')).toBeInTheDocument()
   })
 
   it('links to registration and sign-in', () => {

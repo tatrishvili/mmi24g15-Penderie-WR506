@@ -14,6 +14,7 @@ Token: `--font: 'Baloo Chettan 2', system-ui, 'Segoe UI', Roboto, sans-serif`
 | Element | Weight | Size (mobile) | Size (≥900px) | Line height | Color |
 | --- | --- | --- | --- | --- | --- |
 | `h1` | 700 | 34px | 44px | 1.1 | `--bordeaux-title` |
+| Welcome title (`.welcome__title`) | 700 | 40px | 44px | 0.82 stacked | `--bordeaux-title` |
 | Auth titles (`.register__title` / `.login__title` / `.verify__title`) | 700 | 40px | 44px | 0.78 stacked / 1.1 single-line | `--bordeaux-title` |
 | `h2` | 700 | 24px | 30px | 1.2 | `--bordeaux-title` |
 | `h3` | 600 | 19px | 22px | 1.3 | `--bordeaux-title` |
@@ -21,7 +22,8 @@ Token: `--font: 'Baloo Chettan 2', system-ui, 'Segoe UI', Roboto, sans-serif`
 | Small / hint | 400–600 | 13–15px | 13–15px | 1.45 | `--gris-texte` |
 | Button label | 600 | 16px (19px for the onboarding CTA) | same | 1 | inherit |
 
-Rules: no all-caps headings, no letter-spacing tricks, no underlines except for secondary text
+Rules: no all-caps headings, no letter-spacing tricks (the welcome title's `0.55px` is the single
+exception, it matches its wireframe glyph run), no underlines except for secondary text
 links. Never mix font families inside a page.
 
 ## Colors
@@ -34,6 +36,7 @@ links. Never mix font families inside a page.
 | `--bordeaux-deep` | `#521825` | Hover/pressed state of primary actions |
 | `--gris-texte` | `#5a4c4c` | Body copy, labels |
 | `--rose-sable` | `#eed2c4` | Inactive onboarding dots, subtle fills |
+| `--rose-wash` | `#fbe1e0` | Onboarding background gradient (top wash + bottom blob) |
 | `--rose-poudre` | `#fad9e0` | Borders, dividers |
 | `--rose-blush` | `#f8e8e5` | Soft backgrounds (chips, active nav) |
 | `--gris-rose` | `#c88a9a` | Muted accents |
@@ -49,16 +52,17 @@ use white text on `--creme` or `--rose-*`.
 
 - Base spacing unit: 4px; page gutters 20px (`--radius-card` container padding).
 - Card radius `--radius-card: 20px`, inputs `--radius-input: 12px`, buttons pill `999px`.
-- Minimum tap target `--tap: 44px`; onboarding CTA height 68px.
+- Minimum tap target `--tap: 44px`; onboarding CTA height 74px (297×74).
 
 ## Components
 
 - **Primary button** (`.btn.btn-primary`): full width, pill, `--bordeaux` on white text.
 - **Secondary button** (`.btn.btn-secondary`): pill, `--rose-blush` background.
 - **Card** (`.card`): white, `--rose-poudre` border, 20px radius, soft wine-tinted shadow.
-- **Onboarding screen** (`.welcome*`): full-height photo with a curved creme mask (SVG path in
-  `Home.tsx`), white logo over the photo, centered title/tagline, step dots (active `--bordeaux`,
-  inactive `--rose-sable`), CTA + sign-in link.
+- **Onboarding screen** (`.welcome*`): creme shell with a full-height SVG background (top
+  `--rose-wash` → `--creme` wash cut by a curve, bottom organic `--rose-wash` blob fading out),
+  the `home_page_buddie.svg` mascot pinned over the title's first line, centered 40px title /
+  tagline, step dots (active `--bordeaux`, inactive `--rose-sable`), 297×74 CTA + sign-in link.
 - **Pill field** (`.pill-group` > `.pill-field` + `.pill-field__icon` / `__input` / `__placeholder`):
   shared white pill input row with a left icon, sr-only label and placeholder; used by both auth
   screens.
@@ -86,5 +90,5 @@ use white text on `--creme` or `--rose-*`.
 - Wireframes live in `frontend/src/Wireframes/<Page>.png`; image assets in `frontend/src/images/`.
   A new screen starts from its wireframe: sample colors from it, reuse tokens from this table, and
   only introduce a new token when no existing one fits.
-- Photography and the logo are the only illustration assets; icons come from `lucide-react` and
-  inherit `currentColor`.
+- Photography, mascots and the logo are illustration assets in `frontend/src/images/`; icons come
+  from `lucide-react` and inherit `currentColor`.
