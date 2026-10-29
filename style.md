@@ -74,7 +74,9 @@ use white text on `--creme` or `--rose-*`.
   - `.lend__*` (step 3): two-line title (40/32px), `.step-card` (1px `--rose-wash`, ~30px radius)
     with a 163px photo cell (12px white inset), 18px item name, status badge, meta rows (10px,
     lucide icons), creme chips (`--rose-poudre` border), 17px/25px body, three-step timeline
-    (rose `::before` line, lucide icons, green check for the accepted step).
+    (rose `::before` line behind the icons — `.lend__step` is `position: relative; z-index: 1`
+    so the absolutely-positioned line never paints over them — and a green check for the
+    accepted step).
   - `.look__*` (step 4): two-line title, 17px/24px body, `.step-card` with the 179px outfit photo
     and a weather block (sun icon, 28px temperature, 16px day), two 154×53 choice buttons with
     heart icons, centered 17px caption.

@@ -252,6 +252,10 @@ p {
   padding: 66px 0 35px;
 }
 
+.welcome__flow > :not(.welcome__foot) {
+  margin-bottom: 24px;
+}
+
 .welcome--step .btn.welcome__next {
   margin-top: 32px;
 }
@@ -510,6 +514,8 @@ p {
 }
 
 .lend__step {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;

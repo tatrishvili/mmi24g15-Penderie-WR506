@@ -162,6 +162,15 @@ neighbouring elements in the wire but not in the render — compare by content, 
   foot = dots (10px, 6px gap) + 32px + `.btn.welcome__next` (297×74) + sign-in link.
   With that: dots land at y683–692, CTA at y725–798, sign-in bottom ≈ y838 at 402×874 — these
   three are **pixel-exact on every step screen** and are a good regression check.
+- **Foot collapse floor:** `.welcome__flow > :not(.welcome__foot) { margin-bottom: 24px }`.
+  The foot relies on `margin-top: auto`, which collapses to 0 when the viewport is shorter
+  than content + foot — the dots then touched the content above (reproduced at 402×750,
+  402×700 and 1280×800 on `/onboarding/3`). The 24px block margin is the visual gap floor
+  when collapsed; when the foot is bottom-pinned the free space absorbs it, so the frozen
+  anchors above do not move (verified: dots stay y683 at 402×874).
+- **Timeline layering:** absolutely-positioned pseudo-element lines paint above static-flow
+  content. Any icon/disc that must sit *on* such a line needs `position: relative; z-index: 1`
+  on its wrapper (`.lend__step` is the reference case).
 
 ---
 
