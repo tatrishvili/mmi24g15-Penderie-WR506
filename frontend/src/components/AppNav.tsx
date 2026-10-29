@@ -3,10 +3,10 @@ import { Heart, MapPin, ScanLine, Shirt, UserRound, UsersRound } from 'lucide-re
 import { getCopy } from '../i18n/copy.ts'
 
 const BASE_TABS = [
-  { to: '/compte', label: 'Compte', Icon: UserRound },
+  { to: '/profil', label: 'Profil', Icon: UserRound },
   { to: '/scanner', label: 'Scanner', Icon: ScanLine },
   { to: '/dressing', label: 'Dressing', Icon: Shirt },
-  { to: '/lieux', label: 'Lieux', Icon: MapPin },
+  { to: '/foyer', label: 'Foyer', Icon: MapPin },
   { to: '/profils', label: 'Profils', Icon: UsersRound },
 ] as const
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ScanLine, Search } from 'lucide-react'
 import { listItems, updateItem } from '../api/items.ts'
 import { ApiError } from '../api/client.ts'
@@ -12,6 +12,7 @@ import { conditionLabel, statusLabel } from '../types/item.ts'
  * with a shortcut to add one through the scanner.
  */
 export default function ItemsPage() {
+  const [searchParams] = useSearchParams()
   const [items, setItems] = useState<ItemSummary[]>([])
   const [total, setTotal] = useState(0)
   const [query, setQuery] = useState('')
@@ -20,22 +21,29 @@ export default function ItemsPage() {
   const [busyId, setBusyId] = useState<number | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  const load = useCallback(async (q: string, signal?: AbortSignal) => {
-    setLoading(true)
-    setError(null)
+  const load = useCallback(
+    async (q: string, signal?: AbortSignal) => {
+      setLoading(true)
+      setError(null)
 
-    try {
-      const result = await listItems({ q })
-      if (signal?.aborted === true) return
-      setItems(result.items)
-      setTotal(result.total)
-    } catch (err) {
-      if (signal?.aborted === true) return
-      setError(err instanceof ApiError ? err.message : 'Une erreur inattendue est survenue.')
-    } finally {
-      if (signal?.aborted !== true) setLoading(false)
-    }
-  }, [])
+      try {
+        const result = await listItems({
+          q,
+          roomId: searchParams.get('room') ? Number(searchParams.get('room')) : undefined,
+          status: searchParams.get('status') === 'archive' ? 'archive' : 'active',
+        })
+        if (signal?.aborted === true) return
+        setItems(result.items)
+        setTotal(result.total)
+      } catch (err) {
+        if (signal?.aborted === true) return
+        setError(err instanceof ApiError ? err.message : 'Une erreur inattendue est survenue.')
+      } finally {
+        if (signal?.aborted !== true) setLoading(false)
+      }
+    },
+    [searchParams],
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -75,7 +83,16 @@ export default function ItemsPage() {
       <p className="auth-tagline">Tout ce que vous possédez, au même endroit.</p>
 
       <div className="auth-card">
-        <h1>Mon dressing</h1>
+        <h1>{searchParams.get('status') === 'archive' ? 'Articles archivés' : 'Mon dressing'}</h1>
+        <div className="design-inline-links">
+          <Link
+            to={searchParams.get('status') === 'archive' ? '/dressing' : '/dressing?status=archive'}
+          >
+            {searchParams.get('status') === 'archive' ? 'Mon dressing actif' : 'Voir les archives'}
+          </Link>
+          <Link to="/articles/nouveau">Ajouter manuellement</Link>
+          <Link to="/prets">Mes prêts</Link>
+        </div>
 
         <form className="auth-form" onSubmit={onSearch} noValidate>
           <div className="field">
@@ -141,7 +158,9 @@ export default function ItemsPage() {
                     </span>
                   )}
                   <span className="profile-meta">
-                    <span className="profile-name">{item.name}</span>
+                    <Link className="profile-name" to={`/articles/${item.id}`}>
+                      {item.name}
+                    </Link>
                     <br />
                     <span className="profile-role">
                       {item.room === null

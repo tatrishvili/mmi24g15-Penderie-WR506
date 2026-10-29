@@ -17,7 +17,9 @@ describe('Connexion', () => {
 
   it('déconnecte puis bloque de nouveau les routes protégées', () => {
     cy.loginDemo()
-    cy.contains('nav[aria-label="Navigation principale"] a', 'Compte').click()
+    cy.get('nav[aria-label="Navigation principale"] a[href="/profil"]').click()
+    cy.contains('summary', 'Plus').click()
+    cy.contains('a', 'Mon compte').click()
     cy.url().should('include', '/compte')
     cy.contains('button', 'Se déconnecter').click()
     cy.url().should('include', '/connexion')

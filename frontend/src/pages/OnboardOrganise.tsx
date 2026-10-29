@@ -6,7 +6,7 @@ import chambre from '../images/icons/chambre_icon.svg'
 import cuisine from '../images/icons/Cusine_icon.svg'
 import dressing from '../images/icons/dressing_icon.svg'
 import garage from '../images/icons/garage_icon.svg'
-import salon from '../images/icons/Salon_icon.png'
+import salon from '../images/icons/Salon_icon.svg'
 
 const ROOM_ICONS = [dressing, chambre, bureau, salon, garage, cuisine]
 

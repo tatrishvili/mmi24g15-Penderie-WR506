@@ -1,11 +1,23 @@
-import { useEffect, useRef, useState } from 'react'
+import FigmaGlyph from '../components/FigmaGlyph.tsx'
+import itemSymbol from '../images/figma/item-symbol.svg'
+import { errorText } from '../lib/errors.ts'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../auth/useAuth.ts'
 import { resizeToBase64 } from '../lib/image.ts'
 import { listPlaces } from '../api/places.ts'
 import type { Place } from '../types/location.ts'
 import { flattenStorageLocations } from '../types/location.ts'
-import { ApiError } from '../api/client.ts'
+import type { ItemCondition } from '../types/item.ts'
+import {
+  DesignPage,
+  DesignField,
+  DesignForm,
+  DesignNotice,
+  ErrorMessage,
+} from '../components/DesignPage.tsx'
 
-type ItemFormValues = {
+export type ItemFormValues = {
   name: string
   type: 'pull' | 'tshirt' | 'pantalon' | 'jupe' | 'robe' | 'chaussure' | 'sac' | 'autre'
   category: string
@@ -13,311 +25,382 @@ type ItemFormValues = {
   color: string
   size: string
   material: string
-  condition: 'neuf' | 'comme_neuf' | 'tres_bon' | 'bon' | 'a_reparer' | 'abime'
+  condition: ItemCondition
   roomId: number | null
   storageLocationId: number | null
-  photos: string[]  // base64 data URLs
+  ownerProfileId?: number
+  photos: string[]
   memory?: string
   notes?: string
 }
-
 interface ItemFormProps {
   initialValues?: ItemFormValues
   onSubmit: (values: ItemFormValues) => void
   onClose: () => void
+  initialStep?: 'details' | 'location'
+  editing?: boolean
+  busy?: boolean
 }
 
-export function ItemForm({ initialValues, onSubmit, onClose }: ItemFormProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+export function ItemForm({
+  initialValues,
+  onSubmit,
+  onClose,
+  initialStep = 'details',
+  editing = false,
+  busy = false,
+}: ItemFormProps) {
+  const auth = useAuth()
   const [places, setPlaces] = useState<Place[]>([])
-  const [placeError, setPlaceError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [step, setStep] = useState(initialStep)
+  const [placeId, setPlaceId] = useState('')
+  const [precise, setPrecise] = useState('')
   const [values, setValues] = useState<ItemFormValues>({
-    name: initialValues?.name ?? '',
-    type: initialValues?.type ?? 'autre',
-    category: initialValues?.category ?? '',
-    brand: initialValues?.brand ?? '',
-    color: initialValues?.color ?? '',
-    size: initialValues?.size ?? '',
-    material: initialValues?.material ?? '',
-    condition: initialValues?.condition ?? 'bon',
-    roomId: initialValues?.roomId ?? null,
-    storageLocationId: initialValues?.storageLocationId ?? null,
-    photos: initialValues?.photos ?? [],
-    memory: initialValues?.memory ?? '',
-    notes: initialValues?.notes ?? '',
+    name: '',
+    type: 'autre',
+    category: '',
+    brand: '',
+    color: '',
+    size: '',
+    material: '',
+    condition: 'bon',
+    roomId: null,
+    storageLocationId: null,
+    ownerProfileId: auth.activeProfileId ?? undefined,
+    photos: [],
+    memory: '',
+    notes: '',
+    ...initialValues,
   })
-
   useEffect(() => {
-    let cancelled = false
-    listPlaces()
-      .then(({ places: loadedPlaces }) => {
-        if (!cancelled) setPlaces(loadedPlaces)
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          setPlaceError(error instanceof ApiError ? error.message : 'Impossible de charger les lieux.')
-        }
-      })
+    let live = true
+    const load = () => {
+      void listPlaces()
+        .then((data) => {
+          if (live) {
+            setPlaces(data.places)
+            setError(null)
+          }
+        })
+        .catch((e) => {
+          if (live) setError(errorText(e))
+        })
+    }
+    load()
+    window.addEventListener('focus', load)
     return () => {
-      cancelled = true
+      live = false
+      window.removeEventListener('focus', load)
     }
   }, [])
-
-  const rooms = places.flatMap((place) =>
-    place.rooms.map((room) => ({ ...room, placeName: place.name })),
+  const roomPlace = places.find((p) => p.rooms.some((r) => r.id === values.roomId))
+  const place = places.find((p) => String(p.id) === placeId) ?? roomPlace ?? places[0]
+  const room = place?.rooms.find((r) => r.id === values.roomId)
+  const roots = room?.storageLocations ?? []
+  const root = roots.find(
+    (s) =>
+      s.id === values.storageLocationId ||
+      flattenStorageLocations(s.children).some((c) => c.id === values.storageLocationId),
   )
-  const selectedRoom = rooms.find((room) => room.id === values.roomId)
-  const storageOptions = selectedRoom === undefined
-    ? []
-    : flattenStorageLocations(selectedRoom.storageLocations)
-
-  const onChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target
-    setValues({ ...values, [name]: value as any })
+  const children = root ? flattenStorageLocations(root.children) : []
+  const patch = <K extends keyof ItemFormValues>(key: K, value: ItemFormValues[K]) =>
+    setValues((v) => ({ ...v, [key]: value }))
+  const save = (skip = false) => {
+    if (!busy) onSubmit({ ...values, ...(skip ? { roomId: null, storageLocationId: null } : {}) })
   }
 
-  return (
-    <div className="max-w-md p-4">
-      <button
-        className="absolute top-2 right-2 text-gray-500 hover:text-rose-500"
-        onClick={onClose}
+  if (step === 'location')
+    return (
+      <DesignPage
+        frame="160:264"
+        household
+        className="item-location-page"
+        title="Lieu de rangement"
+        subtitle="Vous pourrez le modifier plus tard."
+        footer={
+          <>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              form="item-location-form"
+              disabled={busy}
+            >
+              {busy ? 'Enregistrement…' : 'Enregistrer l’article'}
+            </button>
+            <button
+              className="design-link"
+              type="button"
+              disabled={busy}
+              onClick={() => save(true)}
+            >
+              Je le rangerai plus tard
+            </button>
+          </>
+        }
       >
-        &times;
-      </button>
-
-      <h2 className="mt-6 text-xl font-bold text-rose-500 mb-4">Nouvel article</h2>
-
-      <form
-        className="space-y-4"
-        onSubmit={(e) => {
-          e.preventDefault()
-          onSubmit(values)
-        }}
-      >
-        <div>
-          <label htmlFor="item-name" className="block text-sm font-medium mb-1">Nom de l'article</label>
-          <input
-            type="text"
-            id="item-name"
-            name="name"
-            value={values.name}
-            onChange={onChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-type" className="block text-sm font-medium mb-1">Type</label>
-          <select id="item-type"
-            name="type" value={values.type} onChange={onChange} className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300">
-            <option value="pull">Pull</option>
-            <option value="tshirt">T-shirt</option>
-            <option value="pantalon">Pantalon</option>
-            <option value="jupe">Jupe</option>
-            <option value="robe">Robe</option>
-            <option value="chaussure">Chaussure</option>
-            <option value="sac">Sac</option>
-            <option value="autre">Autre</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="item-category" className="block text-sm font-medium mb-1">Catégorie</label>
-          <input
-            type="text"
-            id="item-category"
-            name="category"
-            value={values.category}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-brand" className="block text-sm font-medium mb-1">Marque</label>
-          <input
-            type="text"
-            id="item-brand"
-            name="brand"
-            value={values.brand}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-color" className="block text-sm font-medium mb-1">Couleur</label>
-          <input
-            type="text"
-            id="item-color"
-            name="color"
-            value={values.color}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-size" className="block text-sm font-medium mb-1">Taille</label>
-          <input
-            type="text"
-            id="item-size"
-            name="size"
-            value={values.size}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-material" className="block text-sm font-medium mb-1">Matériau</label>
-          <input
-            type="text"
-            id="item-material"
-            name="material"
-            value={values.material}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-condition" className="block text-sm font-medium mb-1">État</label>
-          <select
-            id="item-condition"
-            name="condition"
-            value={values.condition}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
-          >
-            <option value="neuf">Neuf</option>
-            <option value="comme_neuf">Comme neuf</option>
-            <option value="tres_bon">Très bon</option>
-            <option value="bon">Bon</option>
-            <option value="a_reparer">À réparer</option>
-            <option value="abime">Abîmé</option>
-          </select>
-        </div>
-
-        <fieldset className="item-location">
-          <legend>Emplacement (optionnel)</legend>
-          <div className="field">
-            <label htmlFor="item-room">Maison et pièce</label>
+        <ErrorMessage error={error} />
+        <DesignForm
+          id="item-location-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            save()
+          }}
+        >
+          <DesignField label="Foyer">
             <select
-              id="item-room"
-              className="input"
+              value={place?.id ?? ''}
+              onChange={(e) => {
+                setPlaceId(e.target.value)
+                setValues((v) => ({ ...v, roomId: null, storageLocationId: null }))
+                setPrecise('')
+              }}
+            >
+              <option value="">Pas encore rangé</option>
+              {places.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </DesignField>
+          <DesignField label="Pièce">
+            <select
               value={values.roomId ?? ''}
-              onChange={(event) => {
-                const roomId = event.target.value === '' ? null : Number(event.target.value)
-                setValues({ ...values, roomId, storageLocationId: null })
+              onChange={(e) => {
+                setValues((v) => ({
+                  ...v,
+                  roomId: e.target.value ? Number(e.target.value) : null,
+                  storageLocationId: null,
+                }))
+                setPrecise('')
               }}
             >
               <option value="">Pas encore rangé / inconnu</option>
-              {rooms.map((room) => (
-                <option key={room.id} value={room.id}>{room.placeName} › {room.name}</option>
+              {place?.rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
               ))}
             </select>
+          </DesignField>
+          <DesignField label="Rangement">
+            <select
+              value={root?.id ?? ''}
+              onChange={(e) => {
+                patch('storageLocationId', e.target.value ? Number(e.target.value) : null)
+                setPrecise('')
+              }}
+            >
+              <option value="">Sans rangement précis</option>
+              {roots.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </DesignField>
+          <DesignField label="Emplacement précis (optionnel)">
+            <select
+              value={
+                precise ||
+                (values.storageLocationId !== root?.id ? (values.storageLocationId ?? '') : '')
+              }
+              onChange={(e) => {
+                setPrecise(e.target.value)
+                patch(
+                  'storageLocationId',
+                  e.target.value ? Number(e.target.value) : (root?.id ?? null),
+                )
+              }}
+            >
+              <option value="">Aucun emplacement supplémentaire</option>
+              {children.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </DesignField>
+          <DesignNotice>
+            <strong>
+              <FigmaGlyph name="locationHeading" /> {place?.name ?? 'Lieu non défini'}{' '}
+              {room ? `› ${room.name}` : ''}
+            </strong>
+            <p>
+              {root?.name ?? 'Sans rangement'}{' '}
+              {precise ? `› ${children.find((s) => String(s.id) === precise)?.label ?? ''}` : ''}
+            </p>
+          </DesignNotice>
+          <div className="design-inline-links">
+            <button type="button" onClick={() => setStep('details')}>
+              Modifier l’article
+            </button>
+            <Link to="/foyer/rangement/ajouter" target="_blank" rel="noopener">
+              Ajouter un rangement (nouvel onglet)
+            </Link>
           </div>
-          {values.roomId !== null && (
-            <div className="field">
-              <label htmlFor="item-storage">Rangement, étagère ou boîte</label>
+        </DesignForm>
+      </DesignPage>
+    )
+
+  return (
+    <DesignPage
+      frame="160:241"
+      household
+      className="item-details-form"
+      title={editing ? 'Modifier l’article' : 'Nouvel article'}
+      subtitle="Vérifiez les informations détectées."
+      footer={
+        <button className="btn btn-primary" type="submit" form="item-details-form">
+          Choisir l’emplacement
+        </button>
+      }
+    >
+      <DesignForm
+        id="item-details-form"
+        onSubmit={(e) => {
+          e.preventDefault()
+          setStep('location')
+        }}
+      >
+        <div className="item-photo-section">
+          <label className="item-photo-picker">
+            <span className="item-photo-picker__image">
+              {values.photos[0] ? (
+                <img src={values.photos[0]} alt="Article photographié" />
+              ) : (
+                <img className="item-photo-picker__symbol" src={itemSymbol} alt="" />
+              )}
+            </span>
+            <strong>Photo de l’article</strong>
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              aria-label="Ajouter une photo de l’article"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f)
+                  void resizeToBase64(f)
+                    .then((photo) => patch('photos', [photo]))
+                    .catch((e) => setError(errorText(e)))
+              }}
+            />
+          </label>
+          <details className="item-extra-fields">
+            <summary>Plus de détails (facultatif)</summary>
+            {(
+              [
+                ['category', 'Catégorie'],
+                ['brand', 'Marque'],
+                ['size', 'Taille'],
+                ['material', 'Matière'],
+              ] as const
+            ).map(([key, label]) => (
+              <DesignField key={key} label={label}>
+                <input
+                  value={values[key]}
+                  onChange={(e) => patch(key, e.target.value)}
+                  maxLength={key === 'size' ? 30 : 120}
+                />
+              </DesignField>
+            ))}
+            <DesignField label="État">
               <select
-                id="item-storage"
-                className="input"
-                value={values.storageLocationId ?? ''}
-                onChange={(event) => {
-                  const storageLocationId = event.target.value === '' ? null : Number(event.target.value)
-                  setValues({ ...values, storageLocationId })
-                }}
+                id="item-condition"
+                value={values.condition}
+                onChange={(e) => patch('condition', e.target.value as ItemCondition)}
               >
-                <option value="">Dans la pièce, sans rangement précis</option>
-                {storageOptions.map((option) => (
-                  <option key={option.id} value={option.id}>{option.label}</option>
+                {Object.entries({
+                  neuf: 'Neuf',
+                  comme_neuf: 'Comme neuf',
+                  tres_bon: 'Très bon état',
+                  bon: 'Bon état',
+                  a_reparer: 'À réparer',
+                  abime: 'Abîmé',
+                }).map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
                 ))}
               </select>
-              {storageOptions.length === 0 && (
-                <span className="field-hint">Ajoutez des rangements dans l’onglet Lieux.</span>
-              )}
-            </div>
-          )}
-          {placeError !== null && <p role="alert" className="form-error">{placeError}</p>}
-        </fieldset>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Photos</label>
-          <div className="grid grid-cols-2 gap-2">
-            {values.photos.map((photo, index) => (
-              <img
-                key={index}
-                src={photo}
-                alt="Photo de l'article"
-                className="w-full h-32 object-cover rounded"
+            </DesignField>
+            <DesignField label="Notes privées">
+              <textarea
+                value={values.notes}
+                onChange={(e) => patch('notes', e.target.value)}
+                maxLength={2000}
               />
-            ))}
-            {values.photos.length < 3 && (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  name="photos"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
-                    resizeToBase64(file).then((base64) =>
-                      setValues({ ...values, photos: [...values.photos, base64] }),
-                    )
-                  }}
-                />
-                <button
-                  type="button"
-                  className="px-3 py-2 border border-dashed border-rose-500 rounded hover:bg-rose-50 text-sm"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Ajouter photo
-                </button>
-              </>
-            )}
-          </div>
+            </DesignField>
+            <DesignField label="Souvenir">
+              <textarea
+                value={values.memory}
+                onChange={(e) => patch('memory', e.target.value)}
+                maxLength={2000}
+              />
+            </DesignField>
+          </details>
         </div>
-
-        <div>
-          <label htmlFor="item-memory" className="block text-sm font-medium mb-1">Souvenir (optionnel)</label>
-          <textarea
-            id="item-memory"
-            name="memory"
-            value={values.memory}
-            onChange={onChange}
-            rows={2}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
+        <DesignField label="Nom de l'article">
+          <input
+            id="item-name"
+            required
+            maxLength={255}
+            value={values.name}
+            onChange={(e) => patch('name', e.target.value)}
+            placeholder="Ex. Pull noir"
           />
-        </div>
-
-        <div>
-          <label htmlFor="item-notes" className="block text-sm font-medium mb-1">Notes (optionnel)</label>
-          <textarea
-            id="item-notes"
-            name="notes"
-            value={values.notes}
-            onChange={onChange}
-            rows={2}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
-          />
-        </div>
-
-        <div className="mt-6">
-          <button
-            type="submit"
-            className="w-full px-4 py-2 bg-rose-500 text-white rounded hover:bg-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+        </DesignField>
+        <DesignField label="Type">
+          <select
+            id="item-type"
+            value={values.type}
+            onChange={(e) => patch('type', e.target.value as ItemFormValues['type'])}
           >
-            Enregistrer
-          </button>
-        </div>
-      </form>
-    </div>
+            {Object.entries({
+              pull: 'Pull',
+              tshirt: 'T-shirt',
+              pantalon: 'Pantalon',
+              jupe: 'Jupe',
+              robe: 'Robe',
+              chaussure: 'Chaussure',
+              sac: 'Sac',
+              autre: 'Autre',
+            }).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </DesignField>
+        <DesignField label="Couleur">
+          <input
+            value={values.color}
+            onChange={(e) => patch('color', e.target.value)}
+            placeholder="Couleur (facultatif)"
+            maxLength={60}
+          />
+        </DesignField>
+        <DesignField label="Propriétaire">
+          <select
+            disabled={editing || auth.activeProfile?.role === 'child'}
+            value={values.ownerProfileId ?? ''}
+            onChange={(e) => patch('ownerProfileId', Number(e.target.value))}
+          >
+            <option value="">Profil actif</option>
+            {auth.profiles.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </DesignField>
+        <ErrorMessage error={error} />
+        <button className="design-link design-back" type="button" onClick={onClose}>
+          Annuler
+        </button>
+      </DesignForm>
+    </DesignPage>
   )
 }

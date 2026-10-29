@@ -38,7 +38,9 @@ const SCAN_RESULT = {
   confidence: 0.85,
 }
 
-function renderScanner(handler: (url: string, init?: RequestInit) => { status: number; body: unknown }) {
+function renderScanner(
+  handler: (url: string, init?: RequestInit) => { status: number; body: unknown },
+) {
   stubFetch(handler)
   render(
     <MemoryRouter initialEntries={['/scanner']}>
@@ -110,6 +112,7 @@ describe('ScanPage', () => {
     const form = screen.getByLabelText("Nom de l'article").closest('form')
     if (form === null) throw new Error('Item form not found')
     fireEvent.submit(form)
+    fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer l’article' }))
 
     await waitFor(() => {
       expect(screen.getByText(/dressing est encore vide/)).toBeInTheDocument()
@@ -175,8 +178,14 @@ describe('ScanPage', () => {
     const stream = { getTracks: () => [{ stop }] } as unknown as MediaStream
     const getUserMedia = vi.fn(async () => stream)
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
-    Object.defineProperty(HTMLVideoElement.prototype, 'videoWidth', { configurable: true, value: 640 })
-    Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', { configurable: true, value: 480 })
+    Object.defineProperty(HTMLVideoElement.prototype, 'videoWidth', {
+      configurable: true,
+      value: 640,
+    })
+    Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', {
+      configurable: true,
+      value: 480,
+    })
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D)
@@ -267,7 +276,9 @@ describe('ScanPage', () => {
       target: { files: [new File(['photo'], 'jupe.jpg', { type: 'image/jpeg' })] },
     })
 
-    expect(await screen.findByText(/L’analyse photo gratuite est temporairement indisponible/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/L’analyse photo gratuite est temporairement indisponible/),
+    ).toBeInTheDocument()
     expect(screen.getByAltText('Photo conservée pour la saisie manuelle')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Saisir l’article manuellement' }))
 
@@ -278,6 +289,7 @@ describe('ScanPage', () => {
     const form = nameInput.closest('form')
     if (form === null) throw new Error('Item form not found')
     fireEvent.submit(form)
+    fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer l’article' }))
 
     await waitFor(() => expect(saved['name']).toBe('Jupe bleue'))
     expect(saved['photos']).toEqual(['data:image/jpeg;base64,preview'])

@@ -21,6 +21,7 @@ export interface ItemSummary {
   material: string | null
   condition: ItemCondition
   status: ItemStatus
+  visibility?: string
   qrToken: string
   memory: string | null
   notes: string | null
@@ -38,6 +39,7 @@ export interface ItemListResult {
 }
 
 export interface CreateItemPayload {
+  ownerProfileId?: number
   name: string
   type?: string
   category?: string

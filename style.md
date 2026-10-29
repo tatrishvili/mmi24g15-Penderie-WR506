@@ -114,3 +114,20 @@ use white text on `--creme` or `--rose-*`.
   `/inscription`; an unknown step redirects to `/`.
 - Photography, mascots and the logo are illustration assets in `frontend/src/images/`; icons come
   from `lucide-react` and inherit `currentColor`.
+
+## Household and social frames (29 October 2026)
+
+The 25 current frames and their route/action coverage are documented in
+[FIGMA_IMPLEMENTATION.md](./FIGMA_IMPLEMENTATION.md). `DesignPage`, `DesignRow`,
+`DesignTile`, `DesignField` and `DesignNotice` extend the existing `.auth-page` shell
+and `.btn` conventions. They use the existing palette and Baloo Chettan 2: household
+headings 32px centered, social headings 33px left aligned, 15px subtitles, 17px row
+titles, 13px row details, 49px inputs, 60px household and 56px social buttons.
+The reference shell is 402×874 with 24px gutters, expands to 560px on desktop,
+and scrolls for real data, extra fields or error states. CSS is scoped to the new
+screens; original welcome/auth screens retain their own geometry.
+
+`frontend/src/images/figma/` contains the actual frame SVGs, including the manually
+changed room illustrations, plus outlined exports of the three original symbol
+illustrations. `frameAssets.ts` preserves the per-frame asset mapping. Dynamic
+photos remain user data. No full-screen design screenshot is used in the UI.

@@ -20,9 +20,8 @@ Cypress.Commands.add('registerViaUi', () => {
   cy.get('#register-email').type(email)
   cy.get('#register-birth-date').type('2000-01-02')
   cy.get('#register-password').type(password)
-  cy.get('#register-password-confirm').type(password)
   cy.intercept('POST', '**/api/auth/register').as('registerSubmit')
-  cy.contains('button', "S'inscrire").click()
+  cy.get('button.register__submit').click()
   cy.wait('@registerSubmit')
   cy.contains('h1', 'Vérifiez votre e-mail').should('be.visible')
 
@@ -99,5 +98,5 @@ Cypress.Commands.add('openManualEntry', () => {
   )
   cy.wait('@scanFail')
   cy.contains('button', 'Saisir l’article manuellement').click()
-  cy.contains('h2', 'Nouvel article').should('be.visible')
+  cy.contains('h1', 'Nouvel article').should('be.visible')
 })

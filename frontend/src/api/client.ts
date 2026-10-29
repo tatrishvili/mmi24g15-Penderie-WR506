@@ -12,11 +12,11 @@ export class ApiError extends Error {
   readonly violations: Record<string, string>
 
   constructor(status: number, body: ApiErrorBody | null) {
-    super(body?.error.message ?? `Erreur inattendue (${status})`)
+    super(body?.error?.message ?? `Erreur inattendue (${status})`)
     this.name = 'ApiError'
     this.status = status
-    this.code = body?.error.code ?? 'unknown'
-    this.violations = body?.error.violations ?? {}
+    this.code = body?.error?.code ?? 'unknown'
+    this.violations = body?.error?.violations ?? {}
   }
 }
 

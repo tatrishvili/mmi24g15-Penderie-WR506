@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './useAuth.ts'
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { status } = useAuth()
+  const location = useLocation()
 
   if (status === 'loading') {
     return (
@@ -14,7 +15,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (status === 'anonymous') {
-    return <Navigate to="/connexion" replace />
+    return (
+      <Navigate to="/connexion" state={{ from: location.pathname + location.search }} replace />
+    )
   }
 
   return <>{children}</>

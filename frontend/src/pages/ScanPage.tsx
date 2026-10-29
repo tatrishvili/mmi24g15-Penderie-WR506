@@ -1,7 +1,8 @@
+import scanSymbol from '../images/figma/scan-symbol.svg'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, ImagePlus, RotateCcw, X } from 'lucide-react'
+import { DesignPage, ErrorMessage } from '../components/DesignPage.tsx'
 import { scan } from '../api/scan.ts'
 import type { ScanResult } from '../api/scan.ts'
 import { createItem } from '../api/items.ts'
@@ -14,15 +15,17 @@ import { ItemForm } from './ItemFormPage.tsx'
 
 type Phase = 'shoot' | 'result' | 'form'
 
-const ITEM_TYPES = ['pull', 'tshirt', 'pantalon', 'jupe', 'robe', 'chaussure', 'sac', 'autre'] as const
-const ITEM_CONDITIONS = [
-  'neuf',
-  'comme_neuf',
-  'tres_bon',
-  'bon',
-  'a_reparer',
-  'abime',
+const ITEM_TYPES = [
+  'pull',
+  'tshirt',
+  'pantalon',
+  'jupe',
+  'robe',
+  'chaussure',
+  'sac',
+  'autre',
 ] as const
+const ITEM_CONDITIONS = ['neuf', 'comme_neuf', 'tres_bon', 'bon', 'a_reparer', 'abime'] as const
 
 function scanFailureMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -65,7 +68,9 @@ export default function ScanPage() {
     if (video !== null && cameraStream !== null) {
       video.srcObject = cameraStream
       void video.play().catch(() => {
-        setCameraError('Impossible de démarrer l’aperçu caméra. Vérifiez les autorisations de votre navigateur.')
+        setCameraError(
+          'Impossible de démarrer l’aperçu caméra. Vérifiez les autorisations de votre navigateur.',
+        )
       })
     }
 
@@ -86,7 +91,9 @@ export default function ScanPage() {
     setScanError(null)
 
     if (navigator.mediaDevices?.getUserMedia === undefined) {
-      setCameraError('Caméra indisponible dans ce navigateur. Utilisez une connexion sécurisée (HTTPS ou localhost) ou choisissez une photo.')
+      setCameraError(
+        'Caméra indisponible dans ce navigateur. Utilisez une connexion sécurisée (HTTPS ou localhost) ou choisissez une photo.',
+      )
       return
     }
 
@@ -145,9 +152,11 @@ export default function ScanPage() {
       setPhase('result')
       if (unclear && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel()
-        window.speechSynthesis.speak(new SpeechSynthesisUtterance(
-          'Je ne distingue pas bien l’article. Placez-le en entier dans le cadre, sur un fond uni, puis reprenez la photo.',
-        ))
+        window.speechSynthesis.speak(
+          new SpeechSynthesisUtterance(
+            'Je ne distingue pas bien l’article. Placez-le en entier dans le cadre, sur un fond uni, puis reprenez la photo.',
+          ),
+        )
       }
     } catch (error) {
       setScanError(scanFailureMessage(error))
@@ -164,7 +173,9 @@ export default function ScanPage() {
     try {
       await analyzeImage(await resizeToBase64(file))
     } catch {
-      setScanError('La photo n’a pas pu être préparée. Choisissez une autre image ou saisissez l’article manuellement.')
+      setScanError(
+        'La photo n’a pas pu être préparée. Choisissez une autre image ou saisissez l’article manuellement.',
+      )
     } finally {
       event.target.value = ''
     }
@@ -193,7 +204,7 @@ export default function ScanPage() {
     void analyzeImage(image)
   }
 
-  function useManualEntry() {
+  function openManualEntry() {
     setResult({
       name: '',
       type: guide,
@@ -235,6 +246,7 @@ export default function ScanPage() {
     condition: string
     roomId: number | null
     storageLocationId: number | null
+    ownerProfileId?: number
   }) {
     setSaveError(null)
     setSaving(true)
@@ -242,6 +254,9 @@ export default function ScanPage() {
     try {
       await createItem({
         name: values.name,
+        ownerProfileId: values.ownerProfileId,
+        memory: values.memory,
+        notes: values.notes,
         type: values.type,
         category: values.category === '' ? undefined : values.category,
         roomId: values.roomId,
@@ -257,7 +272,9 @@ export default function ScanPage() {
       })
       navigate('/dressing')
     } catch (error) {
-      setSaveError(error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.')
+      setSaveError(
+        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+      )
     } finally {
       setSaving(false)
     }
@@ -286,157 +303,164 @@ export default function ScanPage() {
           notes: '',
         }
 
+  if (phase === 'form' && initialValues !== undefined)
+    return (
+      <>
+        <ErrorMessage error={saveError} />
+        <ItemForm
+          initialValues={initialValues}
+          busy={saving}
+          onSubmit={(values) => void onSave(values)}
+          onClose={() => {
+            setPhase('shoot')
+            void startCamera()
+          }}
+        />
+      </>
+    )
+
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1>Scanner un article</h1>
-
-        {phase === 'shoot' && (
-          <>
-            <p className="auth-sub">
-              Choisissez un type, prenez une photo, puis vérifiez les informations avant de l’enregistrer.
-            </p>
-            {cameraError === null && (
-              <p className="auth-sub" role="status">
-                La caméra démarre automatiquement. Placez un seul article en entier dans le cadre.
-              </p>
-            )}
-
-            <div className="guide-scroll" role="radiogroup" aria-label="Type d’article">
-              {GARMENT_TYPES.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={guide === item.value}
-                  className={guide === item.value ? 'guide-chip guide-chip--active' : 'guide-chip'}
-                  onClick={() => setGuide(item.value)}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            {cameraStream !== null ? (
-              <div className="scan-camera">
-                <div className={`scan-camera-preview scan-camera-preview--${guide}`}>
-                  <video ref={videoRef} autoPlay muted playsInline aria-label="Aperçu de la caméra" />
-                  <ScanFrameOverlay type={guide} />
-                </div>
-                <div className="scan-camera-actions">
-                  <button type="button" className="btn btn-primary" onClick={capturePhoto}>
-                    <Camera size={18} aria-hidden="true" /> Prendre la photo
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={scanning}
-                    onClick={() => galleryInputRef.current?.click()}
-                  >
-                    <ImagePlus size={18} aria-hidden="true" /> Choisir depuis la galerie
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={stopCamera}>
-                    <X size={18} aria-hidden="true" /> Annuler
-                  </button>
-                </div>
-              </div>
+    <DesignPage
+      frame="160:219"
+      household
+      className="scanner-design"
+      title="Scanner un article"
+      subtitle="Prenez une photo ou choisissez un fichier."
+    >
+      {phase === 'shoot' && (
+        <>
+          <div
+            className="design-chips scanner-design__types"
+            role="radiogroup"
+            aria-label="Type d’article"
+          >
+            {GARMENT_TYPES.map((type) => (
+              <button
+                key={type.value}
+                role="radio"
+                aria-checked={guide === type.value}
+                aria-pressed={guide === type.value}
+                onClick={() => setGuide(type.value)}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+          <div className={`scanner-design__preview scanner-design__preview--${guide}`}>
+            {cameraStream ? (
+              <>
+                <video ref={videoRef} autoPlay muted playsInline aria-label="Aperçu de la caméra" />
+                <ScanFrameOverlay type={guide} />
+              </>
             ) : (
               <>
-                <div className="account-actions">
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    disabled={scanning}
-                    onClick={() => galleryInputRef.current?.click()}
-                  >
-                    <ImagePlus size={18} aria-hidden="true" /> Choisir depuis la galerie
-                  </button>
-                  {cameraError !== null && (
-                    <button type="button" className="btn btn-secondary" disabled={cameraLoading} onClick={() => void startCamera()}>
-                      <Camera size={18} aria-hidden="true" /> Réessayer la caméra
-                    </button>
-                  )}
-                </div>
+                <img className="scanner-design__symbol" src={scanSymbol} alt="" />
+                <p>Placez votre article dans le cadre</p>
               </>
             )}
-
-            <input
-              ref={galleryInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              aria-label="Choisir depuis la galerie"
-              onChange={(event) => void onFileSelected(event)}
-            />
-
-            {cameraLoading && <p role="status" className="auth-sub">Activation de la caméra…</p>}
-            {cameraError !== null && <p role="alert" className="form-error">{cameraError}</p>}
-            {scanning && <p role="status" className="auth-sub">Analyse de la photo…</p>}
-            {scanError !== null && (
-              <div className="scan-fallback">
-                <p role="alert" className="form-error">{scanError}</p>
-                {preview !== null && (
-                  <img src={preview} alt="Photo conservée pour la saisie manuelle" className="scan-preview" />
-                )}
-                <div className="account-actions">
-                  {preview !== null && (
-                    <button type="button" className="btn btn-primary" onClick={() => void analyzeImage(preview)} disabled={scanning}>
-                      <RotateCcw size={18} aria-hidden="true" /> Réessayer l’analyse
-                    </button>
-                  )}
-                  <button type="button" className="btn btn-secondary" onClick={useManualEntry}>
-                    Saisir l’article manuellement
+          </div>
+          <div className="scanner-design__actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={scanning || cameraLoading}
+              onClick={() => (cameraStream ? capturePhoto() : void startCamera())}
+            >
+              {cameraStream ? 'Prendre la photo' : 'Prendre une photo'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary scanner-design__gallery"
+              disabled={scanning}
+              onClick={() => galleryInputRef.current?.click()}
+            >
+              Choisir depuis la galerie
+            </button>
+            <button
+              type="button"
+              className="design-link"
+              onClick={() => {
+                stopCamera()
+                openManualEntry()
+              }}
+            >
+              Saisir manuellement
+            </button>
+          </div>
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            aria-label="Choisir depuis la galerie"
+            onChange={(event) => void onFileSelected(event)}
+          />
+          {cameraLoading && <p role="status">Activation de la caméra…</p>}
+          <ErrorMessage error={cameraError} />
+          {scanning && <p role="status">Analyse de la photo…</p>}
+          {scanError && (
+            <div className="scan-fallback">
+              <ErrorMessage error={scanError} />
+              {preview && (
+                <img
+                  src={preview}
+                  alt="Photo conservée pour la saisie manuelle"
+                  className="scan-preview"
+                />
+              )}
+              <div className="design-stack">
+                {preview && (
+                  <button
+                    className="btn btn-primary"
+                    disabled={scanning}
+                    onClick={() => void analyzeImage(preview)}
+                  >
+                    Réessayer l’analyse
                   </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {phase === 'result' && preview !== null && result !== null && (
-          <>
-            <img src={preview} alt="Article photographié" className="scan-preview" />
-            {unclearResult && (
-              <div className="scan-quality-warning" role="status">
-                <p>L’article n’est pas assez net ou n’est pas entièrement dans le cadre. Vérifiez son placement avant de continuer.</p>
-                <button type="button" className="btn btn-secondary" onClick={reset}>
-                  Reprendre la photo
+                )}
+                <button className="btn btn-secondary" onClick={openManualEntry}>
+                  Saisir l’article manuellement
                 </button>
               </div>
-            )}
-            <ul className="scan-result">
-              <li><span>Nom</span><strong>{result.name === '' ? '—' : result.name}</strong></li>
-              <li><span>Type</span><strong>{result.type}</strong></li>
-              <li><span>Couleur</span><strong>{result.color === '' ? '—' : result.color}</strong></li>
-              <li><span>Marque</span><strong>{result.brand === '' ? '—' : result.brand}</strong></li>
-              <li><span>Confiance</span><strong>{Math.round(result.confidence * 100)} %</strong></li>
-            </ul>
-            <div className="account-actions">
-              <button type="button" className="btn btn-primary" onClick={() => setPhase('form')}>
-                Vérifier et compléter
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={reset}>
-                Scanner une autre photo
-              </button>
             </div>
-          </>
-        )}
-
-        {phase === 'form' && initialValues !== undefined && (
-          <>
-            {saveError !== null && <p role="alert" className="form-error">{saveError}</p>}
-            {saving ? (
-              <p className="auth-sub">Enregistrement…</p>
-            ) : (
-              <ItemForm
-                initialValues={initialValues}
-                onSubmit={(values) => void onSave(values)}
-                onClose={() => setPhase(result?.confidence === 0 ? 'shoot' : 'result')}
-              />
-            )}
-          </>
-        )}
-      </div>
-    </div>
+          )}
+        </>
+      )}
+      {phase === 'result' && preview && result && (
+        <>
+          <img src={preview} alt="Article photographié" className="scan-preview" />
+          {unclearResult && (
+            <p role="status">
+              L’article n’est pas assez net ou n’est pas entièrement dans le cadre. Vérifiez son
+              placement avant de continuer.
+            </p>
+          )}
+          <ul className="scan-result">
+            <li>
+              <span>Nom</span>
+              <strong>{result.name || 'À renseigner'}</strong>
+            </li>
+            <li>
+              <span>Marque</span>
+              <strong>{result.brand || 'Inconnue'}</strong>
+            </li>
+            <li>
+              <span>Couleur</span>
+              <strong>{result.color || 'À renseigner'}</strong>
+            </li>
+            <li>
+              <span>Confiance</span>
+              <strong>{Math.round(result.confidence * 100)} %</strong>
+            </li>
+          </ul>
+          <button className="btn btn-primary" onClick={() => setPhase('form')}>
+            Vérifier et compléter
+          </button>
+          <button className="btn btn-secondary" onClick={reset}>
+            Scanner une autre photo
+          </button>
+        </>
+      )}
+    </DesignPage>
   )
 }

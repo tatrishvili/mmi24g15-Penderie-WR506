@@ -202,3 +202,12 @@ Recommended next steps:
 4. Add reviewed batch scanning, then invitations, lending, and sharing with their full permission and history flows.
 
 The current working slices and known security/product gaps are tracked in [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) and [WORKFLOWS.md](./WORKFLOWS.md).
+
+### Current Figma household and social screens
+
+See [FIGMA_IMPLEMENTATION.md](./FIGMA_IMPLEMENTATION.md) for all 25 frame-to-route
+mappings, implemented workflows, additive migrations, privacy boundaries and
+remaining backend work. Start at `/foyer` or `/profil` after signing in. On another
+environment, apply pending migrations before using collections, sharing or loans.
+
+Latest session handover: [session.29.10.2026.md](./session.29.10.2026.md). Read it first when resuming the 25-page Figma implementation.

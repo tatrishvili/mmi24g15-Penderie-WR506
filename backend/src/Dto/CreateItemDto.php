@@ -38,6 +38,8 @@ final class CreateItemDto
         public ?string $memory = null,
         public ?string $notes = null,
         public ?array $photos = null,
+        #[Assert\Range(min: 1)]
+        public ?int $ownerProfileId = null,
     ) {
     }
 
@@ -47,6 +49,7 @@ final class CreateItemDto
     public static function fromArray(array $data): self
     {
         return new self(
+            ownerProfileId: self::intOrNull($data['ownerProfileId'] ?? null),
             name: self::stringOrNull($data['name'] ?? null),
             type: self::stringOrNull($data['type'] ?? null),
             category: self::stringOrNull($data['category'] ?? null),

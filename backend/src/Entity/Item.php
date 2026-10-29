@@ -100,6 +100,19 @@ class Item
         $this->photos = new ArrayCollection();
     }
 
+    #[ORM\Column(length: 20, options: ['default' => 'private'])]
+    private string $visibility = 'private';
+
+    public function getVisibility(): string
+    {
+        return $this->visibility;
+    }
+
+    public function setVisibility(string $visibility): void
+    {
+        $this->visibility = $visibility;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
