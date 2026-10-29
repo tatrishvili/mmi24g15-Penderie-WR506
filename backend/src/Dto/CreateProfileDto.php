@@ -15,7 +15,7 @@ final class CreateProfileDto
         #[Assert\NotBlank(message: 'Name is required.')]
         #[Assert\Length(min: 1, max: 100)]
         public ?string $name = null,
-        #[Assert\Length(max: 255)]
+        #[Assert\Length(max: 6)]
         public ?string $pin = null,
         #[Assert\Length(max: 180)]
         public ?string $email = null,

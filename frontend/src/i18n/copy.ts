@@ -1,0 +1,204 @@
+export interface AppCopy {
+  childSignInNotice: string
+  unexpectedError: string
+  nav: {
+    friends: string
+  }
+  profiles: {
+    pinLabel: string
+    pinNote: string
+  }
+  errors: {
+    notFound: string
+    conflict: string
+    forbidden: string
+    invalid: string
+    rateLimited: string
+  }
+  friends: {
+    title: string
+    tagline: string
+    addTitle: string
+    addDescription: string
+    usernameLabel: string
+    usernamePlaceholder: string
+    send: string
+    follow: string
+    followed: string
+    following: string
+    followers: string
+    noFollowers: string
+    noFollowing: string
+    unfollow: string
+    sending: string
+    sent: string
+    incoming: string
+    noIncoming: string
+    outgoing: string
+    noOutgoing: string
+    mine: string
+    noFriends: string
+    accept: string
+    decline: string
+    cancel: string
+    remove: string
+    adultOnly: string
+    loading: string
+  }
+  account: {
+    usernameTitle: string
+    usernameDescription: string
+    usernameLabel: string
+    usernamePlaceholder: string
+    usernameSave: string
+    usernameSaving: string
+    usernameSaved: string
+    usernameTaken: string
+    usernameError: string
+  }
+  rooms: {
+    addRoom: string
+    chooseRoom: string
+    customOption: string
+    customNameLabel: string
+    customNamePlaceholder: string
+    presets: string[]
+  }
+}
+
+const copies: Record<'fr' | 'en', AppCopy> = {
+  fr: {
+    childSignInNotice: 'Les enfants ne peuvent pas encore se connecter depuis un autre appareil. Un parent peut ouvrir leur profil sur un appareil déjà connecté.',
+    unexpectedError: 'Une erreur inattendue est survenue.',
+    nav: { friends: 'Amis' },
+    profiles: {
+      pinLabel: 'Code PIN pour cet appareil (optionnel)',
+      pinNote: 'Ce code protège le changement de profil sur cet appareil. Il ne permet pas une connexion sur un autre appareil.',
+    },
+    errors: {
+      notFound: 'Aucun compte vérifié trouvé avec ce nom d’utilisateur. Vérifiez son orthographe et demandez à votre ami de confirmer son adresse e-mail.',
+      conflict: 'Cette demande ou relation existe déjà, ou n’est plus disponible.',
+      forbidden: 'Cette action est réservée aux comptes adultes vérifiés.',
+      invalid: 'Vérifiez le nom d’utilisateur saisi.',
+      rateLimited: 'Trop d’actions en peu de temps. Attendez un moment avant de réessayer.',
+    },
+    friends: {
+      title: 'Amis',
+      tagline: 'Votre cercle de confiance',
+      addTitle: 'Ajouter un ami',
+      addDescription: 'Saisissez son nom d’utilisateur (visible dans « Mon compte », pas son e-mail). Vous pouvez le suivre directement ou lui envoyer une demande d’amitié : il sera suivi tout de suite, et vous deviendrez amis s’il accepte. Son adresse e-mail doit être confirmée.',
+      usernameLabel: 'Nom d’utilisateur',
+      usernamePlaceholder: 'Ex. camille_92',
+      send: 'Envoyer la demande',
+      follow: 'Suivre',
+      followed: 'Vous suivez maintenant ce compte.',
+      following: 'Abonnements',
+      followers: 'Abonnés',
+      noFollowers: 'Aucun abonné pour le moment.',
+      noFollowing: 'Vous ne suivez personne pour le moment.',
+      unfollow: 'Ne plus suivre',
+      sending: 'Envoi…',
+      sent: 'Demande envoyée.',
+      incoming: 'Demandes reçues',
+      noIncoming: 'Aucune demande reçue pour le moment.',
+      outgoing: 'Demandes envoyées',
+      noOutgoing: 'Aucune demande en attente.',
+      mine: 'Mes amis',
+      noFriends: 'Vos amis apparaîtront ici après acceptation.',
+      accept: 'Accepter la demande',
+      decline: 'Refuser la demande',
+      cancel: 'Annuler la demande',
+      remove: 'Retirer cet ami',
+      adultOnly: 'Les demandes d’amitié sont réservées aux comptes adultes.',
+      loading: 'Chargement…',
+    },
+    account: {
+      usernameTitle: 'Nom d’utilisateur',
+      usernameDescription: 'Votre ancien compte n’a pas encore de nom d’utilisateur. Choisissez-en un pour que vos amis puissent vous trouver. Vous ne pourrez plus le modifier.',
+      usernameLabel: 'Nom d’utilisateur',
+      usernamePlaceholder: 'Ex. penderie_test',
+      usernameSave: 'Enregistrer',
+      usernameSaving: 'Enregistrement…',
+      usernameSaved: 'Nom d’utilisateur enregistré.',
+      usernameTaken: 'Ce nom d’utilisateur est déjà utilisé. Choisissez-en un autre.',
+      usernameError: 'Impossible d’enregistrer le nom d’utilisateur. Réessayez.',
+    },
+    rooms: {
+      addRoom: 'Ajouter une pièce',
+      chooseRoom: 'Choisir une pièce',
+      customOption: 'Autre (nom personnalisé)',
+      customNameLabel: 'Nom personnalisé de la pièce',
+      customNamePlaceholder: 'Ex. Atelier couture',
+      presets: ['Dressing', 'Salon', 'Chambre', 'Cuisine', 'Salle de bain', 'Entrée', 'Bureau', 'Garage', 'Cave', 'Grenier', 'Buanderie'],
+    },
+  },
+  en: {
+    childSignInNotice: 'Children cannot sign in from another device yet. A parent can open their profile on an already signed-in device.',
+    unexpectedError: 'Something unexpected happened.',
+    nav: { friends: 'Friends' },
+    profiles: {
+      pinLabel: 'PIN for this device (optional)',
+      pinNote: 'This PIN protects profile switching on this device. It cannot be used to sign in on another device.',
+    },
+    errors: {
+      notFound: 'No verified account was found with that username. Check the spelling and ask your friend to verify their email address.',
+      conflict: 'This request or relationship already exists, or is no longer available.',
+      forbidden: 'This action is for verified adult accounts only.',
+      invalid: 'Check the username you entered.',
+      rateLimited: 'Too many actions in a short time. Wait a little before trying again.',
+    },
+    friends: {
+      title: 'Friends',
+      tagline: 'Your circle of trust',
+      addTitle: 'Add a friend',
+      addDescription: 'Enter their username (shown in My account, not their email). Follow them directly or send a friend request: the request follows them immediately, and you become friends if they accept. Their email must be verified.',
+      usernameLabel: 'Username',
+      usernamePlaceholder: 'e.g. camille_92',
+      send: 'Send request',
+      follow: 'Follow',
+      followed: 'You are now following this account.',
+      following: 'Following',
+      followers: 'Followers',
+      noFollowers: 'No followers yet.',
+      noFollowing: 'You are not following anyone yet.',
+      unfollow: 'Unfollow',
+      sending: 'Sending…',
+      sent: 'Request sent.',
+      incoming: 'Received requests',
+      noIncoming: 'No requests received yet.',
+      outgoing: 'Sent requests',
+      noOutgoing: 'No pending requests.',
+      mine: 'My friends',
+      noFriends: 'Friends will appear here after they accept.',
+      accept: 'Accept request',
+      decline: 'Decline request',
+      cancel: 'Cancel request',
+      remove: 'Remove friend',
+      adultOnly: 'Friend requests are for adult accounts only.',
+      loading: 'Loading…',
+    },
+    account: {
+      usernameTitle: 'Username',
+      usernameDescription: 'Your existing account does not have a username yet. Choose one so friends can find you. You will not be able to change it later.',
+      usernameLabel: 'Username',
+      usernamePlaceholder: 'e.g. penderie_test',
+      usernameSave: 'Save username',
+      usernameSaving: 'Saving…',
+      usernameSaved: 'Username saved.',
+      usernameTaken: 'That username is already in use. Choose another one.',
+      usernameError: 'Could not save the username. Please try again.',
+    },
+    rooms: {
+      addRoom: 'Add a room',
+      chooseRoom: 'Choose a room',
+      customOption: 'Other (custom name)',
+      customNameLabel: 'Custom room name',
+      customNamePlaceholder: 'e.g. Sewing room',
+      presets: ['Dressing room', 'Living room', 'Bedroom', 'Kitchen', 'Bathroom', 'Entryway', 'Office', 'Garage', 'Cellar', 'Attic', 'Laundry room'],
+    },
+  },
+}
+
+export function getCopy(): AppCopy {
+  return document.documentElement.lang.toLowerCase().startsWith('en') ? copies.en : copies.fr
+}

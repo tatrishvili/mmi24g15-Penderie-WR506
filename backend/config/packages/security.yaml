@@ -33,10 +33,6 @@ security:
                 max_attempts: 5
                 interval: '1 minute'
 
-            # Standalone child login: household slug -> profile -> PIN (Mode C).
-            custom_authenticators:
-                - App\Security\PinAuthenticator
-
             logout:
                 path: /api/auth/logout
                 # The JSON 204 response is set by App\Security\JsonLogoutListener
@@ -46,9 +42,9 @@ security:
     access_control:
         - { path: ^/api/health, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/resend-verification, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/profile-pin, roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/households, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED }
 
 when@test:

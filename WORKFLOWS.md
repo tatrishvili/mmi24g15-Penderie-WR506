@@ -5,15 +5,20 @@ Use this document for the intended user journeys. [PRODUCT_SPEC.md](./PRODUCT_SP
 ## 1. First visit and adult registration
 
 Registration should be quick. It must not ask someone to create a family before they can use their own inventory.
+For the repeatable local test account and browser walkthrough, follow [README.md](./README.md#repeatable-local-smoke-test).
 
-1. The adult enters an email address and password and accepts the applicable terms/privacy notices.
-2. Penderie stores a short-lived pending registration (not an active account) and sends a single-use, expiring verification link. Store the password and token securely as hashes; do not permit inventory access yet.
-3. The user clicks the link. That action verifies the email and completes account creation; no separate approval or second registration is needed.
-4. In the same successful flow, Penderie signs the user in, automatically creates a private personal space with a default owner profile and default place, and redirects straight into the app. Do not ask for a household name, room list, partner, or child here.
-5. The user can add an item immediately. Display name and space name can be added or changed later in Settings.
-6. Offer optional family setup in **Settings → Family and profiles** when the user is ready.
+1. The adult chooses a unique username, enters an email address and date of birth, and chooses a password. Usernames are case-insensitive (stored lowercase), 3–30 letters, numbers, or underscores. Email remains the sign-in identifier.
+2. Penderie calculates the self-declared age from the date of birth and rejects registration if the user is under 18. This is an age gate only: it does not verify identity or prevent someone from entering a false date. Minors use a parent-managed child profile.
+3. Penderie stores a short-lived pending registration with the username, birth date, password hash, and hash of its single-use verification token; the email contains only the verification link/token, never the password or birth date. A pending registration is not an active account and cannot access inventory.
+4. The user opens the link and explicitly confirms on the Penderie page. The API must use POST for confirmation so email-security scanners that prefetch links cannot consume the one-time token.
+5. Confirmation verifies the email and creates the account; no separate approval or second registration is needed. The birth date is retained for the registration age rule but omitted from auth responses and profile display.
+6. In the same successful flow, Penderie signs the user in, automatically creates the private **Mon dressing** space with the **Moi** owner profile and a default **Maison** place, and redirects straight into the app. Do not ask for a household name, room list, partner, or child here.
+7. The user can add an item immediately. The chosen username is visible on the signed-in account page; sign-in continues to use email and password.
+8. Offer optional family setup in **Settings → Family and profiles** when the user is ready.
 
-If the email is delayed, provide a clear “resend verification” action with rate limiting. Verification links must be single-use, expire, and avoid exposing whether an email is already registered. A verified email is not 2FA.
+An existing verified account created before usernames were required may not have a username. Its owner can choose one once from **Mon compte**; use that username, not the account email, for friend requests.
+
+If the email is delayed, provide a clear “resend verification” action with rate limiting and a cooldown. Verification links must be single-use, expire, and avoid exposing whether an email is already registered. A verified email is not 2FA. Before production, review the legal basis, retention period, and deletion process for birth dates; this self-declared age gate is not verified age assurance.
 
 For registration, do not describe an “I am 18+” checkbox as age verification. Age assurance and parental/child consent need their own reviewed policy. Do not collect date of birth by default. A later adult 2FA setup is a separate security workflow: authenticator app plus recovery codes first; passkeys can follow.
 
@@ -28,6 +33,7 @@ For registration, do not describe an “I am 18+” checkbox as age verification
 5. The parent can view and manage the child's inventory, reset the child's credentials, revoke sessions, disable access, and archive/remove the child's items.
 
 Do not use a household slug plus a 4–6 digit PIN as the child's only internet sign-in. A short PIN may be an optional quick unlock on a trusted parent device; it must not grant adult permissions or replace a child account session on another device.
+The current app supports only this trusted-device profile unlock: the adult must already be signed in, choose a profile, and enter its optional PIN. The former public household-code/profile-list sign-in is intentionally unavailable. Children cannot yet sign in on a separate device; do not treat the current profile screen as a child account.
 
 ### Parent invites another adult
 
@@ -37,6 +43,17 @@ Do not use a household slug plus a 4–6 digit PIN as the child's only internet 
 4. The owner can remove the adult's membership and revoke access.
 
 Never ask the first adult to set or know another adult's password. The current “create partner with email/password” form is not the desired invitation workflow.
+
+### Adult friend requests
+
+1. A signed-in adult finds another adult by username and can follow them immediately. The target does not need to approve a follow.
+2. The adult may also send a friend request. Sending the request follows the recipient, and the recipient sees the pending request without either account's email being disclosed.
+3. The recipient can accept to become mutual friends or decline. Declining the request does not remove the sender as a follower.
+4. Either person can unfollow. Blocking prevents future follows and friend requests.
+5. Following or friendship alone does not show items, profiles, collections, places, or storage locations. Sharing remains a separate, explicit, scoped action. Child profiles cannot follow or send/accept friend requests.
+6. Ordinary follow and friend-request use must not hit an arbitrary low hourly quota. Duplicate actions should be safe, invalid lookups should not consume new-relationship allowance, and any targeted anti-abuse delay must explain when the action can be retried.
+
+The app now implements direct follow/unfollow and follower/following lists alongside friend requests. Account search/discovery and blocking/reporting remain to be implemented. Apply the latest database migration before testing follows. See [FRIENDS_AND_FOLLOWERS.md](./FRIENDS_AND_FOLLOWERS.md) for the observed problems and acceptance checks.
 
 ## 3. Sign in, switch profiles, and enforce permissions
 
@@ -61,6 +78,8 @@ The owner profile answers **whose item?**. Category answers **what is it?**. Pla
 
 ## 5. Places, rooms, storage, and categories
 
+Manage locations from **Lieux** in the app, independently from account registration or family setup. Add one or more places, add rooms under a place, then add storage units and nested shelves/boxes under a room. Item entry may stop without a location; users can organize the location tree first or add an item immediately and assign its location later.
+
 Use an optional location path:
 
 ```text
@@ -74,6 +93,7 @@ Place (Home)
 - A household can have more than one physical place.
 - Rooms belong to a place. Storage locations belong to a room or parent storage location.
 - A storage location can be nested, e.g. `Wardrobe → Shelf 2 → Box 4`.
+- Room creation offers common presets (dressing room, living room, bedroom, kitchen, bathroom, entrance, office, garage, cellar, attic, laundry room) plus a custom room name. Presets are suggestions only; users can choose any name.
 - An item has at most one current location; unknown/not stored yet is valid.
 - Categories form a separate optional hierarchy, e.g. `Clothing → Tops → Sweaters`.
 - Moving an item changes its current location but does not erase its previous loan or activity history.
@@ -83,14 +103,15 @@ Place (Home)
 
 ### Single-item scan (first dependable milestone)
 
-1. The user chooses the object/garment type and, if useful, selects the intended owner and location.
-2. The app explains how to frame one item. A decorative guide shown before opening the native camera is **not** a live camera overlay; if a live framing overlay is required, implement an in-app camera preview and validate camera permissions/device behavior separately.
-3. The user captures or selects one image.
-4. The client resizes/compresses the image and sends it to the backend. The OpenRouter key stays on the backend.
-5. The backend validates the image and sends it to the configured vision provider.
-6. The app displays the image and an editable draft. Clearly mark uncertain/unknown fields; do not guess condition, exact category, brand, owner, price, purchase date, or location when the image cannot establish them.
-7. The user reviews/corrects the draft and confirms. Only then does Penderie persist the item and photo.
-8. If analysis fails, preserve the photo and offer manual entry with a clear error. Never show blank fields as a successful AI identification.
+1. The user chooses one of four hints—T-shirt, trousers, skirt, or other/object—and, if useful, selects the intended owner and location.
+2. Opening the scanner requests the device camera automatically and shows a live in-app preview; no extra camera-open action is required. Camera denial/unavailability is explained, and the separate gallery action remains available both while the preview is active and when the camera cannot start.
+3. A simple visual frame matches the selected hint and reminds the user to fit one complete object in view. It is framing guidance only, not real-time object detection or a guarantee that the photo is clear.
+4. The user captures one image in the live preview or separately selects an image from the gallery.
+5. The client resizes/compresses the image and sends it to the backend. The OpenRouter key stays on the backend.
+6. The backend validates the image and sends it to the configured vision provider.
+7. The app displays the image and an editable draft. Clearly mark uncertain/unknown fields; do not guess condition, exact category, brand, owner, price, purchase date, or location when the image cannot establish them.
+8. The user reviews/corrects the draft and confirms. Only then does Penderie persist the item and photo; they can assign its optional room/storage path in the same form.
+9. If analysis fails or the free provider is rate-limited, preserve the photo and offer retry or manual entry with a clear error. Do not require a paid provider and never show blank fields as a successful AI identification.
 
 ### Batch scan (after the single-item path works)
 
@@ -142,24 +163,23 @@ This describes the repository snapshot, not a claim of production readiness:
 
 | Area | Current state / gap |
 | --- | --- |
-| Adult registration | Email/password flow exists, but it signs in immediately and then asks for first name and household name. The frontend's “18+” checkbox is not sent to the API. Email ownership verification is not implemented. |
+| Adult registration | Unique username, self-declared birth date with an 18+ registration gate, pending email registration, single-use confirmation, rate-limited resend, and automatic private-space setup are implemented. Email remains the login identifier and the birth date is not returned by auth APIs. This does not verify age. Delivery uses Mailpit locally or a configured Symfony mail transport; a verified production sender/domain is still needed before real delivery. |
 | Child access | Profile PIN login exists with a 4–6 digit PIN and IP-based throttling. It is not the intended secure own-device credential flow. Public household/profile discovery and rate limits do not replace account-level security. |
 | Authorization | Item endpoints are household-scoped, while item ownership is stored on a profile. Current list/update/delete paths do not consistently enforce child-to-own-profile access; fix and test this before describing child access as secure. |
 | Permission matrix | A pure resolver and tests exist, but tests currently allow a stranger/link holder with a COMMENT grant to comment and apply PERSONAL as an absolute veto. Both conflict with the agreed verified-comment and parent/guardian-management rules; see [PERMISSIONS.md](./PERMISSIONS.md). |
-| Item model | Basic items/photos/QR exist. Category, rooms, and hierarchical storage are not yet wired end-to-end through the item entity, API, and UI. |
-| Scan capture | The page has a garment guide and opens the device's native camera/gallery picker. The guide is not overlaid on a live in-app camera preview. |
-| Scan provider/errors | OpenRouter integration exists. In the current client, missing API configuration or unparsable model output can return an empty success-shaped result; unknown condition can become “damaged”. This can look like scan succeeded when it did not. |
-| Scan persistence | The form/scan flow exists, but fields such as category/type are not all persisted by the current item model/API. |
-| Places and batch scan | The complete place → room → nested storage workflow and batch scan are future work. |
-| Email verification and 2FA | Neither flow is implemented. |
+| Item model and locations | Optional type/category and room/nested storage assignment are wired through item persistence, household-scoped APIs, forms, inventory display, and the Lieux manager. The hierarchy migration is applied to the current local development database; existing deployments must run pending migrations before using these endpoints. |
+| Scan capture | Opening the scanner requests the in-app camera automatically. A selected T-shirt/trousers/skirt/object hint updates the visual framing guide; gallery selection is available while the camera preview is active. This guide is not live object detection and requires browser camera permission on HTTPS or localhost. |
+| Scan provider/errors | Provider errors and temporary rate limits remain explicit; photos can be retried or used for manual entry. AI assistance is optional and no paid provider is required for item entry. The user reviews all suggestions before saving. |
+| Places and batch scan | Place → room → nested storage is implemented as an optional single-item location workflow. Batch scan remains future work. |
+| Email verification and 2FA | Email confirmation is implemented; adult 2FA and its recovery workflow are not. |
 | Loans, user-facing sharing, sale, outfits | Future work unless a complete persistence/API/UI/permission flow is added. |
 
 ## 11. Recommended build order
 
 1. Agree and implement personal-first verified adult account and automatic private space.
 2. Secure the existing item/photo endpoints and finish core item create/list/detail/edit/archive/search.
-3. Add optional category and place → room → storage with migrations and per-item assignment.
-4. Make the single-item scan honest and dependable: configuration checks, real failures, validated response, editable draft, confirmed persistence.
+3. Run and verify pending place → room → nested storage migrations in each target deployment; the current local development database is already migrated.
+4. Continue hardening the single-item scan: configuration checks, real failures, validated response, editable draft, confirmed persistence.
 5. Implement parent-authorized child credentials and object-level permissions before enabling child device sign-in.
 6. Add adult invitation/acceptance and session revocation.
 7. Add reviewed batch scanning, then lending/return.

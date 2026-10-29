@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
+use App\Dto\CreateHouseholdDto;
 use App\Dto\CreateProfileDto;
 use App\Dto\RegisterDto;
-use App\Entity\Household;
 use App\Entity\Profile;
 use App\Security\AuthResponse;
 use App\Service\AuthService;
@@ -18,9 +18,10 @@ use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -31,17 +32,47 @@ final class AuthController extends AbstractController
         private AuthService $auth,
         private CurrentActor $actor,
         private EntityManagerInterface $em,
-        #[Autowire(service: 'limiter.household_profiles')]
-        private RateLimiterFactory $profilesLimiter,
+        #[Autowire(service: 'limiter.pin')]
+        private RateLimiterFactory $pinLimiter,
+        #[Autowire(service: 'limiter.registration')]
+        private RateLimiterFactory $registrationLimiter,
+        #[Autowire(service: 'limiter.verification_resend')]
+        private RateLimiterFactory $verificationResendLimiter,
+        private UserPasswordHasherInterface $hasher,
     ) {
     }
 
     #[Route('/register', name: 'api_auth_register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
-        $payload = $this->auth->register(RegisterDto::fromArray($this->jsonBody($request)));
+        $this->enforceLimit($this->registrationLimiter, $request);
+        $this->auth->register(RegisterDto::fromArray($this->jsonBody($request)));
 
-        return new JsonResponse($payload, Response::HTTP_CREATED);
+        return new JsonResponse([
+            'message' => 'If the address can be registered, a verification email will be sent.',
+        ], Response::HTTP_ACCEPTED);
+    }
+
+    #[Route('/verify-email', name: 'api_auth_verify_email', methods: ['POST'])]
+    public function verifyEmail(Request $request): JsonResponse
+    {
+        $payload = $this->auth->verifyEmail(
+            $this->stringField($this->jsonBody($request), 'token'),
+            $request,
+        );
+
+        return new JsonResponse($payload);
+    }
+
+    #[Route('/resend-verification', name: 'api_auth_resend_verification', methods: ['POST'])]
+    public function resendVerification(Request $request): JsonResponse
+    {
+        $this->enforceLimit($this->verificationResendLimiter, $request);
+        $this->auth->resendVerification($this->stringField($this->jsonBody($request), 'email'));
+
+        return new JsonResponse([
+            'message' => 'If a pending registration exists for that address, a verification email will be sent.',
+        ], Response::HTTP_ACCEPTED);
     }
 
     /**
@@ -55,14 +86,39 @@ final class AuthController extends AbstractController
         throw new \LogicException('Intercepted by the firewall.');
     }
 
-    /**
-     * Intercepted by the firewall (PinAuthenticator): this body never runs.
-     * Same routing reason as login() above.
-     */
     #[Route('/profile-pin', name: 'api_auth_profile_pin', methods: ['POST'])]
-    public function profilePin(): JsonResponse
+    public function profilePin(Request $request): JsonResponse
     {
-        throw new \LogicException('Intercepted by the firewall.');
+        $user = $this->actor->requireUser();
+        $household = $this->actor->requireHousehold();
+        $data = $this->jsonBody($request);
+        $profileId = isset($data['profileId']) && \is_int($data['profileId']) ? $data['profileId'] : 0;
+        $pin = $this->stringField($data, 'pin');
+
+        if ($profileId < 1 || 1 !== preg_match('/^\d{4,6}$/', $pin)) {
+            throw new UnauthorizedHttpException('', 'Invalid profile or PIN.');
+        }
+
+        $limiterKey = implode(':', [$user->getId(), $profileId, (string) $request->getClientIp()]);
+        if (false === $this->pinLimiter->create($limiterKey)->consume()->isAccepted()) {
+            throw new TooManyRequestsHttpException('Too many PIN attempts. Please wait a minute and try again.');
+        }
+
+        $profile = $this->em->getRepository(Profile::class)->findOneBy([
+            'id' => $profileId,
+            'household' => $household,
+        ]);
+
+        if (!$profile instanceof Profile || null === $profile->getPinHash() || !$this->hasher->isPasswordValid($profile, $pin)) {
+            throw new UnauthorizedHttpException('', 'Invalid profile or PIN.');
+        }
+
+        $request->getSession()->set('penderie.active_profile_id', $profile->getId());
+
+        return new JsonResponse([
+            'profile' => AuthResponse::profilePayload($profile),
+            'activeProfileId' => $profile->getId(),
+        ]);
     }
 
     #[Route('/me', name: 'api_auth_me', methods: ['GET'])]
@@ -71,33 +127,29 @@ final class AuthController extends AbstractController
         return new JsonResponse($this->auth->mePayload($this->actor));
     }
 
-    /**
-     * Public minimal profile listing for a household slug. Powers the standalone
-     * PIN login UI (slug -> profile -> PIN) without leaking anything sensitive:
-     * only id, name, role, avatar color and whether a PIN is set.
-     * Rate-limited per IP to slow down slug enumeration.
-     */
-    #[Route('/households/{slug}/profiles', name: 'api_auth_household_profiles', methods: ['GET'])]
-    public function householdProfiles(string $slug, Request $request): JsonResponse
+    #[Route('/username', name: 'api_auth_username_set', methods: ['PUT'])]
+    public function setUsername(Request $request): JsonResponse
     {
-        $limiter = $this->profilesLimiter->create((string) $request->getClientIp());
+        $username = $this->auth->setUsername(
+            $this->actor,
+            $this->stringField($this->jsonBody($request), 'username'),
+        );
 
-        if (false === $limiter->consume()->isAccepted()) {
-            throw new TooManyRequestsHttpException('Too many requests. Please wait a minute and try again.');
-        }
+        return new JsonResponse(['username' => $username]);
+    }
 
-        $household = $this->em->getRepository(Household::class)->findOneBy(['slug' => $slug]);
+    #[Route('/households', name: 'api_auth_households_create', methods: ['POST'])]
+    public function createHousehold(Request $request): JsonResponse
+    {
+        $payload = $this->auth->createHousehold($this->actor, CreateHouseholdDto::fromArray($this->jsonBody($request)), $request);
 
-        if (!$household instanceof Household) {
-            throw new NotFoundHttpException('Household not found.');
-        }
+        return new JsonResponse($payload, Response::HTTP_CREATED);
+    }
 
-        $profiles = $this->em->getRepository(Profile::class)->findBy(['household' => $household], ['id' => 'ASC']);
-
-        return new JsonResponse([
-            'household' => ['name' => $household->getName(), 'slug' => $household->getSlug()],
-            'profiles' => array_map([AuthResponse::class, 'profilePayload'], $profiles),
-        ]);
+    #[Route('/households/{id}/select', name: 'api_auth_households_select', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function selectHousehold(int $id, Request $request): JsonResponse
+    {
+        return new JsonResponse($this->auth->selectHousehold($this->actor, $id, $request));
     }
 
     #[Route('/profiles', name: 'api_auth_profiles_create', methods: ['POST'])]
@@ -133,5 +185,22 @@ final class AuthController extends AbstractController
         }
 
         return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function stringField(array $payload, string $field): string
+    {
+        $value = $payload[$field] ?? null;
+
+        return \is_string($value) ? $value : '';
+    }
+
+    private function enforceLimit(RateLimiterFactory $factory, Request $request): void
+    {
+        if (false === $factory->create((string) $request->getClientIp())->consume()->isAccepted()) {
+            throw new TooManyRequestsHttpException('Too many requests. Please wait and try again.');
+        }
     }
 }

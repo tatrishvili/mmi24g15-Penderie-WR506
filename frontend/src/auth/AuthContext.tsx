@@ -4,6 +4,7 @@ import * as authApi from '../api/auth.ts'
 import { ApiError } from '../api/client.ts'
 import type {
   CreateChildPayload,
+  CreateHouseholdPayload,
   CreatePartnerPayload,
   HouseholdSummary,
   MeResult,
@@ -18,18 +19,24 @@ type AuthStatus = 'loading' | 'anonymous' | 'authenticated'
 export interface AuthContextValue {
   status: AuthStatus
   user: UserSummary | null
+  households: HouseholdSummary[]
   household: HouseholdSummary | null
   profiles: ProfileSummary[]
   places: PlaceSummary[]
+  activeHouseholdId: number | null
   activeProfileId: number | null
   activeProfile: ProfileSummary | null
   refresh: () => Promise<void>
   register: (payload: RegisterPayload) => Promise<void>
+  verifyEmail: (token: string) => Promise<void>
+  resendVerification: (email: string) => Promise<void>
   login: (email: string, password: string) => Promise<void>
-  pinLogin: (householdSlug: string, profileId: number, pin: string) => Promise<void>
+  unlockProfileWithPin: (profileId: number, pin: string) => Promise<void>
   logout: () => Promise<void>
   switchProfile: (profileId: number) => Promise<void>
   createProfile: (payload: CreateChildPayload | CreatePartnerPayload) => Promise<ProfileSummary>
+  createHousehold: (payload: CreateHouseholdPayload) => Promise<void>
+  selectHousehold: (householdId: number) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -39,9 +46,11 @@ export { AuthContext }
 function emptyState() {
   return {
     user: null as UserSummary | null,
+    households: [] as HouseholdSummary[],
     household: null as HouseholdSummary | null,
     profiles: [] as ProfileSummary[],
     places: [] as PlaceSummary[],
+    activeHouseholdId: null as number | null,
     activeProfileId: null as number | null,
     activeProfile: null as ProfileSummary | null,
   }
@@ -54,9 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applyMe = useCallback((data: MeResult) => {
     setState({
       user: data.user ?? null,
+      households: data.households ?? [],
       household: data.household,
-      profiles: data.profiles,
-      places: data.places,
+      profiles: data.profiles ?? [],
+      places: data.places ?? [],
+      activeHouseholdId: data.activeHouseholdId,
       activeProfileId: data.activeProfileId,
       activeProfile: data.activeProfile,
     })
@@ -102,10 +113,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(
     async (payload: RegisterPayload) => {
       await authApi.register(payload)
+    },
+    [],
+  )
+
+  const verifyEmail = useCallback(
+    async (token: string) => {
+      await authApi.verifyEmail(token)
       await refresh()
     },
     [refresh],
   )
+
+  const resendVerification = useCallback(async (email: string) => {
+    await authApi.resendVerification(email)
+  }, [])
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -115,9 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
-  const pinLogin = useCallback(
-    async (householdSlug: string, profileId: number, pin: string) => {
-      await authApi.pinLogin(householdSlug, profileId, pin)
+  const unlockProfileWithPin = useCallback(
+    async (profileId: number, pin: string) => {
+      await authApi.unlockProfileWithPin(profileId, pin)
       await refresh()
     },
     [refresh],
@@ -146,19 +168,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const createHousehold = useCallback(
+    async (payload: CreateHouseholdPayload) => {
+      await authApi.createHousehold(payload)
+      await refresh()
+    },
+    [refresh],
+  )
+
+  const selectHousehold = useCallback(
+    async (householdId: number) => {
+      await authApi.selectHousehold(householdId)
+      await refresh()
+    },
+    [refresh],
+  )
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       ...state,
       refresh,
       register,
+      verifyEmail,
+      resendVerification,
       login,
-      pinLogin,
+      unlockProfileWithPin,
       logout,
       switchProfile,
       createProfile,
+      createHousehold,
+      selectHousehold,
     }),
-    [status, state, refresh, register, login, pinLogin, logout, switchProfile, createProfile],
+    [
+      status,
+      state,
+      refresh,
+      register,
+      verifyEmail,
+      resendVerification,
+      login,
+      unlockProfileWithPin,
+      logout,
+      switchProfile,
+      createProfile,
+      createHousehold,
+      selectHousehold,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

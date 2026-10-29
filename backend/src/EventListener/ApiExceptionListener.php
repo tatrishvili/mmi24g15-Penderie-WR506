@@ -62,6 +62,8 @@ final class ApiExceptionListener
             Response::HTTP_CONFLICT => 'conflict',
             Response::HTTP_UNPROCESSABLE_ENTITY => 'validation_failed',
             Response::HTTP_TOO_MANY_REQUESTS => 'too_many_attempts',
+            Response::HTTP_SERVICE_UNAVAILABLE => 'service_unavailable',
+            Response::HTTP_BAD_GATEWAY => 'upstream_error',
             default => 'error',
         };
     }

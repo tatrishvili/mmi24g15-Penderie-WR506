@@ -3,17 +3,22 @@ import type { FormEvent } from 'react'
 import { Check, LogOut, Plus } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
+import { getCopy } from '../i18n/copy.ts'
 import { roleLabel } from '../types/auth.ts'
 
 export default function ProfilesPage() {
+  const copy = getCopy()
   const {
+    households,
     household,
     profiles,
     activeProfileId,
     activeProfile,
     switchProfile,
-    pinLogin,
+    unlockProfileWithPin,
     createProfile,
+    createHousehold,
+    selectHousehold,
     logout,
   } = useAuth()
 
@@ -31,6 +36,15 @@ export default function ProfilesPage() {
   const [partnerPassword, setPartnerPassword] = useState('')
   const [createError, setCreateError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+
+  const [householdName, setHouseholdName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [placeName, setPlaceName] = useState('')
+  const [householdError, setHouseholdError] = useState<string | null>(null)
+  const [creatingHousehold, setCreatingHousehold] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [selectingId, setSelectingId] = useState<number | null>(null)
+  const [selectError, setSelectError] = useState<string | null>(null)
 
   const canManage = activeProfile === null || activeProfile.role !== 'child'
 
@@ -62,13 +76,11 @@ export default function ProfilesPage() {
   async function onPinSubmit(event: FormEvent, profileId: number) {
     event.preventDefault()
 
-    if (household === null) return
-
     setPinError(null)
     setBusyId(profileId)
 
     try {
-      await pinLogin(household.slug, profileId, pin)
+      await unlockProfileWithPin(profileId, pin)
       setPinFor(null)
       setPin('')
     } catch (error) {
@@ -94,6 +106,44 @@ export default function ProfilesPage() {
       )
     } finally {
       setCreating(false)
+    }
+  }
+
+  async function onCreateHousehold(event: FormEvent) {
+    event.preventDefault()
+    setHouseholdError(null)
+    setCreatingHousehold(true)
+
+    try {
+      await createHousehold({
+        householdName: householdName.trim(),
+        firstName: firstName.trim(),
+        placeName: placeName.trim() === '' ? undefined : placeName.trim(),
+      })
+      setHouseholdName('')
+      setFirstName('')
+      setPlaceName('')
+    } catch (error) {
+      setHouseholdError(
+        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+      )
+    } finally {
+      setCreatingHousehold(false)
+    }
+  }
+
+  async function onSelectHousehold(householdId: number) {
+    setSelectError(null)
+    setSelectingId(householdId)
+
+    try {
+      await selectHousehold(householdId)
+    } catch (error) {
+      setSelectError(
+        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+      )
+    } finally {
+      setSelectingId(null)
     }
   }
 
@@ -126,11 +176,134 @@ export default function ProfilesPage() {
     <div className="auth-page">
       <span className="auth-brand">Penderie</span>
       <p className="auth-tagline">
-        Foyer « {household?.name} » — code : <strong>{household?.slug}</strong>
+        {household === null ? (
+          'Créez votre foyer pour commencer.'
+        ) : (
+          <>
+            Foyer « {household.name} » — code : <strong>{household.slug}</strong>
+          </>
+        )}
       </p>
 
       <div className="auth-card">
-        <h1>Qui entre ?</h1>
+        {household === null ? (
+          households.length > 0 && !showCreateForm ? (
+            <>
+              <h1>Choisissez un foyer</h1>
+              <p className="auth-sub">
+                Vous avez plusieurs foyers. Choisissez celui à ouvrir.
+              </p>
+
+              {selectError !== null && (
+                <p role="alert" className="form-error">
+                  {selectError}
+                </p>
+              )}
+
+              <ul className="profile-list">
+                {households.map((candidate) => (
+                  <li key={candidate.id}>
+                    <button
+                      type="button"
+                      className="profile-row"
+                      onClick={() => void onSelectHousehold(candidate.id)}
+                      disabled={selectingId !== null}
+                    >
+                      <span className="avatar" aria-hidden="true">
+                        {candidate.name.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="profile-meta">
+                        <span className="profile-name">{candidate.name}</span>
+                        <br />
+                        <span className="profile-role">code : {candidate.slug}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCreateForm(true)}
+              >
+                Créer un autre foyer
+              </button>
+            </>
+          ) : (
+          <>
+            <h1>Créez votre foyer</h1>
+            <p className="auth-sub">
+              Votre compte est créé. Ajoutez votre prénom et votre foyer pour devenir le profil
+              adulte, puis vous pourrez ajouter enfants et conjoint.
+            </p>
+
+            {households.length > 0 && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCreateForm(false)}
+                style={{ marginBottom: 12 }}
+              >
+                Retour aux foyers
+              </button>
+            )}
+
+            <form className="auth-form" onSubmit={(event) => void onCreateHousehold(event)} noValidate>
+              {householdError !== null && (
+                <p role="alert" className="form-error">
+                  {householdError}
+                </p>
+              )}
+
+              <div className="field">
+                <label htmlFor="household-firstname">Votre prénom</label>
+                <input
+                  id="household-firstname"
+                  className="input"
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="household-name">Nom du foyer</label>
+                <input
+                  id="household-name"
+                  className="input"
+                  type="text"
+                  placeholder="Famille Moreau"
+                  value={householdName}
+                  onChange={(event) => setHouseholdName(event.target.value)}
+                  required
+                  minLength={2}
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="household-place">Lieu principal (optionnel)</label>
+                <input
+                  id="household-place"
+                  className="input"
+                  type="text"
+                  placeholder="Maison"
+                  value={placeName}
+                  onChange={(event) => setPlaceName(event.target.value)}
+                />
+              </div>
+
+              <button type="submit" className="btn btn-primary" disabled={creatingHousehold}>
+                {creatingHousehold ? 'Création…' : 'Créer mon foyer'}
+              </button>
+            </form>
+          </>
+          )
+        ) : (
+          <>
+            <h1>Qui entre ?</h1>
 
         {pinError !== null && (
           <p role="alert" className="form-error" style={{ marginTop: 12 }}>
@@ -247,7 +420,7 @@ export default function ProfilesPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="child-pin">Code PIN (4 à 6 chiffres)</label>
+                  <label htmlFor="child-pin">{copy.profiles.pinLabel}</label>
                   <input
                     id="child-pin"
                     className="input input--pin"
@@ -258,9 +431,11 @@ export default function ProfilesPage() {
                     maxLength={6}
                     value={childPin}
                     onChange={(event) => setChildPin(event.target.value.replace(/[^0-9]/g, ''))}
-                    required
                   />
                 </div>
+                <p className="auth-sub">
+                  {copy.profiles.pinNote}
+                </p>
                 <button type="submit" className="btn btn-secondary" disabled={creating}>
                   {creating ? 'Création…' : 'Ajouter l’enfant'}
                 </button>
@@ -314,6 +489,8 @@ export default function ProfilesPage() {
                 </button>
               </form>
             )}
+          </>
+        )}
           </>
         )}
 

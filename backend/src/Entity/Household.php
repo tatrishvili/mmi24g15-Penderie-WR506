@@ -27,10 +27,6 @@ class Household
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
-    /** @var Collection<int, User> */
-    #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'household')]
-    private Collection $users;
-
     /** @var Collection<int, Profile> */
     #[ORM\OneToMany(targetEntity: Profile::class, mappedBy: 'household')]
     private Collection $profiles;
@@ -39,14 +35,18 @@ class Household
     #[ORM\OneToMany(targetEntity: Place::class, mappedBy: 'household')]
     private Collection $places;
 
+    /** @var Collection<int, Room> */
+    #[ORM\OneToMany(targetEntity: Room::class, mappedBy: 'household')]
+    private Collection $rooms;
+
     public function __construct(string $name, string $slug)
     {
         $this->name = $name;
         $this->slug = $slug;
         $this->createdAt = new \DateTimeImmutable();
-        $this->users = new ArrayCollection();
         $this->profiles = new ArrayCollection();
         $this->places = new ArrayCollection();
+        $this->rooms = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -69,12 +69,6 @@ class Household
         return $this->createdAt;
     }
 
-    /** @return Collection<int, User> */
-    public function getUsers(): Collection
-    {
-        return $this->users;
-    }
-
     /** @return Collection<int, Profile> */
     public function getProfiles(): Collection
     {
@@ -85,5 +79,11 @@ class Household
     public function getPlaces(): Collection
     {
         return $this->places;
+    }
+
+    /** @return Collection<int, Room> */
+    public function getRooms(): Collection
+    {
+        return $this->rooms;
     }
 }

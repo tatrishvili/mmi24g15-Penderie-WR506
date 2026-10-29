@@ -22,13 +22,17 @@ These decisions resolve earlier ambiguities. Treat them as defaults for the firs
 
 ### 2.1 Personal-first onboarding
 
-- A person starts registration with the minimum necessary information: email and password.
-- Before verification, store only an expiring pending registration (including a password hash and a hash of the single-use verification token); it is not yet an active account and cannot access inventory.
-- Clicking the email verification link completes registration: atomically create/activate the adult account, establish the signed-in session, create a private personal space with a default owner profile and default place, and take the user directly into the app.
+- A person starts registration with a unique username, email address, self-declared date of birth, and password, then receives a single-use verification link. Usernames are case-insensitive, normalized to lowercase, and contain 3–30 letters, numbers, or underscores. Email remains the sign-in identifier.
+- Adult registration requires a self-declared birth date showing the person is at least 18. This check is not identity proof or verified age assurance; a person can enter a false date. Minors use a parent-managed child profile, not an adult account.
+- Before verification, store an expiring pending registration with the password securely hashed, username and birth date, and a hash of the single-use verification token; it is not an active account and cannot access inventory.
+- Store the birth date on the account after verification only to enforce the adult-registration rule. Do not include it in authentication responses or display it in the profile. The user must be told it is self-declared and how the data is used; production retention/deletion requirements need review before launch.
+- Opening the email verification link presents an explicit confirmation page. A POST then atomically creates the adult account using the pending password hash, establishes the signed-in session, creates a private personal space with a default owner profile and default place, and takes the user directly into the app.
 - There is no second manual approval and no need to enter credentials again after clicking the link. The only unavoidable wait is delivery/opening of the verification email.
+- **Known security trade-off:** before verification, someone can submit another person's email with a password they chose. If the email owner follows that confirmation link, that password becomes the account password. This flow prevents access before confirmation but does not prevent account pre-hijacking; use password-after-verification if preventing that risk becomes a requirement.
 - Do **not** require a household/family name, first name, room layout, child, or partner during registration.
 - Use friendly default labels such as **My wardrobe** / **Mon dressing**. Let the person rename their space or add a display name later in Settings.
 - “Household” may remain an internal data-model term for now; the user-facing product should say “My space” or “My wardrobe” until they choose to add family members.
+- The chosen username is a unique account handle shown in the signed-in account page. It is not the login identifier or a public sharing identity; continue to sign in with the verified email.
 - Family and profile management is an optional Settings area, not a mandatory onboarding step.
 
 The current database already uses a `Household` as the item scope. Preserve that boundary initially: create a private household automatically and hide the technical “household” concept in the UI. Do not redesign or migrate this model casually.
@@ -65,11 +69,11 @@ Do **not** treat a 4–6 digit PIN plus a public/guessable household code as sec
 Recommended separation:
 
 - **Child sign-in on their own device:** a parent-authorized child credential and a restricted server-side session. Prefer a one-time, high-entropy parent-issued setup link/code, followed by a child username and password (no child email required for the first version). Parent recovery/reset and session revocation are mandatory.
-- **PIN on a parent's already trusted device:** optional convenience lock/profile switch only. Rate-limit by account/profile and device/IP, add progressive delay/lockout and monitoring, and never let it grant adult permissions.
+- **PIN on a parent's already trusted device:** optional convenience lock/profile switch only. It must require the parent's existing authenticated session, be rate-limited by account/profile and device/IP, and never replace or elevate that session.
 - Do not publish household codes or child profile lists as a security boundary. Login errors should not reveal whether a household, child, username, or PIN exists.
 - Add stronger sign-in protection, secure cookies, CSRF protection appropriate to the deployed architecture, and session rotation/revocation before production.
 
-The current standalone child PIN login is a prototype and does not meet this target yet. In particular, item endpoints currently scope records to the household; child visibility and ownership restrictions are not consistently enforced. Do not present child login as production-safe until the server-side authorization work and tests are complete.
+The standalone child PIN login has been removed. A PIN can only unlock a profile within a parent's existing authenticated session; the child cannot yet sign in on a separate device. Item endpoints still need consistent child-to-own-profile authorization, so do not add child credentials until that server-side work and its allowed/denied tests are complete.
 
 ### 2.4 Verification, age assurance, and two-factor authentication
 
@@ -77,7 +81,7 @@ These are different controls:
 
 - **Email verification** proves control of the email address. Registration should create a short-lived pending registration, send a single-use verification link, and create/activate the actual account only when that link is confirmed. Complete sign-in and personal-space setup in that same verification callback; do not require the user to register or sign in again. This is not 2FA.
 - **Two-factor authentication (2FA)** asks for an additional factor at sign-in. Plan an optional adult-account authenticator-app code (TOTP) with one-time recovery codes; passkeys can follow. Do not use SMS as the default second factor. Never make email confirmation alone count as a second factor when the same email account can reset the password.
-- **Age assurance** is a separate legal/product decision. The current “I am at least 18” checkbox is only a client-side self-declaration: it is not identity or age verification and is not sent to or enforced by the API. Do not describe it as verified age or collect a date of birth by default.
+- **Age assurance** is separate from the registration age gate. Registration now requests a date of birth and calculates whether the user is 18; this is still self-declared and is not reliable verification. Do not describe it as verified age assurance. Any stronger check requires an explicit privacy, legal, and provider-cost review.
 - For the France-first launch, document the intended adult/guardian responsibility and have the actual age/child-consent process reviewed for the launch jurisdiction. Requirements vary by service and country; this document is product guidance, not legal advice. Support English text later without changing the underlying consent or age policy.
 
 Do not add more registration questions to compensate for missing security controls. Email verification, 2FA, guardian approval, and age assurance each need their own explicit workflow.
@@ -107,9 +111,9 @@ The owner profile and category are not levels in the location tree. A place, roo
 
 ### 2.6 Scanning and batch adding
 
-- Photo recognition is assistance, not truth. Always show an editable review form and require confirmation before saving.
+- Photo recognition is optional assistance, not truth, and local development must not require a paid provider. Free providers may be temporarily rate-limited; show that clearly, preserve the photo, and let the user retry later or continue with manual entry.
 - The model may suggest visible facts such as item type or color. It must not invent owner, exact location, price, purchase date, or condition that cannot be judged from a photo.
-- A single scan creates a **draft for one item**. The first reliable milestone is one photo → one reviewed item → one saved record.
+- A single scan creates a **draft for one item**. Offer only four scan hints—T-shirt, trousers, skirt, and other/object. The first reliable milestone is one photo → one reviewed item → one saved record.
 - After that works, add a batch session: scan several objects, keep each as a separate draft, and allow the user to assign or change owner, place, room, and storage location per item.
 - A “scan another in this location” action may reuse the last selected owner/location as a visible default. Never silently apply a previous room or box after the user changes context.
 - For physical moves, let the user choose a place/room/storage location first, then scan a sequence of items into that context; show the selected context and let them correct an individual item.
@@ -118,6 +122,9 @@ The owner profile and category are not levels in the location tree. A place, roo
 ### 2.7 Privacy and sharing
 
 - All spaces, profiles, items, photos, and precise storage locations are private by default.
+- Adult users may follow another adult account directly; follows are one-way and do not require recipient approval. A friend request also follows its recipient. Accepting a request makes the relationship mutual; declining does not remove the requester as a follower. Either party can unfollow, and blocking prevents future contact. A child profile cannot follow, send, accept, or manage adult social relationships.
+- Being friends does not grant access to an inventory, item, collection, profile, home, room, or storage location. Every future share must still be explicit, scoped, and revocable.
+- Normal follow and friend-request use must not be blocked by an arbitrary low hourly quota. Use idempotent relationship actions and proportionate, abuse-focused protections; do not charge failed lookups or duplicate actions as new requests.
 - A child’s items are not visible to strangers. A parent/guardian with the proper household role can manage them.
 - Only a signed-in adult with verified email and authority over the resource can create or revoke a share. A child cannot publish/share in v1; a parent/guardian must explicitly approve any external publication of a child's item or look.
 - For each share link, the owner chooses whether anyone possessing the unguessable link can view read-only without signing in, or whether a signed-in account with verified email is required. Anyone-with-link is a bearer credential and can be forwarded; it does not verify the recipient's identity.
@@ -195,15 +202,16 @@ The following are known differences between this specification and the repositor
 
 | Area | Current code | Required direction |
 | --- | --- | --- |
-| Registration | Email/password registration signs the user in immediately; then the app asks for a first name and household name. The “18+” checkbox is only frontend state. | Verify email; create a private space automatically; remove mandatory household naming from onboarding; decide age assurance separately. |
+| Registration | Pending email registration, unique account username, self-declared date-of-birth age gate (18+), single-use confirmation, rate-limited resend, and automatic private-space setup are implemented. The username is displayed in the signed-in account page; verified email remains the login identifier. Existing verified accounts without a username can set one once from that page. Local delivery uses Mailpit; production delivery still needs a verified sender/domain and provider credentials. | Do not call the birth-date check age verification. Review the lawfulness, retention, deletion, and data minimization of collecting birth dates before production; use a reviewed provider only if stronger age assurance is required. |
 | Family | Child/partner creation appears in the profile flow after a household is created. | Optional family management in Settings. Another adult should accept an invitation and use their own account. |
-| Child sign-in | A standalone 4–6 digit PIN session exists; attempts are limited by client IP. Public profile lookup uses a household slug. | Parent-managed child credential for their own device; PIN only for convenience on a trusted device; enforce per-profile permissions on every server request. |
+| Child sign-in | Standalone PIN sign-in and public household/profile lookup are removed. A parent can optionally unlock a child profile on their already authenticated device. | Parent-managed one-time child setup and child credentials for another device; enforce per-profile permissions on every server request before enabling it. |
+| Friends and followers | Verified adults can follow/unfollow, see follower/following lists, and send, accept, decline, cancel, or remove friend relationships by username. A friend request follows its recipient; accepting creates mutual follows, while declining/cancelling preserves the follow. Repeated direct follows are idempotent. A verified legacy account can set a missing username once. Following does not grant inventory visibility. The former fixed hourly friend-request limiter has been removed. | Add account search/discovery and block/report controls. Add proportionate abuse protection that does not block ordinary use or count invalid/duplicate actions as new relationships. |
 | Item authorization | Item list/show/update/delete are household-scoped. Items store an owner profile, but endpoint access is not consistently restricted to that owner/role. | Parent may manage child items; a child sees and changes only allowed items. Add authorization tests before child access is treated as safe. |
-| Item structure | Item entity/API currently cover basic name, brand, color, size, material, condition, status, notes, photos, and QR. Category and place → room → storage are not yet wired through item persistence and forms. | Add optional category and optional current-location relationships without blocking quick item entry. |
-| Scan | File/camera picker, guide graphic, image resize, endpoint, OpenRouter request, and form prefill exist. The native camera picker is not an in-camera live overlay. | Decide whether a guide before capture is enough for the first milestone or implement a real camera preview with overlay. In either case show real errors and reviewed drafts. |
-| Scan error behavior | A missing API key or invalid model JSON can currently become an empty, success-shaped response; the scan path can also default an unknown condition to “damaged”. | Missing configuration/provider failure/invalid response must be explicit failures, not blank successful identification or a guessed condition. |
-| Email and 2FA | No account email-verification or 2FA flow is implemented. | Email verification before activation; separate adult 2FA setup/recovery workflow. |
-| Multiple scans/locations | Current item creation is a one-item flow and the model has no room/storage path. | Prove one saved item first; then add reviewed multi-item batches with per-item owner and location. |
+| Item structure | Items persist optional type/category and an optional room plus nested storage location. The “Lieux” workflow manages places, rooms, and storage; item forms allow assigning or leaving the current location unknown. API references are scoped to the active private space. The hierarchy migration is applied to the local development database; target deployments must run pending migrations. | Keep location optional and separate from item ownership and category. Add explicit place-only assignment only if the product needs it. |
+| Scan | Opening the scanner requests the device camera automatically and shows an in-app preview with a simple guide for T-shirt, trousers, skirt, or other/object. Gallery selection remains available while the camera is active. Camera access requires browser permission on HTTPS or localhost. The guide is visual framing assistance, not real-time object detection. | Preserve clear camera permission guidance and continue to let the user review or enter the item manually. |
+| Scan error behavior | Provider failures, including temporary free-provider rate limits, are shown as errors; the captured photo is retained for retry or manual entry. Results remain editable before saving. | Keep invalid configuration, provider failures, and invalid model output explicit; never return blank success-shaped identification or guess fields the photo cannot establish. |
+| Email and 2FA | Email verification before account activation is implemented; adult 2FA is not. | Configure production mail delivery and implement a separate adult 2FA setup/recovery workflow. |
+| Multiple scans | Item creation and scanning remain single-item flows. | Add reviewed multi-item batches with per-item owner and location only after the single-item path is dependable. |
 
 These gaps mean “there is a screen or endpoint” must not be reported as “the user workflow is complete.” Keep this table current when implementation changes.
 
@@ -217,5 +225,10 @@ These gaps mean “there is a screen or endpoint” must not be reported as “t
 - **2026-10-08:** Only verified adults with resource authority can create/revoke shares. Owners choose anonymous read-only link access or verified-account access; interactive capabilities require a verified account.
 - **2026-10-08:** Adults may manage non-Personal items in a shared household. A child's responsible parent/guardian retains access to that child's Personal items; other peers and external viewers do not.
 - **2026-10-08:** Adult looks may be deliberately published for anonymous viewing without exposing source items; child looks require parent/guardian approval before external publication.
+- **2026-10-08:** Registration collects email and password before sending verification; only the hashed password is kept pending, and confirmation creates the account and private starter space.
+- **2026-10-09:** The optional physical organization path is Place → Room → nested Storage location → Item. Item location is optional; scanner hints and framing overlays guide composition but do not claim real-time object detection.
+- **2026-10-12:** The place/room/storage migration is applied to the local development database. Deployment databases must run their pending migrations before using the location workflow.
+- **2026-10-12:** Adult registration asks for a unique username and date of birth, blocks self-declared ages under 18, and keeps email as the sign-in identifier. This is an age gate, not verified age assurance; minors use parent-managed profiles.
+- **2026-10-13:** Friend requests are adult-only, use account usernames, and require recipient acceptance. Friendship alone never reveals inventory. A PIN is only a trusted-device profile unlock inside a parent's authenticated session; child own-device sign-in remains disabled until child-owned item authorization is complete.
 
 When a decision changes, update this log and both the product specification and affected workflow docs in the same change.
