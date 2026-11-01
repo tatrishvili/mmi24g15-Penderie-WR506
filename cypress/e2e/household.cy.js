@@ -5,6 +5,9 @@ describe('Foyer à la vérification du compte', () => {
       cy.confirmVerification()
     })
 
+    cy.contains('a', 'Je le ferai plus tard').click()
+    cy.url().should('include', '/dressing')
+
     // À la vérification, le compte reçoit automatiquement son foyer
     // « Mon dressing » et le profil parent « Moi » (AuthService::verifyEmail).
     cy.visit('/profils')

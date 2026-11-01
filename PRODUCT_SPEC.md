@@ -26,14 +26,14 @@ These decisions resolve earlier ambiguities. Treat them as defaults for the firs
 - Adult registration requires a self-declared birth date showing the person is at least 18. This check is not identity proof or verified age assurance; a person can enter a false date. Minors use a parent-managed child profile, not an adult account.
 - Before verification, store an expiring pending registration with the password securely hashed, username and birth date, and a hash of the single-use verification token; it is not an active account and cannot access inventory.
 - Store the birth date on the account after verification only to enforce the adult-registration rule. Do not include it in authentication responses or display it in the profile. The user must be told it is self-declared and how the data is used; production retention/deletion requirements need review before launch.
-- Opening the email verification link presents an explicit confirmation page. A POST then atomically creates the adult account using the pending password hash, establishes the signed-in session, creates a private personal space with a default owner profile and default place, and takes the user directly into the app.
+- Opening the email verification link presents an explicit confirmation page. A POST then atomically creates the adult account using the pending password hash, establishes the signed-in session, creates a private personal space with a default owner profile and default place, and opens the **Créer mon foyer** setup page. The user can create an additional household and continue through the existing setup screens, or skip directly to the automatically provisioned dressing.
 - There is no second manual approval and no need to enter credentials again after clicking the link. The only unavoidable wait is delivery/opening of the verification email.
 - **Known security trade-off:** before verification, someone can submit another person's email with a password they chose. If the email owner follows that confirmation link, that password becomes the account password. This flow prevents access before confirmation but does not prevent account pre-hijacking; use password-after-verification if preventing that risk becomes a requirement.
 - Do **not** require a household/family name, first name, room layout, child, or partner during registration.
 - Use friendly default labels such as **My wardrobe** / **Mon dressing**. Let the person rename their space or add a display name later in Settings.
 - “Household” may remain an internal data-model term for now; the user-facing product should say “My space” or “My wardrobe” until they choose to add family members.
 - The chosen username is a unique account handle shown in the signed-in account page. It is not the login identifier or a public sharing identity; continue to sign in with the verified email.
-- Family and profile management is an optional Settings area, not a mandatory onboarding step.
+- Foyer setup is offered after email confirmation and can be skipped. Family and profile management remains optional and accessible from Settings.
 
 The current database already uses a `Household` as the item scope. Preserve that boundary initially: create a private household automatically and hide the technical “household” concept in the UI. Do not redesign or migrate this model casually.
 

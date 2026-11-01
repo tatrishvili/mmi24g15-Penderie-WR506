@@ -1,3 +1,4 @@
+import { getCopy } from '../i18n/copy.ts'
 import FigmaGlyph from '../components/FigmaGlyph.tsx'
 import houseSymbol from '../images/figma/house-symbol.svg'
 import { errorText } from '../lib/errors.ts'
@@ -134,7 +135,14 @@ export default function HouseholdSetupPage({
         className="household-create"
         title="Créer mon foyer"
         subtitle="Commençons par organiser votre maison."
-        footer={submit('Créer mon foyer', 'household-create')}
+        footer={
+          <>
+            {submit('Créer mon foyer', 'household-create')}
+            <Link className="design-link" to="/dressing">
+              {getCopy().verify.setupLater}
+            </Link>
+          </>
+        }
       >
         <div className="household-create__illustration">
           <img src={houseSymbol} alt="" />

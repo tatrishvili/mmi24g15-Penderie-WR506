@@ -54,10 +54,11 @@ Cypress.Commands.add('verifyViaMailpit', (email) => {
   })
 })
 
-/** Confirm the verification button and expect the landing on /dressing. */
+/** Confirm the verification button and expect household setup. */
 Cypress.Commands.add('confirmVerification', () => {
   cy.contains('button', 'Confirmer et créer mon compte').click()
-  cy.url().should('include', '/dressing')
+  cy.url().should('include', '/foyer/creer')
+  cy.contains('h1', 'Créer mon foyer').should('be.visible')
 })
 
 /** Log the demo account in through the form; expect the foyer chooser. */
