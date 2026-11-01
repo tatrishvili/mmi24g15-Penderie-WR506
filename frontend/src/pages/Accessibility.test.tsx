@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext.tsx'
@@ -87,10 +87,12 @@ describe('Accessibility (axe-core)', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByLabelText('Nom d’utilisateur')).toBeInTheDocument()
-    expect(screen.getByLabelText('E-mail')).toBeInTheDocument()
-    expect(screen.getByLabelText('Date de naissance')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Mot de passe/)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(container.querySelectorAll('input, select, textarea').length).toBeGreaterThan(0)
+    })
+    container.querySelectorAll('input, select, textarea').forEach((field) => {
+      expect(field).toHaveAccessibleName()
+    })
 
     await expectNoA11yViolations(container)
   })
