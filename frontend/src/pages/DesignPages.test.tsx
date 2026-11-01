@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext.tsx'
 import { stubFetch, jsonBody } from '../test/http.ts'
 import HouseholdSetupPage from './HouseholdSetupPage.tsx'
+import CommunityCollectionsPage from './CommunityCollectionsPage.tsx'
 import SocialProfilePage from './SocialProfilePage.tsx'
 import ItemDetailPage, { AccessPage } from './ItemDetailPage.tsx'
 import ItemEditorPage from './ItemEditorPage.tsx'
@@ -225,5 +226,112 @@ describe('Current Figma page families', () => {
     fireEvent.change(screen.getByLabelText('Nom de la collection'), { target: { value: 'Privée' } })
     fireEvent.click(screen.getByRole('button', { name: 'Créer la collection' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Action refusée')
+  })
+})
+
+describe('Collection audiences', () => {
+  const preview = {
+    digest: 'approved-digest',
+    name: 'Mes vinyles',
+    cover: '',
+    items: [{ name: 'Disque approuvé', type: 'vinyle', color: null, photoUrl: null }],
+    excludedCount: 1,
+  }
+  it('sends the chosen creation audience with explicit approval', async () => {
+    let payload: Record<string, unknown> = {}
+    mount(<SocialProfilePage view="create" />, '/', '/', (url, init) => {
+      if (url.endsWith('/api/social/collections') && init?.method === 'POST') {
+        payload = jsonBody(init)
+        return { status: 200, body: WORKSPACE }
+      }
+      return response(url)
+    })
+    fireEvent.change(await screen.findByLabelText('Nom de la collection'), {
+      target: { value: 'Mes disques' },
+    })
+    const visibility = screen.getByLabelText('Visibilité')
+    expect(visibility).toHaveValue('personal')
+    for (const audience of ['friends', 'followers', 'app']) {
+      fireEvent.change(visibility, { target: { value: audience } })
+      expect(visibility).toHaveValue(audience)
+    }
+    fireEvent.click(screen.getByRole('checkbox', { name: /J’approuve/ }))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Créer la collection' })).toBeEnabled(),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Créer la collection' }))
+    await waitFor(() =>
+      expect(payload).toMatchObject({ name: 'Mes disques', visibility: 'app', approved: true }),
+    )
+  })
+  it('requires preview approval and sends its digest when publishing an existing collection', async () => {
+    let payload: Record<string, unknown> = {}
+    mount(
+      <SocialProfilePage view="collection" />,
+      '/collections/vinyles',
+      '/collections/:collectionId',
+      (url, init) => {
+        if (url.endsWith('/preview')) return { status: 200, body: preview }
+        if (url.endsWith('/audience')) {
+          payload = jsonBody(init)
+          return { status: 200, body: { visibility: 'friends', version: 2 } }
+        }
+        return response(url)
+      },
+    )
+    fireEvent.change(await screen.findByLabelText('Visibilité'), { target: { value: 'friends' } })
+    expect(await screen.findByText('Disque approuvé')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enregistrer la visibilité' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /J’approuve/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la visibilité' }))
+    await waitFor(() =>
+      expect(payload).toEqual({
+        version: 1,
+        visibility: 'friends',
+        approved: true,
+        digest: 'approved-digest',
+      }),
+    )
+  })
+  it('shows allowed community collections with a reachable shared view', async () => {
+    mount(<CommunityCollectionsPage />, '/', '/', (url) =>
+      url.includes('/collection-publications')
+        ? {
+            status: 200,
+            body: {
+              collections: [
+                {
+                  id: 'shared',
+                  name: 'Livres de Noa',
+                  owner: 'noa',
+                  cover: '',
+                  visibility: 'followers',
+                  items: [],
+                },
+              ],
+              page: 1,
+              hasMore: false,
+            },
+          }
+        : response(url),
+    )
+    expect(await screen.findByRole('link', { name: /Livres de Noa/ })).toHaveAttribute(
+      'href',
+      '/communaute/collections/shared',
+    )
+  })
+  it('shows a denied response without exposing the private inventory', async () => {
+    mount(
+      <CommunityCollectionsPage />,
+      '/communaute/collections/denied',
+      '/communaute/collections/:collectionId',
+      (url) =>
+        url.includes('/collection-publications/')
+          ? { status: 404, body: { error: { message: 'Collection indisponible' } } }
+          : response(url),
+    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('Collection indisponible')
+    expect(screen.queryByText('Pull noir')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Modifier/ })).not.toBeInTheDocument()
   })
 })

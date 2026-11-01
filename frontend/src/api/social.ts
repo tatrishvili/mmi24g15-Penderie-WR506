@@ -4,7 +4,7 @@ export interface Collection {
   id: string
   name: string
   cover: string
-  visibility: 'personal'
+  visibility: CollectionAudience
   itemIds: number[]
 }
 export interface Workspace {
@@ -52,8 +52,16 @@ export const updateWorkspace = (body: {
   profile?: Workspace['profile']
   pins?: string[]
 }) => api<Workspace>('/api/social/workspace', { method: 'PATCH', body })
-export const createCollection = (name: string, cover: string) =>
-  api<Workspace>('/api/social/collections', { method: 'POST', body: { name, cover } })
+export const createCollection = (
+  name: string,
+  cover: string,
+  visibility: CollectionAudience = 'personal',
+  approved = false,
+) =>
+  api<Workspace>('/api/social/collections', {
+    method: 'POST',
+    body: { name, cover, visibility, approved },
+  })
 export const collectionItem = (id: string, itemId: number, remove = false) =>
   api<Workspace>(`/api/social/collections/${id}/items/${itemId}`, {
     method: remove ? 'DELETE' : 'PUT',
@@ -84,3 +92,48 @@ export const loanLabel: Record<Loan['status'], string> = {
   returned: 'Retourné',
   declined: 'Refusé',
 }
+
+export type CollectionAudience = 'personal' | 'friends' | 'followers' | 'app'
+export interface CollectionPresentation {
+  name: string
+  type: string | null
+  color: string | null
+  photoUrl: string | null
+}
+export interface CollectionPreview {
+  digest: string
+  name: string
+  cover: string
+  items: CollectionPresentation[]
+  excludedCount: number
+}
+export interface PublishedCollection {
+  id: string
+  name: string
+  cover: string
+  visibility: CollectionAudience
+  owner: string | null
+  items: CollectionPresentation[]
+}
+export const previewCollection = (id: string) =>
+  api<CollectionPreview>(`/api/social/collections/${id}/preview`)
+export const setCollectionAudience = (
+  id: string,
+  version: number,
+  visibility: CollectionAudience,
+  approved: boolean,
+  digest?: string,
+) =>
+  api<{ visibility: CollectionAudience; version: number }>(
+    `/api/social/collections/${id}/audience`,
+    {
+      method: 'PUT',
+      body: { version, visibility, approved, digest },
+    },
+  )
+export const discoverCollections = (page = 1) =>
+  api<{ collections: PublishedCollection[]; page: number; hasMore: boolean }>(
+    `/api/social/collection-publications?page=${page}`,
+  )
+export const getPublishedCollection = (id: string) =>
+  api<{ collection: PublishedCollection }>(`/api/social/collection-publications/${id}`)

@@ -252,3 +252,34 @@ remain editable. Changing type adapts the fields before saving.
 
 Migration `Version20261101160000` adds nullable author, artist and publisher
 columns and must be applied in other environments before using these fields.
+
+
+### Collection audiences implemented — 1 November 2026
+
+Collections now support `personal` (private), `friends` (accepted friends),
+`followers` (people following the owner, plus accepted friends), and `app`
+(all signed-in verified adult Penderie accounts). `app` is not anonymous public
+web access. Private remains the default. Both creation and existing-collection
+settings provide these choices. Discover permitted collections from
+**Mes collections → Explorer les collections** (`/communaute/collections`).
+
+A verified adult owner approves a limited publication: collection name and
+metadata-stripped cover, plus selected item names, types, colors and selected
+photos. The preview digest prevents publishing content that changed after review.
+Private notes, memories, prices, household identity, source item/profile IDs,
+QR tokens and storage locations are omitted. Item detail endpoints stay private.
+Personal, archived, child-owned and other adults' items are excluded. Setting an
+item Personal or archiving it removes its published entry; restoring it does not
+republish it without approval. Photo requests recheck audience and live vetoes.
+
+Changing membership makes the collection private until the owner reviews and
+publishes again. Friends/followers are checked on each read, including photos;
+removing a relationship or switching the collection to private revokes access.
+Discovery filters audiences before pagination (24 collections per page). A shared
+collection can also be opened at `/communaute/collections/:collectionId`.
+
+The additive migration `Version20261101160342` stores approved publications
+separately from private workspace data. It is applied locally; other environments
+must apply it. This supersedes older private-only collection implementation notes;
+external profiles/vitrines, anonymous collection access and item-level audience
+publication are separate features and remain outside this change.

@@ -10,6 +10,7 @@ use App\Entity\Loan;
 use App\Entity\SocialWorkspace;
 use App\Entity\User;
 use App\Enum\ItemStatus;
+use App\Service\CollectionSharing;
 use App\Service\CurrentActor;
 use App\Service\ItemService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -27,7 +28,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/social')]
 final class SocialController
 {
-    public function __construct(private CurrentActor $actor, private EntityManagerInterface $em, private ItemService $items,
+    public function __construct(private CurrentActor $actor, private EntityManagerInterface $em, private ItemService $items, private CollectionSharing $collectionSharing,
         #[Autowire(service: 'limiter.sharing')]
         private RateLimiterFactory $sharingLimiter,
         #[Autowire('%kernel.project_dir%')]
@@ -158,13 +159,19 @@ final class SocialController
             throw new UnprocessableEntityHttpException('Limite de collections atteinte.');
         }
         $body = $request->toArray();
-        $workspace->collections[] = [
+        $audience = $this->collectionSharing->audience($body['visibility'] ?? 'personal');
+        if ('personal' !== $audience && true !== ($body['approved'] ?? false)) {
+            throw new UnprocessableEntityHttpException('Approve the collection name and cover before sharing.');
+        }
+        $collection = [
             'id' => bin2hex(random_bytes(12)),
             'name' => $this->text($body['name'] ?? '', 100, true),
             'cover' => $this->image($body['cover'] ?? ''),
-            'visibility' => 'personal',
+            'visibility' => $audience,
             'itemIds' => [],
         ];
+        $workspace->collections[] = $collection;
+        $this->collectionSharing->publish($workspace, $collection, $audience);
         $this->em->flush();
 
         return $this->workspaceResponse($workspace);
@@ -182,6 +189,10 @@ final class SocialController
                 $ids = array_values(array_filter($ids, static fn ($id) => $id !== $itemId));
                 if ('PUT' === $request->getMethod()) {
                     $ids[] = $itemId;
+                }
+                if ($ids !== $collection['itemIds']) {
+                    $this->collectionSharing->publish($workspace, $collection, 'personal');
+                    $collection['visibility'] = 'personal';
                 }
                 $collection['itemIds'] = $ids;
                 $found = true;
@@ -206,6 +217,7 @@ final class SocialController
         }
         $item->setVisibility($visibility);
         if ('personal' === $visibility) {
+            $this->collectionSharing->revokeItem($item);
             foreach ($this->em->getRepository(ItemShare::class)->findBy(['item' => $item]) as $share) {
                 $share->revoked = true;
             }

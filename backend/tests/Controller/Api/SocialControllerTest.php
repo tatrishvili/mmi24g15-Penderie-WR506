@@ -17,7 +17,7 @@ final class SocialControllerTest extends ApiTestCase
         self::assertSame(200, self::api($client, 'PATCH', '/api/social/workspace', [
             'version' => $workspace['version'], 'profile' => ['displayName' => 'Camille', 'bio' => 'Mes objets', 'photo' => ''],
         ])->getStatusCode());
-        $response = self::api($client, 'POST', '/api/social/collections', ['name' => 'Vinyles', 'cover' => '', 'visibility' => 'public']);
+        $response = self::api($client, 'POST', '/api/social/collections', ['name' => 'Vinyles', 'cover' => '']);
         self::assertSame(200, $response->getStatusCode());
         $data = self::decoded($response);
         self::assertSame('personal', $data['collections'][0]['visibility']);

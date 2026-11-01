@@ -163,3 +163,34 @@ The repository has a pure permission resolver and matrix tests, but they are not
 - Current item and look APIs do not yet implement the full resources described in this matrix.
 
 Before enabling sharing or child sign-in in production, align the resolver, authorization service, endpoint checks, share-token model, and positive/negative integration tests with this policy. Do not treat a passing pure matrix test as proof that every HTTP route enforces the matrix.
+
+
+### Collection audiences implemented — 1 November 2026
+
+Collections now support `personal` (private), `friends` (accepted friends),
+`followers` (people following the owner, plus accepted friends), and `app`
+(all signed-in verified adult Penderie accounts). `app` is not anonymous public
+web access. Private remains the default. Both creation and existing-collection
+settings provide these choices. Discover permitted collections from
+**Mes collections → Explorer les collections** (`/communaute/collections`).
+
+A verified adult owner approves a limited publication: collection name and
+metadata-stripped cover, plus selected item names, types, colors and selected
+photos. The preview digest prevents publishing content that changed after review.
+Private notes, memories, prices, household identity, source item/profile IDs,
+QR tokens and storage locations are omitted. Item detail endpoints stay private.
+Personal, archived, child-owned and other adults' items are excluded. Setting an
+item Personal or archiving it removes its published entry; restoring it does not
+republish it without approval. Photo requests recheck audience and live vetoes.
+
+Changing membership makes the collection private until the owner reviews and
+publishes again. Friends/followers are checked on each read, including photos;
+removing a relationship or switching the collection to private revokes access.
+Discovery filters audiences before pagination (24 collections per page). A shared
+collection can also be opened at `/communaute/collections/:collectionId`.
+
+The additive migration `Version20261101160342` stores approved publications
+separately from private workspace data. It is applied locally; other environments
+must apply it. This supersedes older private-only collection implementation notes;
+external profiles/vitrines, anonymous collection access and item-level audience
+publication are separate features and remain outside this change.

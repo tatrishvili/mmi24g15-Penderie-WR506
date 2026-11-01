@@ -1,8 +1,16 @@
+import { audienceLabel, collectionItemDetail } from '../lib/collectionAudience.ts'
+import { CollectionAudience, CollectionApproval } from '../components/CollectionAudience.tsx'
+import { itemText as t } from '../lib/itemCatalog.ts'
 import { errorText } from '../lib/errors.ts'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as social from '../api/social.ts'
-import type { Workspace, Collection } from '../api/social.ts'
+import type {
+  Workspace,
+  Collection,
+  CollectionAudience as Audience,
+  CollectionPreview,
+} from '../api/social.ts'
 import { listAllItems } from '../api/items.ts'
 import type { ItemSummary } from '../types/item.ts'
 import { resizeToBase64 } from '../lib/image.ts'
@@ -48,6 +56,9 @@ export default function SocialProfilePage({
   const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
   const [cover, setCover] = useState('')
+  const [audience, setAudience] = useState<Audience | null>(null)
+  const [approved, setApproved] = useState(false)
+  const [preview, setPreview] = useState<CollectionPreview | null>(null)
   const [profile, setProfile] = useState<Workspace['profile'] | null>(null)
   const [pins, setPins] = useState<string[] | null>(null)
   const [choosePin, setChoosePin] = useState(false)
@@ -67,6 +78,24 @@ export default function SocialProfilePage({
       live = false
     }
   }, [view, setError])
+  useEffect(() => {
+    if (view !== 'collection' || !collectionId || !data) return
+    let live = true
+    void social
+      .previewCollection(collectionId)
+      .then((result) => {
+        if (live) {
+          setPreview(result)
+          setApproved(false)
+        }
+      })
+      .catch((e) => {
+        if (live) setError(errorText(e))
+      })
+    return () => {
+      live = false
+    }
+  }, [view, collectionId, data, setError])
   const frame = {
     profile: '165:8',
     edit: '165:46',
@@ -92,6 +121,7 @@ export default function SocialProfilePage({
   const currentProfile = profile ?? data?.profile ?? { displayName: '', bio: '', photo: '' }
   const currentPins = pins ?? data?.pins ?? []
   const collection = data?.collections.find((c) => c.id === collectionId)
+  const chosenAudience = audience ?? collection?.visibility ?? 'personal'
   const collectionIcon = (c: Collection) => {
     if (c.cover) return <img src={c.cover} alt="" />
     const name = c.name.toLowerCase()
@@ -110,7 +140,7 @@ export default function SocialProfilePage({
     <DesignTile
       key={c.id}
       title={c.name}
-      detail={`${c.itemIds.length} objet${c.itemIds.length > 1 ? 's' : ''} · Privée`}
+      detail={`${c.itemIds.length} · ${audienceLabel(c.visibility)}`}
       icon={collectionIcon(c)}
       to={onClick ? undefined : `/collections/${c.id}`}
       onClick={onClick}
@@ -164,7 +194,7 @@ export default function SocialProfilePage({
             <DesignRow
               icon={icon('imgIconDisc1')}
               title="Mes collections"
-              detail={`${data.collections.length} collections · privées`}
+              detail={`${data.collections.length} collections`}
               to="/collections"
             />
             <h2>À la une</h2>
@@ -291,11 +321,15 @@ export default function SocialProfilePage({
         {data && !data.collections.length && (
           <p className="design-hint">Créez votre première collection pour regrouper vos objets.</p>
         )}
-        <DesignRow
-          icon={icon('imgIconLock')}
-          title="Collections privées"
-          detail="Seules les présentations publiées sont visibles"
-        />
+        <Link className="btn btn-secondary" to="/communaute/collections">
+          {t('Explorer les collections', 'Explore collections')}
+        </Link>
+        <p className="design-hint">
+          {t(
+            'Chaque collection a sa propre audience : privée, amis, abonnés ou tout Penderie.',
+            'Each collection has its own audience: private, friends, followers or everyone on Penderie.',
+          )}
+        </p>
       </DesignPage>
     )
 
@@ -311,7 +345,7 @@ export default function SocialProfilePage({
             className="btn btn-primary"
             type="submit"
             form="collection-create"
-            disabled={busy || !data}
+            disabled={busy || !data || (chosenAudience !== 'personal' && !approved)}
           >
             {busy ? 'Création…' : 'Créer la collection'}
           </button>
@@ -323,7 +357,7 @@ export default function SocialProfilePage({
           onSubmit={(e) => {
             e.preventDefault()
             void run(async () => {
-              setData(await social.createCollection(name, cover))
+              setData(await social.createCollection(name, cover, chosenAudience, approved))
               navigate('/collections')
             })
           }}
@@ -355,11 +389,25 @@ export default function SocialProfilePage({
               />
             </span>
           </DesignField>
-          <DesignRow
-            icon={icon('imgIconLock')}
-            title="Visibilité"
-            detail="Moi uniquement · Par défaut"
+          <CollectionAudience
+            value={chosenAudience}
+            onChange={(value) => {
+              setAudience(value)
+              setApproved(false)
+            }}
+            disabled={busy}
           />
+          {chosenAudience !== 'personal' && (
+            <>
+              <p className="design-hint">
+                {t(
+                  'Le nom et la couverture seront visibles par cette audience. Les articles seront ajoutés à la publication après votre approbation depuis la collection.',
+                  'This audience will see the name and cover. Items can be published after your approval from the collection.',
+                )}
+              </p>
+              <CollectionApproval checked={approved} onChange={setApproved} disabled={busy} />
+            </>
+          )}
         </DesignForm>
       </DesignPage>
     )
@@ -382,9 +430,92 @@ export default function SocialProfilePage({
         {collection && (
           <>
             <DesignNotice>
-              Cette collection est privée. Ajouter un article ne modifie ni son propriétaire ni son
-              rangement.
+              {t(
+                'Ajouter ou retirer un article remet la collection en privé. Vérifiez l’aperçu et publiez à nouveau. Le propriétaire et le rangement des articles restent inchangés.',
+                'Adding or removing an item makes the collection private again. Review the preview and publish again. Item ownership and storage stay unchanged.',
+              )}
             </DesignNotice>
+            <CollectionAudience
+              value={chosenAudience}
+              onChange={(value) => {
+                setAudience(value)
+                setApproved(false)
+              }}
+              disabled={busy}
+            />
+            <p className="design-hint">
+              {t(
+                'Amis : relations acceptées. Abonnés : personnes qui vous suivent et amis. Tout Penderie : comptes adultes vérifiés connectés.',
+                'Friends: accepted friendships. Followers: people following you and friends. Everyone on Penderie: signed-in verified adult accounts.',
+              )}
+            </p>
+            {chosenAudience !== 'personal' && (
+              <section
+                className="collection-publication-preview"
+                aria-label={t('Aperçu du partage', 'Sharing preview')}
+              >
+                <h2>{t('Aperçu du partage', 'Sharing preview')}</h2>
+                {preview ? (
+                  <>
+                    <h3>{preview.name}</h3>
+                    {preview.cover && (
+                      <img className="collection-public-cover" src={preview.cover} alt="" />
+                    )}
+                    <div className="design-grid">
+                      {preview.items.map((item, index) => (
+                        <DesignTile
+                          key={index}
+                          title={item.name}
+                          detail={collectionItemDetail(item)}
+                          icon={item.photoUrl ? <img src={item.photoUrl} alt="" /> : null}
+                        />
+                      ))}
+                    </div>
+                    {preview.excludedCount > 0 && (
+                      <p>
+                        {t('Articles exclus du partage', 'Items excluded from sharing')} :{' '}
+                        {preview.excludedCount}
+                      </p>
+                    )}
+                    <p className="design-hint">
+                      {t(
+                        'Seuls ces noms, types, couleurs et photos seront partagés. Les articles personnels, archivés, appartenant à un enfant ou à un autre adulte sont exclus. Les notes et emplacements restent privés.',
+                        'Only these names, types, colors and photos will be shared. Personal, archived, child-owned and other adults’ items are excluded. Notes and storage locations remain private.',
+                      )}
+                    </p>
+                    <CollectionApproval checked={approved} onChange={setApproved} disabled={busy} />
+                  </>
+                ) : (
+                  <p role="status">{t('Chargement de l’aperçu…', 'Loading preview…')}</p>
+                )}
+              </section>
+            )}
+            <button
+              className="btn btn-primary"
+              disabled={busy || (chosenAudience !== 'personal' && (!approved || !preview))}
+              onClick={() =>
+                void run(async () => {
+                  if (!data) return
+                  await social.setCollectionAudience(
+                    collection.id,
+                    data.version,
+                    chosenAudience,
+                    approved,
+                    preview?.digest,
+                  )
+                  setData(await social.getWorkspace())
+                  setAudience(null)
+                  setNotice(t('Visibilité enregistrée.', 'Visibility saved.'))
+                })
+              }
+            >
+              {t('Enregistrer la visibilité', 'Save visibility')}
+            </button>
+            {collection.visibility !== 'personal' && (
+              <Link className="design-link" to={`/communaute/collections/${collection.id}`}>
+                {t('Voir la collection partagée', 'View shared collection')}
+              </Link>
+            )}
             <h2>Articles de la collection</h2>
             {collection.itemIds.length === 0 && <p>Aucun article pour le moment.</p>}
             {items.map((item) => (
@@ -471,7 +602,7 @@ export default function SocialProfilePage({
             <DesignRow
               key={c.id}
               title={c.name}
-              detail="Collection privée"
+              detail={audienceLabel(c.visibility)}
               selected={currentPins.includes(c.id)}
               onClick={() =>
                 setPins(

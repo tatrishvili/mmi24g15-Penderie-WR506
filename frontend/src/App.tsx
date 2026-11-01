@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext.tsx'
 import { ProtectedRoute } from './auth/ProtectedRoute.tsx'
+import CommunityCollectionsPage from './pages/CommunityCollectionsPage.tsx'
 import AppShell from './components/AppShell.tsx'
 import AccountPage from './pages/AccountPage.tsx'
 import FriendsPage from './pages/FriendsPage.tsx'
@@ -72,6 +73,14 @@ function App() {
             <Route
               path="/collections/:collectionId"
               element={<SocialProfilePage key="collection" view="collection" />}
+            />
+            <Route
+              path="/communaute/collections"
+              element={<CommunityCollectionsPage key="discover" />}
+            />
+            <Route
+              path="/communaute/collections/:collectionId"
+              element={<CommunityCollectionsPage key="published" />}
             />
             <Route path="/vitrine" element={<SocialProfilePage key="showcase" view="showcase" />} />
             <Route path="/articles/nouveau" element={<ItemEditorPage />} />

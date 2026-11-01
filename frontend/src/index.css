@@ -2926,3 +2926,28 @@ button.design-row {
   position: static;
   width: 100%;
 }
+
+.collection-approval {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.collection-approval input {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  accent-color: var(--bordeaux);
+}
+.collection-public-cover {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 18px;
+}
+.collection-publication-preview {
+  display: grid;
+  gap: 16px;
+}

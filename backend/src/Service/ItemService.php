@@ -36,6 +36,7 @@ final class ItemService
         private EntityManagerInterface $em,
         private ValidatorInterface $validator,
         private string $uploadDir,
+        private CollectionSharing $collectionSharing,
     ) {
     }
 
@@ -217,6 +218,7 @@ final class ItemService
 
             $item->setStatus($status);
             if (ItemStatus::Archive === $status) {
+                $this->collectionSharing->revokeItem($item);
                 foreach ($this->em->getRepository(\App\Entity\ItemShare::class)->findBy(['item' => $item]) as $share) {
                     $share->revoked = true;
                 }
