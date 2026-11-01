@@ -1,3 +1,4 @@
+import { itemText } from '../lib/itemCatalog.ts'
 import FigmaGlyph from '../components/FigmaGlyph.tsx'
 import { errorText } from '../lib/errors.ts'
 import { useEffect, useState } from 'react'
@@ -103,6 +104,24 @@ export default function ItemDetailPage({
                 icon('imgIconShirt')
               )}
             </div>
+            {item.author && (
+              <p>
+                <strong>{itemText('Auteur / autrice', 'Author')} : </strong>
+                {item.author}
+              </p>
+            )}
+            {item.artist && (
+              <p>
+                <strong>{itemText('Artiste / groupe', 'Artist / band')} : </strong>
+                {item.artist}
+              </p>
+            )}
+            {item.publisher && (
+              <p>
+                <strong>{itemText('Éditeur / label', 'Publisher / label')} : </strong>
+                {item.publisher}
+              </p>
+            )}
             <DesignRow
               icon={icon('imgIconUser')}
               title="Propriétaire"

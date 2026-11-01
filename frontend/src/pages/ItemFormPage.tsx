@@ -1,3 +1,13 @@
+import {
+  ITEM_TYPES,
+  isItemType,
+  itemTypeLabel,
+  itemText,
+  isBook,
+  isMusic,
+  isClothing,
+} from '../lib/itemCatalog.ts'
+import type { ItemType } from '../lib/itemCatalog.ts'
 import FigmaGlyph from '../components/FigmaGlyph.tsx'
 import itemSymbol from '../images/figma/item-symbol.svg'
 import { errorText } from '../lib/errors.ts'
@@ -19,7 +29,10 @@ import {
 
 export type ItemFormValues = {
   name: string
-  type: 'pull' | 'tshirt' | 'pantalon' | 'jupe' | 'robe' | 'chaussure' | 'sac' | 'autre'
+  type: ItemType
+  author?: string
+  artist?: string
+  publisher?: string
   category: string
   brand: string
   color: string
@@ -36,6 +49,7 @@ export type ItemFormValues = {
 interface ItemFormProps {
   initialValues?: ItemFormValues
   onSubmit: (values: ItemFormValues) => void
+  onRetake?: () => void
   onClose: () => void
   initialStep?: 'details' | 'location'
   editing?: boolean
@@ -46,6 +60,7 @@ export function ItemForm({
   initialValues,
   onSubmit,
   onClose,
+  onRetake,
   initialStep = 'details',
   editing = false,
   busy = false,
@@ -58,8 +73,10 @@ export function ItemForm({
   const [precise, setPrecise] = useState('')
   const [values, setValues] = useState<ItemFormValues>({
     name: '',
-    type: 'autre',
     category: '',
+    author: '',
+    artist: '',
+    publisher: '',
     brand: '',
     color: '',
     size: '',
@@ -72,6 +89,7 @@ export function ItemForm({
     memory: '',
     notes: '',
     ...initialValues,
+    type: initialValues?.type && isItemType(initialValues.type) ? initialValues.type : 'autre',
   })
   useEffect(() => {
     let live = true
@@ -107,7 +125,17 @@ export function ItemForm({
   const patch = <K extends keyof ItemFormValues>(key: K, value: ItemFormValues[K]) =>
     setValues((v) => ({ ...v, [key]: value }))
   const save = (skip = false) => {
-    if (!busy) onSubmit({ ...values, ...(skip ? { roomId: null, storageLocationId: null } : {}) })
+    if (!busy)
+      onSubmit({
+        ...values,
+        brand: isBook(values.type) || isMusic(values.type) ? '' : values.brand,
+        author: isBook(values.type) ? values.author : '',
+        artist: isMusic(values.type) ? values.artist : '',
+        publisher: isBook(values.type) || isMusic(values.type) ? values.publisher : '',
+        size: isClothing(values.type) ? values.size : '',
+        material: isClothing(values.type) ? values.material : '',
+        ...(skip ? { roomId: null, storageLocationId: null } : {}),
+      })
   }
 
   if (step === 'location')
@@ -281,6 +309,7 @@ export function ItemForm({
               aria-label="Ajouter une photo de l’article"
               onChange={(e) => {
                 const f = e.target.files?.[0]
+                e.target.value = ''
                 if (f)
                   void resizeToBase64(f)
                     .then((photo) => patch('photos', [photo]))
@@ -288,59 +317,22 @@ export function ItemForm({
               }}
             />
           </label>
-          <details className="item-extra-fields">
-            <summary>Plus de détails (facultatif)</summary>
-            {(
-              [
-                ['category', 'Catégorie'],
-                ['brand', 'Marque'],
-                ['size', 'Taille'],
-                ['material', 'Matière'],
-              ] as const
-            ).map(([key, label]) => (
-              <DesignField key={key} label={label}>
-                <input
-                  value={values[key]}
-                  onChange={(e) => patch(key, e.target.value)}
-                  maxLength={key === 'size' ? 30 : 120}
-                />
-              </DesignField>
-            ))}
-            <DesignField label="État">
-              <select
-                id="item-condition"
-                value={values.condition}
-                onChange={(e) => patch('condition', e.target.value as ItemCondition)}
+          {values.photos.length > 0 && (
+            <div className="scanner-review-controls">
+              {onRetake && (
+                <button type="button" className="design-link" onClick={onRetake}>
+                  {itemText('Reprendre la photo', 'Retake photo')}
+                </button>
+              )}
+              <button
+                type="button"
+                className="design-link"
+                onClick={() => patch('photos', values.photos.slice(1))}
               >
-                {Object.entries({
-                  neuf: 'Neuf',
-                  comme_neuf: 'Comme neuf',
-                  tres_bon: 'Très bon état',
-                  bon: 'Bon état',
-                  a_reparer: 'À réparer',
-                  abime: 'Abîmé',
-                }).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </DesignField>
-            <DesignField label="Notes privées">
-              <textarea
-                value={values.notes}
-                onChange={(e) => patch('notes', e.target.value)}
-                maxLength={2000}
-              />
-            </DesignField>
-            <DesignField label="Souvenir">
-              <textarea
-                value={values.memory}
-                onChange={(e) => patch('memory', e.target.value)}
-                maxLength={2000}
-              />
-            </DesignField>
-          </details>
+                {itemText('Supprimer la photo', 'Remove photo')}
+              </button>
+            </div>
+          )}
         </div>
         <DesignField label="Nom de l'article">
           <input
@@ -358,30 +350,104 @@ export function ItemForm({
             value={values.type}
             onChange={(e) => patch('type', e.target.value as ItemFormValues['type'])}
           >
-            {Object.entries({
-              pull: 'Pull',
-              tshirt: 'T-shirt',
-              pantalon: 'Pantalon',
-              jupe: 'Jupe',
-              robe: 'Robe',
-              chaussure: 'Chaussure',
-              sac: 'Sac',
-              autre: 'Autre',
-            }).map(([v, l]) => (
-              <option key={v} value={v}>
-                {l}
+            {ITEM_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {itemTypeLabel(type)}
               </option>
             ))}
           </select>
         </DesignField>
-        <DesignField label="Couleur">
-          <input
-            value={values.color}
-            onChange={(e) => patch('color', e.target.value)}
-            placeholder="Couleur (facultatif)"
-            maxLength={60}
-          />
+        {(isBook(values.type)
+          ? ([
+              ['author', itemText('Auteur / autrice', 'Author')],
+              ['publisher', itemText('Maison d’édition', 'Publisher')],
+            ] as const)
+          : isMusic(values.type)
+            ? ([
+                ['artist', itemText('Artiste / groupe', 'Artist / band')],
+                ['publisher', itemText('Label', 'Record label')],
+              ] as const)
+            : ([['brand', itemText('Marque', 'Brand')]] as const)
+        ).map(([key, label]) => (
+          <DesignField key={key} label={label}>
+            <input
+              value={values[key] ?? ''}
+              maxLength={120}
+              onChange={(e) => patch(key, e.target.value)}
+            />
+          </DesignField>
+        ))}
+        {isClothing(values.type) && (
+          <>
+            <DesignField label={itemText('Taille', 'Size')}>
+              <input
+                value={values.size}
+                maxLength={30}
+                onChange={(e) => patch('size', e.target.value)}
+              />
+            </DesignField>
+            <DesignField label={itemText('Matière', 'Material')}>
+              <input
+                value={values.material}
+                maxLength={120}
+                onChange={(e) => patch('material', e.target.value)}
+              />
+            </DesignField>
+          </>
+        )}
+        {!isBook(values.type) && !isMusic(values.type) && (
+          <DesignField label="Couleur">
+            <input
+              value={values.color}
+              onChange={(e) => patch('color', e.target.value)}
+              maxLength={60}
+            />
+          </DesignField>
+        )}
+        <DesignField label={itemText('État', 'Condition')}>
+          <select
+            id="item-condition"
+            value={values.condition}
+            onChange={(e) => patch('condition', e.target.value as ItemCondition)}
+          >
+            {Object.entries({
+              neuf: itemText('Neuf', 'New'),
+              comme_neuf: itemText('Comme neuf', 'Like new'),
+              tres_bon: itemText('Très bon état', 'Very good'),
+              bon: itemText('Bon état', 'Good'),
+              a_reparer: itemText('À réparer', 'Needs repair'),
+              abime: itemText('Abîmé', 'Damaged'),
+            }).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
         </DesignField>
+        <details className="item-extra-fields">
+          <summary>{itemText('Plus de détails (facultatif)', 'More details (optional)')}</summary>
+          <DesignField label={itemText('Catégorie', 'Category')}>
+            <input
+              value={values.category}
+              maxLength={120}
+              onChange={(e) => patch('category', e.target.value)}
+            />
+          </DesignField>
+          <DesignField label="Notes privées">
+            <textarea
+              value={values.notes}
+              onChange={(e) => patch('notes', e.target.value)}
+              maxLength={2000}
+            />
+          </DesignField>
+          <DesignField label="Souvenir">
+            <textarea
+              value={values.memory}
+              onChange={(e) => patch('memory', e.target.value)}
+              maxLength={2000}
+            />
+          </DesignField>
+        </details>
         <DesignField label="Propriétaire">
           <select
             disabled={editing || auth.activeProfile?.role === 'child'}

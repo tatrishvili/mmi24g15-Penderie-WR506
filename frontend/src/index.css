@@ -1510,27 +1510,6 @@ p {
   pointer-events: none;
 }
 
-.scan-guide-shape {
-  width: min(68%, 300px);
-  height: 68%;
-  border: 2px dashed rgba(255, 255, 255, 0.92);
-  border-radius: 18px;
-  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.18);
-}
-
-.scan-guide-shape--pantalon {
-  width: min(54%, 240px);
-  height: 78%;
-  border-radius: 12px 12px 24px 24px;
-}
-
-.scan-guide-shape--jupe {
-  width: min(62%, 260px);
-  height: 68%;
-  clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
-  border-radius: 10px;
-}
-
 .scan-guidance-label {
   position: absolute;
   bottom: 16px;
@@ -2880,4 +2859,70 @@ button.design-row {
   background: transparent;
   padding: 0;
   min-height: 44px;
+}
+
+/* Scanner stages: keep framing inside the preview and review at the top. */
+.scanner-stage:focus {
+  outline: none;
+}
+.scanner-design .design-page__body {
+  margin-top: 24px;
+  gap: 18px;
+}
+.scanner-design .scanner-design__preview {
+  padding: 0;
+  height: clamp(260px, 43svh, 430px);
+  background: #34272c;
+  isolation: isolate;
+}
+.scanner-design__preview video {
+  position: absolute;
+  inset: 0;
+}
+.scan-guide-outline {
+  width: 90%;
+  height: calc(100% - 54px);
+  align-self: flex-start;
+  margin-top: 4px;
+  overflow: visible;
+}
+.scan-guide-outline path {
+  fill: rgba(255, 255, 255, 0.04);
+  stroke: white;
+  stroke-width: 2.5;
+  stroke-dasharray: 9 5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 1px 2px #000);
+}
+.scanner-design .scanner-design__actions {
+  margin: 0;
+  gap: 12px;
+}
+.scanner-review-photo {
+  display: block;
+  width: 100%;
+  height: clamp(200px, 34svh, 340px);
+  object-fit: contain;
+  border-radius: 20px;
+  background: var(--rose-blush);
+}
+.scanner-review-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.scanner-review-controls button {
+  min-height: 44px;
+}
+.item-details-form .item-photo-section {
+  position: static;
+  display: grid;
+  gap: 12px;
+}
+.item-details-form .item-extra-fields {
+  position: static;
+  width: 100%;
 }

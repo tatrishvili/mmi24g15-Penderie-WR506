@@ -65,6 +65,31 @@ final class ItemLifecycleTest extends ApiTestCase
         self::assertSame('manque un bouton', $updated['notes']);
     }
 
+    public function testBookAndMusicMetadataRoundTripsAndCanBeCleared(): void
+    {
+        $client = static::createClient();
+        self::registerHousehold($client);
+        $created = self::api($client, 'POST', '/api/items', [
+            'name' => 'Un livre', 'type' => 'livre', 'author' => 'Camille', 'publisher' => 'Éditions Test',
+        ]);
+        self::assertSame(201, $created->getStatusCode());
+        $item = self::decoded($created)['item'];
+        $shown = self::decoded(self::api($client, 'GET', '/api/items/'.$item['id']))['item'];
+        self::assertSame('Camille', $shown['author']);
+        self::assertSame('Éditions Test', $shown['publisher']);
+        self::assertNull($shown['brand']);
+        $patched = self::api($client, 'PATCH', '/api/items/'.$item['id'], [
+            'type' => 'vinyle', 'author' => null, 'artist' => 'Un groupe', 'publisher' => 'Un label',
+        ]);
+        self::assertSame(200, $patched->getStatusCode());
+        $shown = self::decoded(self::api($client, 'GET', '/api/items/'.$item['id']))['item'];
+        self::assertNull($shown['author']);
+        self::assertSame('Un groupe', $shown['artist']);
+        self::assertSame('Un label', $shown['publisher']);
+        $invalid = self::api($client, 'PATCH', '/api/items/'.$item['id'], ['author' => str_repeat('a', 121)]);
+        self::assertSame(422, $invalid->getStatusCode());
+    }
+
     public function testPatchRejectsAnEmptyName(): void
     {
         $client = static::createClient();

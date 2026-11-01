@@ -20,7 +20,6 @@ describe('Dressing : recherche et ajout d’article', () => {
     cy.openManualEntry()
     cy.get('#item-name').type('Pull e2e Cypress')
     cy.get('#item-type').select('pull')
-    cy.contains('summary', 'Plus de détails').click()
     cy.get('#item-condition').select('bon')
     cy.contains('button', 'Choisir l’emplacement').click()
     cy.contains('button', 'Enregistrer l’article').click()

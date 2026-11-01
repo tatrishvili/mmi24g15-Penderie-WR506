@@ -109,6 +109,10 @@ final class ItemService
         $item = new Item($household, $owner, trim((string) $dto->name));
         $this->applyLocation($item, $household, $dto->roomId, $dto->storageLocationId);
         $item->setType(self::cleanOrNull($dto->type));
+        $item->setAuthor(self::cleanOrNull($dto->author));
+        $item->setArtist(self::cleanOrNull($dto->artist));
+        $item->setPublisher(self::cleanOrNull($dto->publisher));
+
         $item->setCategory(self::cleanOrNull($dto->category));
         $this->apply($item, $dto->brand, $dto->color, $dto->size, $dto->material, $dto->condition, $dto->status, $dto->memory, $dto->notes);
         $this->em->persist($item);
@@ -163,6 +167,18 @@ final class ItemService
                 $roomId,
                 $storageLocationId,
             );
+        }
+
+        if ($dto->has('author')) {
+            $item->setAuthor(self::cleanOrNull($dto->author));
+        }
+
+        if ($dto->has('artist')) {
+            $item->setArtist(self::cleanOrNull($dto->artist));
+        }
+
+        if ($dto->has('publisher')) {
+            $item->setPublisher(self::cleanOrNull($dto->publisher));
         }
 
         if ($dto->has('brand')) {
@@ -344,6 +360,9 @@ final class ItemService
                 'name' => $item->getStorageLocation()->getName(),
                 'path' => self::storagePath($item->getStorageLocation()),
             ],
+            'author' => $item->getAuthor(),
+            'artist' => $item->getArtist(),
+            'publisher' => $item->getPublisher(),
             'brand' => $item->getBrand(),
             'color' => $item->getColor(),
             'size' => $item->getSize(),

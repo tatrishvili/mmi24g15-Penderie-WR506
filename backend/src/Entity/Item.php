@@ -52,6 +52,15 @@ class Item
     #[ORM\Column(length: 120, nullable: true)]
     private ?string $brand = null;
 
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $author = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $artist = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $publisher = null;
+
     #[ORM\Column(length: 60, nullable: true)]
     private ?string $color = null;
 
@@ -176,6 +185,36 @@ class Item
     public function setName(string $name): void
     {
         $this->name = $name;
+    }
+
+    public function getAuthor(): ?string
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?string $author): void
+    {
+        $this->author = $author;
+    }
+
+    public function getArtist(): ?string
+    {
+        return $this->artist;
+    }
+
+    public function setArtist(?string $artist): void
+    {
+        $this->artist = $artist;
+    }
+
+    public function getPublisher(): ?string
+    {
+        return $this->publisher;
+    }
+
+    public function setPublisher(?string $publisher): void
+    {
+        $this->publisher = $publisher;
     }
 
     public function getBrand(): ?string

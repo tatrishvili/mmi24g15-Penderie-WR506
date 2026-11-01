@@ -186,3 +186,23 @@ This describes the repository snapshot, not a claim of production readiness:
 8. Add privacy-safe sharing, controlled sale/gifting, then outfits and insights.
 
 For every step, deliver a vertical slice: database/migration, API contract, server validation and authorization, frontend flow, and positive/negative tests. Update [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) when a product decision changes.
+
+
+### Scanner review and item-specific details (1 November 2026)
+
+The scanner offers T-shirt, trousers, skirt and object framing outlines contained
+inside the camera preview. Capturing or selecting a photo immediately replaces
+the camera screen with a dedicated review screen, including while analysis runs
+or fails. Retake and remove are available there; stale analysis responses cannot
+restore a discarded photo. Manual entry remains available without AI.
+
+The editable item type includes common clothing and accessories plus books,
+vinyl records, CDs and household objects. Clothing shows brand, size, material
+and color; books show author and publisher; music shows artist/band and label.
+Condition is visible for every type. Author, artist and publisher have separate
+validated database fields and are not stored as brands. Only clearly readable
+creator/brand information should be suggested by photo analysis; all suggestions
+remain editable. Changing type adapts the fields before saving.
+
+Migration `Version20261101160000` adds nullable author, artist and publisher
+columns and must be applied in other environments before using these fields.

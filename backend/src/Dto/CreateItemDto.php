@@ -25,6 +25,12 @@ final class CreateItemDto
         public ?int $storageLocationId = null,
         #[Assert\Length(max: 120)]
         public ?string $brand = null,
+        #[Assert\Length(max: 120)]
+        public ?string $author = null,
+        #[Assert\Length(max: 120)]
+        public ?string $artist = null,
+        #[Assert\Length(max: 120)]
+        public ?string $publisher = null,
         #[Assert\Length(max: 60)]
         public ?string $color = null,
         #[Assert\Length(max: 30)]
@@ -56,6 +62,9 @@ final class CreateItemDto
             roomId: self::intOrNull($data['roomId'] ?? null),
             storageLocationId: self::intOrNull($data['storageLocationId'] ?? null),
             brand: self::stringOrNull($data['brand'] ?? null),
+            author: self::stringOrNull($data['author'] ?? null),
+            artist: self::stringOrNull($data['artist'] ?? null),
+            publisher: self::stringOrNull($data['publisher'] ?? null),
             color: self::stringOrNull($data['color'] ?? null),
             size: self::stringOrNull($data['size'] ?? null),
             material: self::stringOrNull($data['material'] ?? null),

@@ -232,3 +232,23 @@ These gaps mean “there is a screen or endpoint” must not be reported as “t
 - **2026-10-13:** Friend requests are adult-only, use account usernames, and require recipient acceptance. Friendship alone never reveals inventory. A PIN is only a trusted-device profile unlock inside a parent's authenticated session; child own-device sign-in remains disabled until child-owned item authorization is complete.
 
 When a decision changes, update this log and both the product specification and affected workflow docs in the same change.
+
+
+### Scanner review and item-specific details (1 November 2026)
+
+The scanner offers T-shirt, trousers, skirt and object framing outlines contained
+inside the camera preview. Capturing or selecting a photo immediately replaces
+the camera screen with a dedicated review screen, including while analysis runs
+or fails. Retake and remove are available there; stale analysis responses cannot
+restore a discarded photo. Manual entry remains available without AI.
+
+The editable item type includes common clothing and accessories plus books,
+vinyl records, CDs and household objects. Clothing shows brand, size, material
+and color; books show author and publisher; music shows artist/band and label.
+Condition is visible for every type. Author, artist and publisher have separate
+validated database fields and are not stored as brands. Only clearly readable
+creator/brand information should be suggested by photo analysis; all suggestions
+remain editable. Changing type adapts the fields before saving.
+
+Migration `Version20261101160000` adds nullable author, artist and publisher
+columns and must be applied in other environments before using these fields.
