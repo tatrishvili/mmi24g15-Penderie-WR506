@@ -68,6 +68,15 @@ Then open:
 The whole chain — browser → Vite → nginx → PHP-FPM → MariaDB — is containerised; nothing needs to be
 installed on the host except Docker.
 
+Compose waits for PHP-FPM and the gateway health check before starting the frontend.
+The gateway refreshes Docker DNS every five seconds so recreating the API container
+does not leave it forwarding requests to an obsolete address.
+
+If login reports a gateway/proxy error, check `docker compose ps` and
+`docker compose logs --tail=50 frontend nginx api`. An `ENOTFOUND nginx` error means
+the frontend cannot reach the Docker gateway; start the complete stack with
+`docker compose up -d` and wait for its health checks before retrying login.
+
 Registration emails are captured locally by Mailpit; no external email account is needed for development.
 For deployment, set `MAILER_DSN` to the Symfony Resend transport
 (`resend+api://<API_KEY>@default`), `MAILER_FROM_ADDRESS` to an address on your verified sending domain,
