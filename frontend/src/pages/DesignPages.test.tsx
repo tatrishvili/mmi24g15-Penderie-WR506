@@ -264,7 +264,7 @@ describe('Collection audiences', () => {
       expect(payload).toMatchObject({ name: 'Mes disques', visibility: 'app', approved: true }),
     )
   })
-  it('requires preview approval and sends its digest when publishing an existing collection', async () => {
+  it('publishes the approved preview directly from the sharing button and confirms success', async () => {
     let payload: Record<string, unknown> = {}
     mount(
       <SocialProfilePage view="collection" />,
@@ -276,14 +276,24 @@ describe('Collection audiences', () => {
           payload = jsonBody(init)
           return { status: 200, body: { visibility: 'friends', version: 2 } }
         }
+        if (url.endsWith('/workspace') && payload.approved) {
+          return {
+            status: 200,
+            body: {
+              ...WORKSPACE,
+              version: 2,
+              collections: [{ ...WORKSPACE.collections[0], visibility: 'friends' }],
+            },
+          }
+        }
         return response(url)
       },
     )
     fireEvent.change(await screen.findByLabelText('Visibilité'), { target: { value: 'friends' } })
     expect(await screen.findByText('Disque approuvé')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Enregistrer la visibilité' })).toBeDisabled()
-    fireEvent.click(screen.getByRole('checkbox', { name: /J’approuve/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la visibilité' }))
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(payload).toEqual({})
+    fireEvent.click(screen.getByRole('button', { name: 'Partager avec mes amis' }))
     await waitFor(() =>
       expect(payload).toEqual({
         version: 1,
@@ -292,6 +302,39 @@ describe('Collection audiences', () => {
         digest: 'approved-digest',
       }),
     )
+    expect(await screen.findByText('Collection partagée avec succès.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Visibilité')).toHaveValue('friends')
+    expect(screen.getByRole('link', { name: 'Voir la collection partagée' })).toHaveAttribute(
+      'href',
+      '/communaute/collections/vinyles',
+    )
+  })
+  it('shows a publication failure beside the sharing action without claiming success', async () => {
+    mount(
+      <SocialProfilePage view="collection" />,
+      '/collections/vinyles',
+      '/collections/:collectionId',
+      (url) => {
+        if (url.endsWith('/preview')) return { status: 200, body: preview }
+        if (url.endsWith('/audience'))
+          return {
+            status: 409,
+            body: {
+              error: {
+                code: 'conflict',
+                message: 'La collection a changé. Vérifiez le nouvel aperçu.',
+              },
+            },
+          }
+        return response(url)
+      },
+    )
+    fireEvent.change(await screen.findByLabelText('Visibilité'), { target: { value: 'friends' } })
+    await screen.findByText('Disque approuvé')
+    fireEvent.click(screen.getByRole('button', { name: 'Partager avec mes amis' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('La collection a changé.')
+    expect(screen.queryByText('Collection partagée avec succès.')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Partager avec mes amis' })).toBeEnabled()
   })
   it('shows allowed community collections with a reachable shared view', async () => {
     mount(<CommunityCollectionsPage />, '/', '/', (url) =>

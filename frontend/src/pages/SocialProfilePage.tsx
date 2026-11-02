@@ -424,7 +424,6 @@ export default function SocialProfilePage({
           </Link>
         }
       >
-        {errors}
         {load}
         {data && !collection && <p>Collection introuvable.</p>}
         {collection && (
@@ -479,11 +478,16 @@ export default function SocialProfilePage({
                     )}
                     <p className="design-hint">
                       {t(
-                        'Seuls ces noms, types, couleurs et photos seront partagés. Les articles personnels, archivés, appartenant à un enfant ou à un autre adulte sont exclus. Les notes et emplacements restent privés.',
-                        'Only these names, types, colors and photos will be shared. Personal, archived, child-owned and other adults’ items are excluded. Notes and storage locations remain private.',
+                        'Votre nom de collection, sa couverture et les articles de cet aperçu seront visibles par l’audience choisie. Vos notes et emplacements restent privés.',
+                        'Your collection name, cover and the items in this preview will be visible to the selected audience. Your notes and storage locations stay private.',
                       )}
                     </p>
-                    <CollectionApproval checked={approved} onChange={setApproved} disabled={busy} />
+                    <p className="design-hint">
+                      {t(
+                        'Cliquez sur Partager pour confirmer cet aperçu.',
+                        'Click Share to approve this preview.',
+                      )}
+                    </p>
                   </>
                 ) : (
                   <p role="status">{t('Chargement de l’aperçu…', 'Loading preview…')}</p>
@@ -492,7 +496,7 @@ export default function SocialProfilePage({
             )}
             <button
               className="btn btn-primary"
-              disabled={busy || (chosenAudience !== 'personal' && (!approved || !preview))}
+              disabled={busy || (chosenAudience !== 'personal' && !preview)}
               onClick={() =>
                 void run(async () => {
                   if (!data) return
@@ -500,17 +504,35 @@ export default function SocialProfilePage({
                     collection.id,
                     data.version,
                     chosenAudience,
-                    approved,
+                    chosenAudience !== 'personal',
                     preview?.digest,
                   )
                   setData(await social.getWorkspace())
                   setAudience(null)
-                  setNotice(t('Visibilité enregistrée.', 'Visibility saved.'))
+                  setNotice(
+                    chosenAudience === 'personal'
+                      ? t('La collection est privée.', 'The collection is private.')
+                      : t('Collection partagée avec succès.', 'Collection shared successfully.'),
+                  )
                 })
               }
             >
-              {t('Enregistrer la visibilité', 'Save visibility')}
+              {busy
+                ? t('Enregistrement…', 'Saving…')
+                : chosenAudience === 'personal'
+                  ? t('Garder la collection privée', 'Keep collection private')
+                  : chosenAudience === 'friends'
+                    ? t('Partager avec mes amis', 'Share with my friends')
+                    : chosenAudience === 'followers'
+                      ? t('Partager avec mes abonnés', 'Share with my followers')
+                      : t('Partager sur Penderie', 'Share on Penderie')}
             </button>
+            <ErrorMessage error={error} />
+            {notice && (
+              <p className="collection-sharing-status" role="status">
+                {notice}
+              </p>
+            )}
             {collection.visibility !== 'personal' && (
               <Link className="design-link" to={`/communaute/collections/${collection.id}`}>
                 {t('Voir la collection partagée', 'View shared collection')}
