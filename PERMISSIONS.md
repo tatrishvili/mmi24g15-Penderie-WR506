@@ -215,3 +215,10 @@ access without deleting the private profile. Avatar GETs require a verified adul
 session and use `no-store`. Connection counts and lists exposed in these new
 profile controls belong to the current account. Member profiles expose aggregate
 counts only, without revealing their lists.
+
+Profile pins are presentation preferences, not grants. Ranking happens only
+within audience-authorized publications and before pagination. Only a boolean
+pinned badge is returned per visible publication; private pin IDs and collection
+metadata are never returned to external viewers. Pin/unpin reuses the verified
+adult, current-workspace ownership and optimistic-version checks of the existing
+workspace mutation endpoint. Pinning never publishes private collections or items.

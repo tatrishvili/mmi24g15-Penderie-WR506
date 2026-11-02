@@ -275,3 +275,15 @@ Use the profile counts for connections and the visible **Profil → Famille et p
 card for household members and child setup. **Profil → Plus → Changer de profil**
 opens existing profile management and trusted-device switching. Secure adult email
 invitations are still unavailable.
+
+### Own profile collections and pins
+
+Open **Profil** to see all your collections immediately, including private ones.
+Use **Toutes / Partagées / Privées** to filter the grid. Each card opens its
+collection and shows its audience and item count. **Créer** starts a new collection.
+Click the pin button on a card to pin or unpin it; the change saves immediately
+and survives reload. Up to 12 collections may be pinned. Pinned cards move first.
+
+Visitors see only collections shared with their audience, with eligible pinned
+collections first. Pinning never grants visibility or changes chronological feed
+order. The existing **Personnaliser ma vitrine** screen can still reorder pins.

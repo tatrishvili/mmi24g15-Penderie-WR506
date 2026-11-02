@@ -333,3 +333,15 @@ photos remaining the main content. Shared collection/approval covers are 88px.
 **Famille et profils** is now a visible card on the own profile, linking directly
 to `/foyer/membres` for the active household's members and child setup. Adult
 invitation support remains a separate, unimplemented workflow.
+
+The own profile now renders every collection in a two-column grid, with All,
+Shared and Private filters, item counts and audience labels. Direct pin/unpin
+controls persist immediately through the versioned workspace API (up to 12 pins).
+Pinned collections appear first in saved pin order; unpinned collections remain
+visible on the own profile. Edit-profile and family management remain reachable.
+
+On member profiles, permitted pinned publications appear before other eligible
+publications, ranked before pagination. Feed ordering stays chronological. Pinning
+a private collection does not publish it, change its audience or disclose its
+name, ID or item count. The visitor sees a pinned badge only on a publication they
+are already authorized to view. No migration is required for pinning.

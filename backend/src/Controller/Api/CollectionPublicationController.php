@@ -190,9 +190,25 @@ final class CollectionPublicationController
         }
         $username = $request->query->getString('owner');
         if ('' !== $username) {
-            $query->andWhere('w.owner = :owner')->setParameter('owner', $this->profileOwner($username));
+            $owner = $this->profileOwner($username);
+            $query->andWhere('w.owner = :owner')->setParameter('owner', $owner);
+            // Rank pins before pagination, while preserving the existing audience filter.
+            $pins = [];
+            foreach ($this->em->getRepository(SocialWorkspace::class)->findBy(['owner' => $owner]) as $workspace) {
+                $pins = [...$pins, ...$workspace->pins];
+            }
+            $pins = array_values(array_unique($pins));
+            if ([] !== $pins) {
+                $cases = [];
+                foreach ($pins as $rank => $pin) {
+                    $cases[] = 'WHEN p.id = :pin'.$rank.' THEN '.$rank;
+                    $query->setParameter('pin'.$rank, $pin);
+                }
+                $query->addSelect('CASE '.implode(' ', $cases).' ELSE '.\count($pins).' END AS HIDDEN pinRank')
+                    ->addOrderBy('pinRank', 'ASC');
+            }
         }
-        $query->orderBy('p.updatedAt', 'DESC')->addOrderBy('p.id', 'ASC')->setFirstResult(($page - 1) * 24)->setMaxResults(25);
+        $query->addOrderBy('p.updatedAt', 'DESC')->addOrderBy('p.id', 'ASC')->setFirstResult(($page - 1) * 24)->setMaxResults(25);
         /** @var list<CollectionPublication> $records */
         $records = $query->getQuery()->getResult();
         $hasMore = \count($records) > 24;

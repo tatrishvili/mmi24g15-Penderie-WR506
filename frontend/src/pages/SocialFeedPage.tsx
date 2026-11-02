@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Heart, UsersRound, Shirt } from 'lucide-react'
+import { Heart, UsersRound, Shirt, Pin } from 'lucide-react'
 import { discoverCollections, getCommunityProfile } from '../api/social.ts'
 import type { CommunityProfile, PublishedCollection } from '../api/social.ts'
 import { DesignPage, ErrorMessage } from '../components/DesignPage.tsx'
@@ -33,6 +33,12 @@ function PublicationCard({ collection }: { collection: PublishedCollection }) {
         </div>
       </header>
       <div className="feed-card__body">
+        {collection.pinned && (
+          <span className="feed-card__pinned">
+            <Pin size={14} aria-hidden="true" />
+            {t('Épinglée au profil', 'Pinned to profile')}
+          </span>
+        )}
         <div className="feed-card__collection">
           {collection.cover && (
             <Link to={destination} tabIndex={-1} aria-hidden="true">

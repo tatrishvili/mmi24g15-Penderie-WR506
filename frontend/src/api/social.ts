@@ -113,6 +113,7 @@ export interface CollectionPreview {
   excludedCount: number
 }
 export interface PublishedCollection {
+  pinned?: boolean
   id: string
   name: string
   cover: string
