@@ -1,5 +1,9 @@
 # Penderie agent instructions
 
+## Latest session handover
+
+- Before resuming work, read [session02/11/26.md](../session02/11/26.md). It records the 2 November child-account decisions and outstanding implementation; do not ask the user to re-explain them.
+
 ## Product source of truth
 
 - Read [PRODUCT_SPEC.md](../PRODUCT_SPEC.md) for product decisions, domain vocabulary, security boundaries, and current implementation gaps.

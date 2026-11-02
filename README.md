@@ -219,4 +219,4 @@ mappings, implemented workflows, additive migrations, privacy boundaries and
 remaining backend work. Start at `/foyer` or `/profil` after signing in. On another
 environment, apply pending migrations before using collections, sharing or loans.
 
-Latest session handover: [session.29.10.2026.md](./session.29.10.2026.md). Read it first when resuming the 25-page Figma implementation.
+Latest session handover: [session02/11/26.md](./session02/11/26.md). Read it first when resuming, especially the child-account system decisions and remaining implementation. The October Figma handover is historical.

@@ -1,0 +1,29 @@
+diff --git a/Makefile b/Makefile
+index df5569f..9f4b233 100644
+--- a/Makefile
++++ b/Makefile
+@@ -36,8 +36,9 @@ down: ## Stop the stack (keeps the database volume)
+ 	$(COMPOSE) down
+ 
+ .PHONY: restart
+-restart: ## Restart the stack without rebuilding
+-	$(COMPOSE) restart
++restart: ## Recreate app containers and wait for readiness (keeps database data)
++	$(COMPOSE) up -d --wait db mailpit
++	$(COMPOSE) up -d --no-deps --force-recreate --wait api nginx frontend
+ 
+ .PHONY: ps
+ ps: ## Show the status of every service
+diff --git a/docker-compose.yml b/docker-compose.yml
+index e93bf3a..35e727d 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -61,7 +61,7 @@ services:
+       MAILER_FROM_ADDRESS: ${MAILER_FROM_ADDRESS:-no-reply@penderie.local}
+       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:5173}
+     healthcheck:
+-      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
++      test: ["CMD", "php", "-r", "exit(is_file('/var/www/html/public/index.php') && is_file('/var/www/html/vendor/autoload.php') && @fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+       interval: 5s
+       timeout: 3s
+       retries: 12
