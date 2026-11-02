@@ -26,6 +26,12 @@ class CommunityIdentity
     #[ORM\Column(type: 'text')]
     public string $photo;
 
+    #[ORM\Column(type: 'text', options: ['default' => ''])]
+    public string $bio = '';
+
+    #[ORM\Column(options: ['default' => false])]
+    public bool $bioShared = false;
+
     public function __construct(User $owner, string $displayName, string $photo)
     {
         $this->owner = $owner;

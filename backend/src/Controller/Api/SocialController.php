@@ -115,9 +115,12 @@ final class SocialController
             $profile['displayName'] = $workspace->owner->getUsername() ?? 'Mon profil';
         }
 
+        $identity = $this->identities->find($workspace->owner);
+
         return new JsonResponse([
             'profile' => $profile,
-            'identityPublished' => null !== $this->identities->find($workspace->owner),
+            'identityPublished' => null !== $identity,
+            'bioPublished' => $identity->bioShared ?? false,
             'connections' => $this->identities->counts($workspace->owner),
             'username' => $workspace->owner->getUsername(),
             'collections' => $workspace->collections,
@@ -142,11 +145,16 @@ final class SocialController
                 'photo' => $this->image($profile['photo'] ?? ''),
             ];
         }
+        if (array_key_exists('shareBio', $body)
+            && (!\is_bool($body['shareBio']) || !array_key_exists('shareIdentity', $body) || (true === $body['shareBio'] && true !== $body['shareIdentity']))) {
+            throw new UnprocessableEntityHttpException('Sharing a bio requires an approved community identity.');
+        }
         if (array_key_exists('shareIdentity', $body)) {
             if (!\is_bool($body['shareIdentity']) || !isset($body['profile']) || !\is_array($body['profile'])) {
                 throw new UnprocessableEntityHttpException('Approve a profile name and photo before publishing.');
             }
-            $this->identities->save($workspace->owner, $workspace->profile['displayName'], $workspace->profile['photo'], $body['shareIdentity']);
+            $this->identities->save($workspace->owner, $workspace->profile['displayName'], $workspace->profile['photo'], $body['shareIdentity'],
+                $workspace->profile['bio'], $body['shareBio'] ?? null);
         }
         if (isset($body['pins'])) {
             if (!\is_array($body['pins']) || \count($body['pins']) > 12) {

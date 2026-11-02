@@ -159,6 +159,10 @@ describe('Current Figma page families', () => {
       'href',
       '/amis?liste=abonnements',
     )
+    expect(screen.getByRole('link', { name: /Famille et profils/ })).toHaveAttribute(
+      'href',
+      '/foyer/membres',
+    )
   })
   it('keeps name and photo sharing opt-in when saving a profile', async () => {
     let saved: Record<string, unknown> = {}
@@ -173,10 +177,21 @@ describe('Current Figma page families', () => {
       name: 'Afficher ce nom et cette photo aux membres Penderie',
     })
     expect(consent).not.toBeChecked()
+    const bioConsent = screen.getByRole('checkbox', {
+      name: 'Afficher aussi ma bio sur mon profil Penderie',
+    })
+    expect(bioConsent).toBeDisabled()
+    expect(bioConsent).not.toBeChecked()
     fireEvent.click(consent)
+    expect(bioConsent).toBeEnabled()
+    fireEvent.click(bioConsent)
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
     await waitFor(() =>
-      expect(saved).toMatchObject({ shareIdentity: true, profile: WORKSPACE.profile }),
+      expect(saved).toMatchObject({
+        shareIdentity: true,
+        shareBio: true,
+        profile: WORKSPACE.profile,
+      }),
     )
   })
   it.each([

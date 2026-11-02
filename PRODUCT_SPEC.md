@@ -304,12 +304,12 @@ records remain private. Audience and optional owner filters run before paginatio
 more appends results; returning focus refreshes permissions and clears cached cards.
 
 The own profile shows live friends/followers/following counts, each opening the
-matching own list at `/amis?liste=amis|abonnes|abonnements`. Profiles of other
-members do not expose their connection lists or counts.
+matching own list at `/amis?liste=amis|abonnes|abonnements`. Member profiles show aggregate friend/follower/following counts; their connection
+lists remain private.
 
 An adult may explicitly enable **Afficher ce nom et cette photo aux membres
 Penderie** when saving their profile. This saves a separate account-wide approved
-identity snapshot; the private bio and household profile stay private. New and
+identity snapshot; the household profile stays private and a bio requires separate approval. New and
 existing accounts default to username + initial until approval. Disabling the
 option removes that snapshot and future avatar access. Approved avatars are
 resized and re-encoded without image metadata. Editing private data without the
@@ -320,3 +320,16 @@ The main navigation has five destinations: Fil, Dressing, Scanner, Foyer and
 Profil. Friends/requests and family/profile switching are available from Profil.
 Migration `Version20261102105511` adds only the `community_identity` table and is
 applied locally; other environments must migrate before using these endpoints.
+
+Member profiles now display aggregate friends/followers/following counts and an
+optional approved bio. A separate **Afficher aussi ma bio sur mon profil Penderie**
+control defaults off, including for already-published identities. Approval stores
+only the reviewed bio; unsharing removes the public copy while retaining private
+profile text. Migration `Version20261102111118` adds default-empty bio and
+approval fields and is applied locally.
+
+Collection covers are compact title thumbnails in the feed (64px), with item
+photos remaining the main content. Shared collection/approval covers are 88px.
+**Famille et profils** is now a visible card on the own profile, linking directly
+to `/foyer/membres` for the active household's members and child setup. Adult
+invitation support remains a separate, unimplemented workflow.

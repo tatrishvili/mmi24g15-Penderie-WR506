@@ -32,21 +32,25 @@ function PublicationCard({ collection }: { collection: PublishedCollection }) {
           <small>{audienceLabel(collection.visibility)}</small>
         </div>
       </header>
-      {collection.cover && (
-        <Link to={destination} tabIndex={-1} aria-hidden="true">
-          <img className="feed-card__cover" src={collection.cover} alt="" loading="lazy" />
-        </Link>
-      )}
       <div className="feed-card__body">
-        <h2>
-          <Link to={destination}>{collection.name}</Link>
-        </h2>
-        <p className="feed-card__count">
-          {collection.items.length}{' '}
-          {collection.items.length === 1
-            ? t('article partagé', 'shared item')
-            : t('articles partagés', 'shared items')}
-        </p>
+        <div className="feed-card__collection">
+          {collection.cover && (
+            <Link to={destination} tabIndex={-1} aria-hidden="true">
+              <img className="feed-card__cover" src={collection.cover} alt="" loading="lazy" />
+            </Link>
+          )}
+          <div>
+            <h2>
+              <Link to={destination}>{collection.name}</Link>
+            </h2>
+            <p className="feed-card__count">
+              {collection.items.length}{' '}
+              {collection.items.length === 1
+                ? t('article partagé', 'shared item')
+                : t('articles partagés', 'shared items')}
+            </p>
+          </div>
+        </div>
         {collection.items.length > 0 && (
           <ul className="feed-items">
             {collection.items.slice(0, 4).map((item, index) => (
@@ -165,6 +169,24 @@ function Feed({ username, scope }: { username?: string; scope: Scope }) {
                   ? t('Abonné(e)', 'Following')
                   : t('Membre Penderie', 'Penderie member')}
           </span>
+          <dl
+            className="profile-connections community-profile__counts"
+            aria-label={t('Ses relations', 'Their connections')}
+          >
+            <div>
+              <dt>{t('Amis', 'Friends')}</dt>
+              <dd>{profile.connections?.friends ?? 0}</dd>
+            </div>
+            <div>
+              <dt>{t('Abonnés', 'Followers')}</dt>
+              <dd>{profile.connections?.followers ?? 0}</dd>
+            </div>
+            <div>
+              <dt>{t('Abonnements', 'Following')}</dt>
+              <dd>{profile.connections?.following ?? 0}</dd>
+            </div>
+          </dl>
+          {profile.bio && <p className="community-profile__bio">{profile.bio}</p>}
           <p>{t('Ses collections partagées avec vous', 'Collections shared with you')}</p>
         </header>
       )}

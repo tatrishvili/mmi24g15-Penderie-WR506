@@ -58,6 +58,7 @@ export default function SocialProfilePage({
   const [cover, setCover] = useState('')
   const [audience, setAudience] = useState<Audience | null>(null)
   const [approved, setApproved] = useState(false)
+  const [shareBio, setShareBio] = useState<boolean | null>(null)
   const [shareIdentity, setShareIdentity] = useState<boolean | null>(null)
   const [preview, setPreview] = useState<CollectionPreview | null>(null)
   const [profile, setProfile] = useState<Workspace['profile'] | null>(null)
@@ -221,6 +222,12 @@ export default function SocialProfilePage({
               detail={`${data.collections.length} collections`}
               to="/collections"
             />
+            <DesignRow
+              icon={icon('imgIconUser')}
+              title={t('Famille et profils', 'Family and profiles')}
+              detail={t('Voir les membres et ajouter un enfant', 'View members and add a child')}
+              to="/foyer/membres"
+            />
             <h2>À la une</h2>
             <div className="design-grid">
               {data.collections.filter((c) => data.pins.includes(c.id)).map((c) => tile(c))}
@@ -232,7 +239,7 @@ export default function SocialProfilePage({
               <summary>Plus</summary>
               <div className="design-inline-links">
                 <Link to="/amis">{t('Amis et demandes', 'Friends and requests')}</Link>
-                <Link to="/profils">{t('Famille et profils', 'Family and profiles')}</Link>
+                <Link to="/profils">{t('Changer de profil', 'Switch profile')}</Link>
                 <Link to="/actualites">{t('Le fil Penderie', 'The Penderie feed')}</Link>
                 <Link to="/vitrine">Personnaliser ma vitrine</Link>
                 <Link to="/acces">Gérer les accès</Link>
@@ -276,6 +283,9 @@ export default function SocialProfilePage({
                     version: data.version,
                     profile: currentProfile,
                     shareIdentity: shareIdentity ?? data.identityPublished ?? false,
+                    shareBio:
+                      (shareIdentity ?? data.identityPublished ?? false) &&
+                      (shareBio ?? data.bioPublished ?? false),
                   }),
                 )
                 navigate('/profil')
@@ -338,10 +348,27 @@ export default function SocialProfilePage({
                 )}
               </span>
             </label>
+            <label className="collection-approval">
+              <input
+                type="checkbox"
+                checked={
+                  (shareIdentity ?? data.identityPublished ?? false) &&
+                  (shareBio ?? data.bioPublished ?? false)
+                }
+                disabled={!(shareIdentity ?? data.identityPublished ?? false)}
+                onChange={(e) => setShareBio(e.target.checked)}
+              />
+              <span>
+                {t(
+                  'Afficher aussi ma bio sur mon profil Penderie',
+                  'Also show my bio on my Penderie profile',
+                )}
+              </span>
+            </label>
             <p className="design-hint">
               {t(
-                'Votre bio reste privée. Vous pouvez retirer votre nom et votre photo de la communauté en décochant cette option puis en enregistrant.',
-                'Your bio stays private. Uncheck this option and save to remove your name and photo from the community.',
+                'Votre nom, votre photo et votre bio sont partagés selon ces choix. Décochez une option puis enregistrez pour la retirer de votre profil Penderie.',
+                'Your name, photo and bio are shared according to these choices. Uncheck an option and save to remove it from your Penderie profile.',
               )}
             </p>
             {data.username && (

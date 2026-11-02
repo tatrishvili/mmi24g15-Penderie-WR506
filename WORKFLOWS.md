@@ -267,8 +267,11 @@ To show your chosen name and photo on member profiles, friends lists and feed
 cards, open **Personnaliser mon profil**, edit them, enable **Afficher ce nom et
 cette photo aux membres Penderie**, and save. Leaving it off keeps the username
 and initial as the community identity. Uncheck and save to withdraw the approved
-identity; the private profile data remains saved. Bios remain private.
+identity; the private profile data remains saved. To publish a bio, separately
+enable **Afficher aussi ma bio sur mon profil Penderie** before saving.
 
 The five main tabs are **Fil**, **Dressing**, **Scanner**, **Foyer** and **Profil**.
-Use the profile counts for connections and **Profil → Plus → Famille et profils**
-for family management and trusted-device profile switching.
+Use the profile counts for connections and the visible **Profil → Famille et profils**
+card for household members and child setup. **Profil → Plus → Changer de profil**
+opens existing profile management and trusted-device switching. Secure adult email
+invitations are still unavailable.

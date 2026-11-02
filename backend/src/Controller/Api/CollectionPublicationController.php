@@ -147,8 +147,12 @@ final class CollectionPublicationController
         ]);
         $following = !$self && null !== $this->em->getRepository(Follow::class)->findOneBy(['follower' => $viewer, 'followed' => $owner]);
 
-        // The private workspace profile (photo, bio, display name) is never published implicitly.
+        $identity = $this->identities->find($owner);
+
+        // Read approved snapshots only; existing private bios never become public implicitly.
         return $this->response(['profile' => ['username' => $owner->getUsername(), 'self' => $self, 'friend' => $friend, 'following' => $following,
+            'bio' => null !== $identity && $identity->bioShared ? $identity->bio : '',
+            'connections' => $this->identities->counts($owner),
             ...$this->identities->presentation($owner)]]);
     }
 
