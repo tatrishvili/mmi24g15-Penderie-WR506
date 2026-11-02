@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Link } from 'react-router-dom'
+import { itemText as t } from '../lib/itemCatalog.ts'
 import { Check, Heart, UserMinus, UserPlus, X } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import * as friendsApi from '../api/friends.ts'
@@ -35,13 +37,18 @@ function FriendRow({
 }) {
   return (
     <li className="friend-row">
-      <span className="avatar" aria-hidden="true">
-        {entry.user.firstName.charAt(0).toUpperCase()}
-      </span>
-      <span className="profile-meta">
-        <span className="profile-name">{entry.user.firstName}</span>
-        {entry.user.username !== null && <span className="friend-username">@{entry.user.username}</span>}
-      </span>
+      <Link
+        className="friend-profile-link"
+        to={entry.user.username ? `/communaute/profils/${encodeURIComponent(entry.user.username)}` : '/amis'}
+      >
+        <span className="avatar" aria-hidden="true">
+          {entry.user.firstName.charAt(0).toUpperCase()}
+        </span>
+        <span className="profile-meta">
+          <span className="profile-name">{entry.user.firstName}</span>
+          {entry.user.username !== null && <span className="friend-username">@{entry.user.username}</span>}
+        </span>
+      </Link>
       {actions.map((action) => (
         <button
           key={action.label}
@@ -225,6 +232,9 @@ export default function FriendsPage() {
         </div>
       </div>
 
+      <Link className="btn btn-secondary" to="/actualites">
+        {t('Voir le fil d’actualité', 'See the feed')}
+      </Link>
       <section className="auth-card friends-card">
         <h2>{copy.friends.addTitle}</h2>
         <p className="auth-sub">{copy.friends.addDescription}</p>

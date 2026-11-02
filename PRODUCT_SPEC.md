@@ -283,3 +283,22 @@ separately from private workspace data. It is applied locally; other environment
 must apply it. This supersedes older private-only collection implementation notes;
 external profiles/vitrines, anonymous collection access and item-level audience
 publication are separate features and remain outside this change.
+
+### Community feed and member profiles — 2 November 2026
+
+Verified adult accounts can open another member's profile from friends, followers,
+following lists or a feed author. `/communaute/profils/:username` shows the account
+handle, the viewer's relationship and only collections already published for that
+viewer. Private profile photos, bios, display names, email addresses and household
+information are not implicitly published. No new profile-publication consent is
+introduced by this read-only view.
+
+`/actualites` provides a scrolling feed with Friends & following and Discover
+filters. Friends & following includes accepted friends and accounts the viewer
+follows, excluding the viewer's own posts. Discover includes all collections the
+viewer is eligible to see, including app-audience publications. Each card shows
+up to four approved item previews and links to the full shared collection.
+Standalone item links are not discoverable feed posts; individual inventory
+records remain private. Audience and optional owner filters run before pagination
+(24 publications per page), ordered by publication update time and ID. Loading
+more appends results; returning focus refreshes permissions and clears cached cards.

@@ -55,6 +55,17 @@ export default function CommunityCollectionsPage() {
             )
       }
     >
+      <Link className="design-link" to="/actualites">
+        {t('Voir le fil d’actualité', 'See the feed')}
+      </Link>
+      {collection?.owner && (
+        <Link
+          className="design-link"
+          to={`/communaute/profils/${encodeURIComponent(collection.owner)}`}
+        >
+          @{collection.owner}
+        </Link>
+      )}
       <ErrorMessage error={error} />
       {loading && <p role="status">{t('Chargement…', 'Loading…')}</p>}
       {!loading && !error && !collectionId && (

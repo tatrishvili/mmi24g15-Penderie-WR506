@@ -2951,3 +2951,209 @@ button.design-row {
   display: grid;
   gap: 16px;
 }
+
+/* Shared community views use the existing cream, rose and burgundy palette. */
+.friend-profile-link {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+}
+.friend-profile-link .profile-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.friend-profile-link:focus-visible,
+.feed-card a:focus-visible,
+.feed-navigation a:focus-visible,
+.feed-tabs button:focus-visible {
+  outline: 2px solid var(--bordeaux);
+  outline-offset: 4px;
+}
+.social-feed-page .design-page__body {
+  margin-top: 24px;
+}
+.feed-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.feed-navigation a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--bordeaux);
+  font-weight: 600;
+}
+.feed-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: var(--rose-blush);
+  border-radius: 24px;
+}
+.feed-tabs button {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 20px;
+  color: var(--bordeaux);
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+.feed-tabs button[aria-pressed='true'] {
+  background: var(--bordeaux);
+  color: var(--white);
+}
+.social-feed {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.feed-card {
+  overflow: hidden;
+  min-width: 0;
+  background: var(--white);
+  border: 1px solid var(--rose-poudre);
+  border-radius: 24px;
+}
+.feed-card__author {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 16px;
+}
+.feed-card__author > div {
+  min-width: 0;
+}
+.feed-card__author a {
+  color: var(--bordeaux);
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.feed-card__author small {
+  display: block;
+  color: var(--gris-texte);
+}
+.feed-avatar {
+  display: inline-flex;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--rose-blush);
+  color: var(--bordeaux);
+  font-size: 22px;
+  font-weight: 700;
+}
+.feed-card__cover {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  background: var(--creme);
+}
+.feed-card__body {
+  display: grid;
+  gap: 14px;
+  padding: 0 16px 18px;
+}
+.feed-card__cover + .feed-card__body {
+  padding-top: 16px;
+}
+.feed-card h2 {
+  overflow-wrap: anywhere;
+}
+.feed-card h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+.feed-card .feed-card__count {
+  margin-top: -8px;
+  color: var(--gris-texte);
+  font-size: 13px;
+}
+.feed-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.feed-items li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.feed-items img,
+.feed-item-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 16px;
+  background: var(--creme);
+  color: var(--gris-rose);
+}
+.feed-items strong {
+  color: var(--bordeaux);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.feed-items small {
+  color: var(--gris-texte);
+}
+.community-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 16px;
+  background: var(--white);
+  border: 1px solid var(--rose-poudre);
+  border-radius: 24px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.feed-avatar--large {
+  width: 72px;
+  height: 72px;
+  flex-basis: 72px;
+  font-size: 32px;
+}
+.community-profile__relationship {
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: var(--rose-blush);
+  color: var(--bordeaux);
+  font-size: 14px;
+}
+.feed-empty {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 28px 18px;
+  border: 1px dashed var(--rose-poudre);
+  border-radius: 24px;
+  color: var(--bordeaux);
+}
+.feed-empty p {
+  color: var(--gris-texte);
+}

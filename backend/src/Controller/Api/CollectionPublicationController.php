@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Entity\CollectionPublication;
+use App\Entity\Follow;
+use App\Entity\FriendRequest;
 use App\Entity\Item;
 use App\Entity\ItemPhoto;
 use App\Entity\SocialWorkspace;
 use App\Entity\User;
+use App\Enum\FriendRequestStatus;
 use App\Service\CollectionSharing;
 use App\Service\CurrentActor;
 use Doctrine\ORM\EntityManagerInterface;
@@ -122,18 +125,55 @@ final class CollectionPublicationController
         return $publication;
     }
 
+    private function profileOwner(string $username): User
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['username' => strtolower(trim($username)), 'emailVerified' => true]);
+        if (!$owner instanceof User) {
+            throw new NotFoundHttpException();
+        }
+
+        return $owner;
+    }
+
+    #[Route('/profiles/{username}', methods: ['GET'])]
+    public function profile(string $username): JsonResponse
+    {
+        $viewer = $this->adult();
+        $owner = $this->profileOwner($username);
+        $self = $viewer->getId() === $owner->getId();
+        $friend = !$self && null !== $this->em->getRepository(FriendRequest::class)->findOneBy([
+            'pairKey' => FriendRequest::pairKey($viewer, $owner), 'status' => FriendRequestStatus::Accepted,
+        ]);
+        $following = !$self && null !== $this->em->getRepository(Follow::class)->findOneBy(['follower' => $viewer, 'followed' => $owner]);
+
+        // The private workspace profile (photo, bio, display name) is never published implicitly.
+        return $this->response(['profile' => ['username' => $owner->getUsername(), 'self' => $self, 'friend' => $friend, 'following' => $following]]);
+    }
+
     #[Route('/collection-publications', methods: ['GET'])]
     public function discover(Request $request): JsonResponse
     {
         $viewer = $this->adult();
         $page = max(1, $request->query->getInt('page', 1));
+        $scope = $request->query->getString('scope', 'community');
+        if (!\in_array($scope, ['community', 'following'], true)) {
+            throw new UnprocessableEntityHttpException('Invalid feed scope.');
+        }
         // Apply audience filtering before pagination: private metadata never enters the feed.
         $query = $this->em->getRepository(CollectionPublication::class)->createQueryBuilder('p')
             ->join('p.workspace', 'w')->join('w.owner', 'u')
             ->where('u.emailVerified = true')
             ->andWhere("p.audience = 'app' OR w.owner = :viewer OR (p.audience IN ('friends', 'followers') AND EXISTS (SELECT fr.id FROM App\\Entity\\FriendRequest fr WHERE ((fr.sender = u AND fr.recipient = :viewer) OR (fr.recipient = u AND fr.sender = :viewer)) AND fr.status = :accepted)) OR (p.audience = 'followers' AND EXISTS (SELECT f.id FROM App\\Entity\\Follow f WHERE f.follower = :viewer AND f.followed = u))")
-            ->setParameter('viewer', $viewer)->setParameter('accepted', 'accepted')
-            ->orderBy('p.updatedAt', 'DESC')->addOrderBy('p.id', 'ASC')->setFirstResult(($page - 1) * 24)->setMaxResults(25);
+            ->setParameter('viewer', $viewer)->setParameter('accepted', 'accepted');
+        if ('following' === $scope) {
+            $query->andWhere('w.owner != :viewer')
+                ->andWhere('EXISTS (SELECT followed.id FROM App\\Entity\\Follow followed WHERE followed.follower = :viewer AND followed.followed = u) OR EXISTS (SELECT friendship.id FROM App\\Entity\\FriendRequest friendship WHERE ((friendship.sender = u AND friendship.recipient = :viewer) OR (friendship.recipient = u AND friendship.sender = :viewer)) AND friendship.status = :accepted)');
+        }
+        $username = $request->query->getString('owner');
+        if ('' !== $username) {
+            $query->andWhere('w.owner = :owner')->setParameter('owner', $this->profileOwner($username));
+        }
+        $query->orderBy('p.updatedAt', 'DESC')->addOrderBy('p.id', 'ASC')->setFirstResult(($page - 1) * 24)->setMaxResults(25);
         /** @var list<CollectionPublication> $records */
         $records = $query->getQuery()->getResult();
         $hasMore = \count($records) > 24;

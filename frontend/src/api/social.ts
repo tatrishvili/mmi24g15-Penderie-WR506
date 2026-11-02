@@ -131,9 +131,21 @@ export const setCollectionAudience = (
       body: { version, visibility, approved, digest },
     },
   )
-export const discoverCollections = (page = 1) =>
+export const discoverCollections = (
+  page = 1,
+  options: { owner?: string; scope?: 'community' | 'following' } = {},
+) =>
   api<{ collections: PublishedCollection[]; page: number; hasMore: boolean }>(
-    `/api/social/collection-publications?page=${page}`,
+    `/api/social/collection-publications?${new URLSearchParams({ page: String(page), ...options })}`,
   )
 export const getPublishedCollection = (id: string) =>
   api<{ collection: PublishedCollection }>(`/api/social/collection-publications/${id}`)
+
+export interface CommunityProfile {
+  username: string
+  self: boolean
+  friend: boolean
+  following: boolean
+}
+export const getCommunityProfile = (username: string) =>
+  api<{ profile: CommunityProfile }>(`/api/social/profiles/${encodeURIComponent(username)}`)

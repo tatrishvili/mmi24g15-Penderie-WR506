@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
-import { Heart, MapPin, ScanLine, Shirt, UserRound, UsersRound } from 'lucide-react'
+import { Heart, House, MapPin, ScanLine, Shirt, UserRound, UsersRound } from 'lucide-react'
+import { itemText as t } from '../lib/itemCatalog.ts'
 import { getCopy } from '../i18n/copy.ts'
 
 const BASE_TABS = [
@@ -13,6 +14,7 @@ const BASE_TABS = [
 export default function AppNav() {
   const copy = getCopy()
   const tabs = [
+    { to: '/actualites', label: t('Fil', 'Feed'), Icon: House },
     ...BASE_TABS.slice(0, 4),
     { to: '/amis', label: copy.nav.friends, Icon: Heart },
     ...BASE_TABS.slice(4),

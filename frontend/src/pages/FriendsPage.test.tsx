@@ -74,6 +74,8 @@ describe('FriendsPage', () => {
     renderPage()
 
     expect(await screen.findByText(/Saisissez son nom d’utilisateur/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Sophie.*@sophie_test/ })).toHaveAttribute('href', '/communaute/profils/sophie_test')
+    expect(screen.getByRole('link', { name: 'Voir le fil d’actualité' })).toHaveAttribute('href', '/actualites')
     fireEvent.change(await screen.findByLabelText('Nom d’utilisateur'), {
       target: { value: 'lea_test' },
     })

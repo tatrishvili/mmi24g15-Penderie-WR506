@@ -194,3 +194,14 @@ separately from private workspace data. It is applied locally; other environment
 must apply it. This supersedes older private-only collection implementation notes;
 external profiles/vitrines, anonymous collection access and item-level audience
 publication are separate features and remain outside this change.
+
+### Member profiles and feed — 2 November 2026
+
+Member profile GETs require a signed-in verified adult and return only a verified
+account's username plus self/friend/following relationship flags. They do not
+publish the private SocialWorkspace profile. Child and anonymous access is denied.
+Profile collection queries and both feed scopes reuse the publication audience
+checks before pagination; an owner filter never expands access. The following
+scope further restricts results to accepted friends or followed accounts.
+Source-item vetoes and photo authorization remain in force. No private collection
+count, source item ID, email, location, bio or profile photo is exposed by these views.

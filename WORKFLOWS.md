@@ -237,3 +237,24 @@ separately from private workspace data. It is applied locally; other environment
 must apply it. This supersedes older private-only collection implementation notes;
 external profiles/vitrines, anonymous collection access and item-level audience
 publication are separate features and remain outside this change.
+
+### Visit a friend and browse shared collections — 2 November 2026
+
+1. Open **Amis**, then click a person's name/avatar in friends, followers,
+   following or request lists to visit their member profile.
+2. The profile shows their username, your relationship and only collections
+   published for you. An empty state means no collection is currently available
+   to this viewer; private collection counts are never exposed.
+3. Open **Fil** (`/actualites`) for **Mes amis & abonnements**, or choose
+   **Découvrir** to browse all permitted community publications.
+4. Scroll through collection cards with approved item photos, names, types and
+   colors. More results load automatically, with a **Voir plus de partages**
+   fallback. Click the author for their profile or **Voir la collection** for
+   the complete approved collection.
+5. For a visibility check, use two independently verified adult accounts in
+   separate browser sessions. Publish from one, visit its profile from the other,
+   and vary the audience/relationship. Refocusing the page reloads results;
+   photo and collection API requests always recheck authorization.
+
+Profiles and the feed do not grant access to source inventory, private profile
+photos/bios, household details or standalone bearer-link shares.

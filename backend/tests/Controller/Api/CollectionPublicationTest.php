@@ -66,6 +66,83 @@ final class CollectionPublicationTest extends ApiTestCase
         self::assertSame(401, self::api($anonymous, 'GET', $path)->getStatusCode());
     }
 
+    public function testProfilesAndFollowingFeedRespectAudiencesAndRevocation(): void
+    {
+        $owner = static::createClient();
+        self::registerHousehold($owner);
+        $workspace = self::decoded(self::api($owner, 'GET', '/api/social/workspace'));
+        self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'],
+            'profile' => ['displayName' => 'Private display', 'bio' => 'Secret biography', 'photo' => '']]);
+        $id = self::decoded(self::api($owner, 'POST', '/api/social/collections', ['name' => 'Selected collection']))['collections'][0]['id'];
+        $item = self::decoded(self::api($owner, 'POST', '/api/items', ['name' => 'Approved record', 'notes' => 'Private note']))['item']['id'];
+        self::api($owner, 'PUT', '/api/social/collections/'.$id.'/items/'.$item);
+        $this->publish($owner, $id, 'friends');
+        $viewer = self::freshClient();
+        self::registerHousehold($viewer, 'viewer@example.com');
+        $feed = '/api/social/collection-publications?scope=following';
+        $profileFeed = '/api/social/collection-publications?owner=CAMILLE_TEST';
+        $profilePath = '/api/social/profiles/CAMILLE_TEST';
+        $profile = self::decoded(self::api($viewer, 'GET', $profilePath));
+        self::assertSame(['username' => 'camille_test', 'self' => false, 'friend' => false, 'following' => false], $profile['profile']);
+        self::assertCount(0, self::decoded(self::api($viewer, 'GET', $profileFeed))['collections']);
+        $request = self::decoded(self::api($viewer, 'POST', '/api/friends/requests', ['username' => 'camille_test']))['request'];
+        self::assertCount(0, self::decoded(self::api($viewer, 'GET', $feed))['collections'], 'Pending friendship does not grant friends content.');
+        self::api($owner, 'POST', '/api/friends/requests/'.$request['id'].'/accept');
+        self::assertTrue(self::decoded(self::api($viewer, 'GET', $profilePath))['profile']['friend']);
+        $shown = self::decoded(self::api($viewer, 'GET', $feed))['collections'];
+        self::assertCount(1, $shown);
+        self::assertSame('Approved record', $shown[0]['items'][0]['name']);
+        self::assertCount(1, self::decoded(self::api($viewer, 'GET', $profileFeed))['collections']);
+        self::assertCount(0, self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications?owner=viewer_test'))['collections']);
+        $stranger = self::freshClient();
+        self::registerHousehold($stranger, 'stranger@example.com');
+        $other = self::decoded(self::api($stranger, 'POST', '/api/social/collections', ['name' => 'Community record']))['collections'][0]['id'];
+        $this->publish($stranger, $other, 'app');
+        self::assertCount(1, self::decoded(self::api($viewer, 'GET', $feed))['collections'], 'Following feed excludes accounts not followed or befriended.');
+        self::assertCount(2, self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications'))['collections']);
+        self::api($owner, 'DELETE', '/api/friends/'.$request['id']);
+        self::assertCount(0, self::decoded(self::api($viewer, 'GET', $feed))['collections']);
+        self::assertCount(0, self::decoded(self::api($viewer, 'GET', $profileFeed))['collections']);
+        self::assertFalse(self::decoded(self::api($viewer, 'GET', $profilePath))['profile']['friend']);
+        self::assertSame(404, self::api($viewer, 'GET', '/api/social/profiles/missing')->getStatusCode());
+        self::assertSame(422, self::api($viewer, 'GET', '/api/social/collection-publications?scope=invalid')->getStatusCode());
+        $anonymous = self::freshClient();
+        self::assertSame(401, self::api($anonymous, 'GET', $profilePath)->getStatusCode());
+        $child = self::decoded(self::api($viewer, 'POST', '/api/auth/profiles', ['role' => 'child', 'name' => 'Child']))['profile'];
+        self::api($viewer, 'POST', '/api/auth/profiles/'.$child['id'].'/switch');
+        self::assertSame(403, self::api($viewer, 'GET', $profilePath)->getStatusCode());
+        self::assertSame(403, self::api($viewer, 'GET', $feed)->getStatusCode());
+    }
+
+    public function testOwnerFilteringIsAppliedBeforePagination(): void
+    {
+        $owner = static::createClient();
+        $account = self::registerHousehold($owner);
+        // Create more than a page of approved publications directly; the HTTP tests above cover approval.
+        $em = static::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class);
+        $user = $em->getRepository(\App\Entity\User::class)->findOneBy(['username' => 'camille_test']);
+        self::assertInstanceOf(\App\Entity\User::class, $user);
+        $household = $em->find(\App\Entity\Household::class, $account['household']['id']);
+        self::assertInstanceOf(\App\Entity\Household::class, $household);
+        $workspace = new \App\Entity\SocialWorkspace($user, $household);
+        $em->persist($workspace);
+        for ($i = 0; $i < 26; ++$i) {
+            $em->persist(new \App\Entity\CollectionPublication(str_pad((string) $i, 24, '0', STR_PAD_LEFT), $workspace, 'app', ['name' => 'Collection '.$i, 'cover' => '', 'items' => []]));
+        }
+        $em->flush();
+        $viewer = self::freshClient();
+        self::registerHousehold($viewer, 'viewer@example.com');
+        $pageOne = self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications?owner=camille_test&page=1'));
+        $pageTwo = self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications?owner=camille_test&page=2'));
+        self::assertCount(24, $pageOne['collections']);
+        self::assertTrue($pageOne['hasMore']);
+        self::assertCount(2, $pageTwo['collections']);
+        self::assertFalse($pageTwo['hasMore']);
+        self::assertSame([], array_intersect(array_column($pageOne['collections'], 'id'), array_column($pageTwo['collections'], 'id')));
+        self::assertCount(0, self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications?owner=viewer_test'))['collections']);
+        self::assertCount(0, self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications?scope=following'))['collections']);
+    }
+
     public function testApprovalSafeFrozenProjectionAndPhotoVetoes(): void
     {
         $owner = static::createClient();
