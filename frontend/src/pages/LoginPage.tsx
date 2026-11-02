@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
 import { getCopy } from '../i18n/copy.ts'
@@ -10,6 +10,10 @@ import profilIcon from '../images/icons/profil_icon.svg'
 
 export default function LoginPage() {
   const { status, login } = useAuth()
+  const location = useLocation()
+  const from = (location.state as { from?: unknown } | null)?.from
+  const destination =
+    typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/profils'
   const copy = getCopy()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -18,7 +22,7 @@ export default function LoginPage() {
   const [loggingIn, setLoggingIn] = useState(false)
 
   if (status === 'authenticated') {
-    return <Navigate to="/profils" replace />
+    return <Navigate to={destination} replace />
   }
 
   async function onPasswordSubmit(event: FormEvent) {

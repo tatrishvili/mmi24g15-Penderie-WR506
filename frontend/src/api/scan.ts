@@ -1,8 +1,12 @@
+import type { ItemType } from '../lib/itemCatalog.ts'
 import { api } from './client'
 
 export interface ScanResult {
   name: string
-  type: 'pull' | 'tshirt' | 'pantalon' | 'jupe' | 'robe' | 'chaussure' | 'sac' | 'autre'
+  type: ItemType
+  author?: string
+  artist?: string
+  publisher?: string
   category: string
   brand: string
   color: string

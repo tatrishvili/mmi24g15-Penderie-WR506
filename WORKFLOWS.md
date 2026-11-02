@@ -12,7 +12,7 @@ For the repeatable local test account and browser walkthrough, follow [README.md
 3. Penderie stores a short-lived pending registration with the username, birth date, password hash, and hash of its single-use verification token; the email contains only the verification link/token, never the password or birth date. A pending registration is not an active account and cannot access inventory.
 4. The user opens the link and explicitly confirms on the Penderie page. The API must use POST for confirmation so email-security scanners that prefetch links cannot consume the one-time token.
 5. Confirmation verifies the email and creates the account; no separate approval or second registration is needed. The birth date is retained for the registration age rule but omitted from auth responses and profile display.
-6. In the same successful flow, Penderie signs the user in, automatically creates the private **Mon dressing** space with the **Moi** owner profile and a default **Maison** place, and redirects straight into the app. Do not ask for a household name, room list, partner, or child here.
+6. In the same successful flow, Penderie signs the user in, automatically creates the private **Mon dressing** space with the **Moi** owner profile and a default **Maison** place, and opens **Créer mon foyer** (`/foyer/creer`). The user may create an additional household and continue through members, rooms and storage, or choose **Je le ferai plus tard** to use the automatically provisioned dressing immediately. Family members are optional.
 7. The user can add an item immediately. The chosen username is visible on the signed-in account page; sign-in continues to use email and password.
 8. Offer optional family setup in **Settings → Family and profiles** when the user is ready.
 
@@ -186,3 +186,89 @@ This describes the repository snapshot, not a claim of production readiness:
 8. Add privacy-safe sharing, controlled sale/gifting, then outfits and insights.
 
 For every step, deliver a vertical slice: database/migration, API contract, server validation and authorization, frontend flow, and positive/negative tests. Update [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) when a product decision changes.
+
+
+### Scanner review and item-specific details (1 November 2026)
+
+The scanner offers T-shirt, trousers, skirt and object framing outlines contained
+inside the camera preview. Capturing or selecting a photo immediately replaces
+the camera screen with a dedicated review screen, including while analysis runs
+or fails. Retake and remove are available there; stale analysis responses cannot
+restore a discarded photo. Manual entry remains available without AI.
+
+The editable item type includes common clothing and accessories plus books,
+vinyl records, CDs and household objects. Clothing shows brand, size, material
+and color; books show author and publisher; music shows artist/band and label.
+Condition is visible for every type. Author, artist and publisher have separate
+validated database fields and are not stored as brands. Only clearly readable
+creator/brand information should be suggested by photo analysis; all suggestions
+remain editable. Changing type adapts the fields before saving.
+
+Migration `Version20261101160000` adds nullable author, artist and publisher
+columns and must be applied in other environments before using these fields.
+
+
+### Collection audiences implemented — 1 November 2026
+
+Collections now support `personal` (private), `friends` (accepted friends),
+`followers` (people following the owner, plus accepted friends), and `app`
+(all signed-in verified adult Penderie accounts). `app` is not anonymous public
+web access. Private remains the default. Both creation and existing-collection
+settings provide these choices. Discover permitted collections from
+**Mes collections → Explorer les collections** (`/communaute/collections`).
+
+A verified adult owner approves a limited publication: collection name and
+metadata-stripped cover, plus selected item names, types, colors and selected
+photos. The preview digest prevents publishing content that changed after review.
+Private notes, memories, prices, household identity, source item/profile IDs,
+QR tokens and storage locations are omitted. Item detail endpoints stay private.
+Personal, archived, child-owned and other adults' items are excluded. Setting an
+item Personal or archiving it removes its published entry; restoring it does not
+republish it without approval. Photo requests recheck audience and live vetoes.
+
+Changing membership makes the collection private until the owner reviews and
+publishes again. Friends/followers are checked on each read, including photos;
+removing a relationship or switching the collection to private revokes access.
+Discovery filters audiences before pagination (24 collections per page). A shared
+collection can also be opened at `/communaute/collections/:collectionId`.
+
+The additive migration `Version20261101160342` stores approved publications
+separately from private workspace data. It is applied locally; other environments
+must apply it. This supersedes older private-only collection implementation notes;
+external profiles/vitrines, anonymous collection access and item-level audience
+publication are separate features and remain outside this change.
+
+### Visit a friend and browse shared collections — 2 November 2026
+
+1. Open **Amis**, then click a person's name/avatar in friends, followers,
+   following or request lists to visit their member profile.
+2. The profile shows their username, your relationship and only collections
+   published for you. An empty state means no collection is currently available
+   to this viewer; private collection counts are never exposed.
+3. Open **Fil** (`/actualites`) for **Mes amis & abonnements**, or choose
+   **Découvrir** to browse all permitted community publications.
+4. Scroll through collection cards with approved item photos, names, types and
+   colors. More results load automatically, with a **Voir plus de partages**
+   fallback. Click the author for their profile or **Voir la collection** for
+   the complete approved collection.
+5. For a visibility check, use two independently verified adult accounts in
+   separate browser sessions. Publish from one, visit its profile from the other,
+   and vary the audience/relationship. Refocusing the page reloads results;
+   photo and collection API requests always recheck authorization.
+
+Profiles and the feed do not grant access to source inventory, private profile
+photos/bios, household details or standalone bearer-link shares.
+
+From **Mon profil**, click the friends, followers or following count to open that
+specific list. Its entries show the approved name/photo and username and open the
+member profile. **Gérer** opens the existing follow/request management flow.
+
+To show your chosen name and photo on member profiles, friends lists and feed
+cards, open **Personnaliser mon profil**, edit them, enable **Afficher ce nom et
+cette photo aux membres Penderie**, and save. Leaving it off keeps the username
+and initial as the community identity. Uncheck and save to withdraw the approved
+identity; the private profile data remains saved. Bios remain private.
+
+The five main tabs are **Fil**, **Dressing**, **Scanner**, **Foyer** and **Profil**.
+Use the profile counts for connections and **Profil → Plus → Famille et profils**
+for family management and trusted-device profile switching.

@@ -50,6 +50,7 @@ final class ItemServiceValidationTest extends TestCase
             $this->createStub(EntityManagerInterface::class),
             $validator,
             sys_get_temp_dir(),
+            new \App\Service\CollectionSharing($this->createStub(EntityManagerInterface::class), new \App\Service\CommunityIdentityService($this->createStub(EntityManagerInterface::class))),
         );
     }
 

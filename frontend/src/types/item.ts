@@ -15,12 +15,16 @@ export interface ItemSummary {
   name: string
   type: string | null
   category: string | null
+  author?: string | null
+  artist?: string | null
+  publisher?: string | null
   brand: string | null
   color: string | null
   size: string | null
   material: string | null
   condition: ItemCondition
   status: ItemStatus
+  visibility?: string
   qrToken: string
   memory: string | null
   notes: string | null
@@ -38,11 +42,15 @@ export interface ItemListResult {
 }
 
 export interface CreateItemPayload {
+  ownerProfileId?: number
   name: string
   type?: string
   category?: string
   roomId?: number | null
   storageLocationId?: number | null
+  author?: string
+  artist?: string
+  publisher?: string
   brand?: string
   color?: string
   size?: string

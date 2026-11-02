@@ -31,7 +31,7 @@ export default function VerifyEmailPage() {
 
     try {
       await verifyEmail(token)
-      navigate('/dressing', { replace: true })
+      navigate('/foyer/creer', { replace: true })
     } catch (cause) {
       setError(
         cause instanceof ApiError ? copy.expiredError : copy.genericError,

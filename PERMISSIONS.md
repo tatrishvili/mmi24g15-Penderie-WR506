@@ -163,3 +163,54 @@ The repository has a pure permission resolver and matrix tests, but they are not
 - Current item and look APIs do not yet implement the full resources described in this matrix.
 
 Before enabling sharing or child sign-in in production, align the resolver, authorization service, endpoint checks, share-token model, and positive/negative integration tests with this policy. Do not treat a passing pure matrix test as proof that every HTTP route enforces the matrix.
+
+
+### Collection audiences implemented — 1 November 2026
+
+Collections now support `personal` (private), `friends` (accepted friends),
+`followers` (people following the owner, plus accepted friends), and `app`
+(all signed-in verified adult Penderie accounts). `app` is not anonymous public
+web access. Private remains the default. Both creation and existing-collection
+settings provide these choices. Discover permitted collections from
+**Mes collections → Explorer les collections** (`/communaute/collections`).
+
+A verified adult owner approves a limited publication: collection name and
+metadata-stripped cover, plus selected item names, types, colors and selected
+photos. The preview digest prevents publishing content that changed after review.
+Private notes, memories, prices, household identity, source item/profile IDs,
+QR tokens and storage locations are omitted. Item detail endpoints stay private.
+Personal, archived, child-owned and other adults' items are excluded. Setting an
+item Personal or archiving it removes its published entry; restoring it does not
+republish it without approval. Photo requests recheck audience and live vetoes.
+
+Changing membership makes the collection private until the owner reviews and
+publishes again. Friends/followers are checked on each read, including photos;
+removing a relationship or switching the collection to private revokes access.
+Discovery filters audiences before pagination (24 collections per page). A shared
+collection can also be opened at `/communaute/collections/:collectionId`.
+
+The additive migration `Version20261101160342` stores approved publications
+separately from private workspace data. It is applied locally; other environments
+must apply it. This supersedes older private-only collection implementation notes;
+external profiles/vitrines, anonymous collection access and item-level audience
+publication are separate features and remain outside this change.
+
+### Member profiles and feed — 2 November 2026
+
+Member profile GETs require a signed-in verified adult and return only a verified
+account's username plus self/friend/following relationship flags. They do not
+publish the private SocialWorkspace profile. Child and anonymous access is denied.
+Profile collection queries and both feed scopes reuse the publication audience
+checks before pagination; an owner filter never expands access. The following
+scope further restricts results to accepted friends or followed accounts.
+Source-item vetoes and photo authorization remain in force. No private collection
+count, source item ID, email, location, bio or profile photo is exposed by these views.
+
+An optional, explicit profile-save approval now publishes an account-wide name
+and sanitized avatar snapshot in `community_identity`; it never publishes the
+private bio. Profiles, feed cards and own connection lists use only this snapshot
+or the account username/initial fallback. Existing private profile data is not
+migrated into a published identity. Withdrawing approval removes future avatar
+access without deleting the private profile. Avatar GETs require a verified adult
+session and use `no-store`. Connection counts and lists exposed in these new
+profile controls belong to the current account, not to arbitrary member profiles.

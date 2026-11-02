@@ -40,6 +40,7 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
+        - { path: '^/api/social/shared/[a-f0-9]+(/photo)?$', roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/health, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }

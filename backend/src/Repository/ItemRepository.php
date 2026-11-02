@@ -31,18 +31,38 @@ final class ItemRepository extends ServiceEntityRepository
         string $status,
         int $page,
         int $perPage,
+        ?\App\Service\CurrentActor $actor = null,
+        ?int $roomId = null,
     ): array {
         $qb = $this->createQueryBuilder('i')
             ->where('i.household = :household')
             ->setParameter('household', $household)
             ->orderBy('i.id', 'DESC');
 
+        if (null !== $actor) {
+            $profile = $actor->profile();
+            if (null !== $profile && !$profile->isAdult()) {
+                $qb->andWhere('i.ownerProfile = :profile')->setParameter('profile', $profile);
+            } else {
+                $qb->join('i.ownerProfile', 'owner')
+                    ->andWhere("i.visibility != 'personal' OR owner.user = :viewer OR owner.role = :childRole")
+                    ->setParameter('viewer', $actor->requireUser())
+                    ->setParameter('childRole', \App\Enum\ProfileRole::Child);
+            }
+        }
+
+        if (null !== $roomId) {
+            $qb->andWhere('IDENTITY(i.room) = :roomId')->setParameter('roomId', $roomId);
+        }
+
         if ('' !== $query) {
             $qb->andWhere('i.name LIKE :q OR i.brand LIKE :q OR i.color LIKE :q')
                 ->setParameter('q', '%'.$query.'%');
         }
 
-        if ('' !== $status) {
+        if ('active' === $status) {
+            $qb->andWhere("i.status != 'archive'");
+        } elseif ('' !== $status) {
             $qb->andWhere('i.status = :status')->setParameter('status', $status);
         }
 

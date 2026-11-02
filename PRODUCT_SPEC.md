@@ -26,14 +26,14 @@ These decisions resolve earlier ambiguities. Treat them as defaults for the firs
 - Adult registration requires a self-declared birth date showing the person is at least 18. This check is not identity proof or verified age assurance; a person can enter a false date. Minors use a parent-managed child profile, not an adult account.
 - Before verification, store an expiring pending registration with the password securely hashed, username and birth date, and a hash of the single-use verification token; it is not an active account and cannot access inventory.
 - Store the birth date on the account after verification only to enforce the adult-registration rule. Do not include it in authentication responses or display it in the profile. The user must be told it is self-declared and how the data is used; production retention/deletion requirements need review before launch.
-- Opening the email verification link presents an explicit confirmation page. A POST then atomically creates the adult account using the pending password hash, establishes the signed-in session, creates a private personal space with a default owner profile and default place, and takes the user directly into the app.
+- Opening the email verification link presents an explicit confirmation page. A POST then atomically creates the adult account using the pending password hash, establishes the signed-in session, creates a private personal space with a default owner profile and default place, and opens the **Créer mon foyer** setup page. The user can create an additional household and continue through the existing setup screens, or skip directly to the automatically provisioned dressing.
 - There is no second manual approval and no need to enter credentials again after clicking the link. The only unavoidable wait is delivery/opening of the verification email.
 - **Known security trade-off:** before verification, someone can submit another person's email with a password they chose. If the email owner follows that confirmation link, that password becomes the account password. This flow prevents access before confirmation but does not prevent account pre-hijacking; use password-after-verification if preventing that risk becomes a requirement.
 - Do **not** require a household/family name, first name, room layout, child, or partner during registration.
 - Use friendly default labels such as **My wardrobe** / **Mon dressing**. Let the person rename their space or add a display name later in Settings.
 - “Household” may remain an internal data-model term for now; the user-facing product should say “My space” or “My wardrobe” until they choose to add family members.
 - The chosen username is a unique account handle shown in the signed-in account page. It is not the login identifier or a public sharing identity; continue to sign in with the verified email.
-- Family and profile management is an optional Settings area, not a mandatory onboarding step.
+- Foyer setup is offered after email confirmation and can be skipped. Family and profile management remains optional and accessible from Settings.
 
 The current database already uses a `Household` as the item scope. Preserve that boundary initially: create a private household automatically and hide the technical “household” concept in the UI. Do not redesign or migrate this model casually.
 
@@ -232,3 +232,91 @@ These gaps mean “there is a screen or endpoint” must not be reported as “t
 - **2026-10-13:** Friend requests are adult-only, use account usernames, and require recipient acceptance. Friendship alone never reveals inventory. A PIN is only a trusted-device profile unlock inside a parent's authenticated session; child own-device sign-in remains disabled until child-owned item authorization is complete.
 
 When a decision changes, update this log and both the product specification and affected workflow docs in the same change.
+
+
+### Scanner review and item-specific details (1 November 2026)
+
+The scanner offers T-shirt, trousers, skirt and object framing outlines contained
+inside the camera preview. Capturing or selecting a photo immediately replaces
+the camera screen with a dedicated review screen, including while analysis runs
+or fails. Retake and remove are available there; stale analysis responses cannot
+restore a discarded photo. Manual entry remains available without AI.
+
+The editable item type includes common clothing and accessories plus books,
+vinyl records, CDs and household objects. Clothing shows brand, size, material
+and color; books show author and publisher; music shows artist/band and label.
+Condition is visible for every type. Author, artist and publisher have separate
+validated database fields and are not stored as brands. Only clearly readable
+creator/brand information should be suggested by photo analysis; all suggestions
+remain editable. Changing type adapts the fields before saving.
+
+Migration `Version20261101160000` adds nullable author, artist and publisher
+columns and must be applied in other environments before using these fields.
+
+
+### Collection audiences implemented — 1 November 2026
+
+Collections now support `personal` (private), `friends` (accepted friends),
+`followers` (people following the owner, plus accepted friends), and `app`
+(all signed-in verified adult Penderie accounts). `app` is not anonymous public
+web access. Private remains the default. Both creation and existing-collection
+settings provide these choices. Discover permitted collections from
+**Mes collections → Explorer les collections** (`/communaute/collections`).
+
+A verified adult owner approves a limited publication: collection name and
+metadata-stripped cover, plus selected item names, types, colors and selected
+photos. The preview digest prevents publishing content that changed after review.
+Private notes, memories, prices, household identity, source item/profile IDs,
+QR tokens and storage locations are omitted. Item detail endpoints stay private.
+Personal, archived, child-owned and other adults' items are excluded. Setting an
+item Personal or archiving it removes its published entry; restoring it does not
+republish it without approval. Photo requests recheck audience and live vetoes.
+
+Changing membership makes the collection private until the owner reviews and
+publishes again. Friends/followers are checked on each read, including photos;
+removing a relationship or switching the collection to private revokes access.
+Discovery filters audiences before pagination (24 collections per page). A shared
+collection can also be opened at `/communaute/collections/:collectionId`.
+
+The additive migration `Version20261101160342` stores approved publications
+separately from private workspace data. It is applied locally; other environments
+must apply it. This supersedes older private-only collection implementation notes;
+external profiles/vitrines, anonymous collection access and item-level audience
+publication are separate features and remain outside this change.
+
+### Community feed and member profiles — 2 November 2026
+
+Verified adult accounts can open another member's profile from friends, followers,
+following lists or a feed author. `/communaute/profils/:username` shows the account
+handle, the viewer's relationship and only collections already published for that
+viewer. Private profile photos, bios, display names, email addresses and household
+information are not implicitly published. No new profile-publication consent is
+introduced by this read-only view.
+
+`/actualites` provides a scrolling feed with Friends & following and Discover
+filters. Friends & following includes accepted friends and accounts the viewer
+follows, excluding the viewer's own posts. Discover includes all collections the
+viewer is eligible to see, including app-audience publications. Each card shows
+up to four approved item previews and links to the full shared collection.
+Standalone item links are not discoverable feed posts; individual inventory
+records remain private. Audience and optional owner filters run before pagination
+(24 publications per page), ordered by publication update time and ID. Loading
+more appends results; returning focus refreshes permissions and clears cached cards.
+
+The own profile shows live friends/followers/following counts, each opening the
+matching own list at `/amis?liste=amis|abonnes|abonnements`. Profiles of other
+members do not expose their connection lists or counts.
+
+An adult may explicitly enable **Afficher ce nom et cette photo aux membres
+Penderie** when saving their profile. This saves a separate account-wide approved
+identity snapshot; the private bio and household profile stay private. New and
+existing accounts default to username + initial until approval. Disabling the
+option removes that snapshot and future avatar access. Approved avatars are
+resized and re-encoded without image metadata. Editing private data without the
+publication flag does not update the approved snapshot. The technical `Moi`/`Me`
+name is not used as a community identity.
+
+The main navigation has five destinations: Fil, Dressing, Scanner, Foyer and
+Profil. Friends/requests and family/profile switching are available from Profil.
+Migration `Version20261102105511` adds only the `community_identity` table and is
+applied locally; other environments must migrate before using these endpoints.

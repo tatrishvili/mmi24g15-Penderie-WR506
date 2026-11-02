@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { itemText as t } from '../lib/itemCatalog.ts'
 import { Check, Heart, UserMinus, UserPlus, X } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import * as friendsApi from '../api/friends.ts'
@@ -35,13 +37,18 @@ function FriendRow({
 }) {
   return (
     <li className="friend-row">
-      <span className="avatar" aria-hidden="true">
-        {entry.user.firstName.charAt(0).toUpperCase()}
-      </span>
-      <span className="profile-meta">
-        <span className="profile-name">{entry.user.firstName}</span>
-        {entry.user.username !== null && <span className="friend-username">@{entry.user.username}</span>}
-      </span>
+      <Link
+        className="friend-profile-link"
+        to={entry.user.username ? `/communaute/profils/${encodeURIComponent(entry.user.username)}` : '/amis'}
+      >
+        <span className="avatar" aria-hidden="true">
+          {entry.user.photoUrl ? <img src={entry.user.photoUrl} alt="" /> : (entry.user.displayName ?? entry.user.firstName).charAt(0).toUpperCase()}
+        </span>
+        <span className="profile-meta">
+          <span className="profile-name">{entry.user.displayName ?? entry.user.firstName}</span>
+          {entry.user.username !== null && <span className="friend-username">@{entry.user.username}</span>}
+        </span>
+      </Link>
       {actions.map((action) => (
         <button
           key={action.label}
@@ -65,6 +72,9 @@ function emptyResult(): FriendsResult {
 
 export default function FriendsPage() {
   const { user } = useAuth()
+  const [search] = useSearchParams()
+  const list = search.get('liste')
+  const filter = ['amis', 'abonnes', 'abonnements', 'demandes'].includes(list ?? '') ? list : null
   const copy = getCopy()
   const [data, setData] = useState<FriendsResult>(emptyResult)
   const [username, setUsername] = useState('')
@@ -208,7 +218,7 @@ export default function FriendsPage() {
     return (
       <div className="auth-page">
         <div className="auth-card">
-          <h1>{copy.friends.title}</h1>
+          <h1>{filter === 'abonnes' ? copy.friends.followers : filter === 'abonnements' ? copy.friends.following : filter === 'demandes' ? t('Demandes', 'Requests') : copy.friends.title}</h1>
           <p className="auth-sub">{copy.friends.adultOnly}</p>
         </div>
       </div>
@@ -221,11 +231,18 @@ export default function FriendsPage() {
         <span className="friends-mark" aria-hidden="true"><Heart size={22} /></span>
         <div>
           <p className="auth-tagline">{copy.friends.tagline}</p>
-          <h1>{copy.friends.title}</h1>
+          <h1>{filter === 'abonnes' ? copy.friends.followers : filter === 'abonnements' ? copy.friends.following : filter === 'demandes' ? t('Demandes', 'Requests') : copy.friends.title}</h1>
         </div>
       </div>
 
-      <section className="auth-card friends-card">
+      <Link className="btn btn-secondary" to="/actualites">
+        {t('Voir le fil d’actualité', 'See the feed')}
+      </Link>
+      <nav className="friend-filters" aria-label={t('Mes relations', 'My connections')}>
+        <Link to="/profil">{t('Mon profil', 'My profile')}</Link>
+        {[[null, t('Gérer', 'Manage')], ['amis', t('Amis', 'Friends')], ['abonnes', t('Abonnés', 'Followers')], ['abonnements', t('Abonnements', 'Following')], ['demandes', t('Demandes', 'Requests')]].map(([value, label]) => <Link key={value ?? 'all'} aria-current={filter === value ? 'page' : undefined} to={value ? `/amis?liste=${value}` : '/amis'}>{label}</Link>)}
+      </nav>
+      <section hidden={filter !== null} className="auth-card friends-card">
         <h2>{copy.friends.addTitle}</h2>
         <p className="auth-sub">{copy.friends.addDescription}</p>
         <form className="friend-form" onSubmit={(event) => void onSend(event)}>
@@ -258,7 +275,7 @@ export default function FriendsPage() {
         <p className="auth-sub">{copy.friends.loading}</p>
       ) : (
         <div className="friend-sections">
-          <section className="auth-card friends-card">
+          <section hidden={filter !== null && filter !== 'demandes'} className="auth-card friends-card">
             <h2>{copy.friends.incoming}</h2>
             <ul className="friend-list">
               {data.incoming.length > 0
@@ -270,7 +287,7 @@ export default function FriendsPage() {
             </ul>
           </section>
 
-          <section className="auth-card friends-card">
+          <section hidden={filter !== null && filter !== 'demandes'} className="auth-card friends-card">
             <h2>{copy.friends.outgoing}</h2>
             <ul className="friend-list">
               {data.outgoing.length > 0
@@ -281,7 +298,7 @@ export default function FriendsPage() {
             </ul>
           </section>
 
-          <section className="auth-card friends-card">
+          <section hidden={filter !== null && filter !== 'amis'} className="auth-card friends-card">
             <h2>{copy.friends.mine} <span className="friend-count">{data.friends.length}</span></h2>
             <ul className="friend-list">
               {data.friends.length > 0
@@ -291,7 +308,7 @@ export default function FriendsPage() {
                 : <li className="friend-empty">{copy.friends.noFriends}</li>}
             </ul>
           </section>
-          <section className="auth-card friends-card">
+          <section hidden={filter !== null && filter !== 'abonnements'} className="auth-card friends-card">
             <h2>{copy.friends.following} <span className="friend-count">{data.following.length}</span></h2>
             <ul className="friend-list">
               {data.following.length > 0
@@ -301,7 +318,7 @@ export default function FriendsPage() {
                 : <li className="friend-empty">{copy.friends.noFollowing}</li>}
             </ul>
           </section>
-          <section className="auth-card friends-card">
+          <section hidden={filter !== null && filter !== 'abonnes'} className="auth-card friends-card">
             <h2>{copy.friends.followers} <span className="friend-count">{data.followers.length}</span></h2>
             <ul className="friend-list">
               {data.followers.length > 0

@@ -12,3 +12,7 @@ framework:
             policy: 'fixed_window'
             limit: 3
             interval: '1 hour'
+        sharing:
+            policy: 'fixed_window'
+            limit: 120
+            interval: '1 minute'

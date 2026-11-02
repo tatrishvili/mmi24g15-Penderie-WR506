@@ -30,17 +30,51 @@ final class PlaceController extends AbstractController
     {
         $household = $this->actor->requireHousehold();
 
-        return new JsonResponse([
-            'places' => array_map(
-                fn (Place $place): array => $this->placePayload($place),
-                $this->em->getRepository(Place::class)->findBy(['household' => $household], ['id' => 'ASC']),
-            ),
-        ]);
+        $places = array_map(
+            fn (Place $place): array => $this->placePayload($place),
+            $this->em->getRepository(Place::class)->findBy(['household' => $household], ['id' => 'ASC']),
+        );
+        $profile = $this->actor->profile();
+        if (null !== $profile && !$profile->isAdult()) {
+            $allowedRooms = [];
+            $allowedStorage = [];
+            foreach ($this->em->getRepository(\App\Entity\Item::class)->findBy(['ownerProfile' => $profile]) as $item) {
+                $allowedRooms[] = $item->getRoom()?->getId();
+                $storage = $item->getStorageLocation();
+                while (null !== $storage) {
+                    $allowedStorage[] = $storage->getId();
+                    $storage = $storage->getParent();
+                }
+            }
+            $filterStorage = function (array $nodes) use (&$filterStorage, $allowedStorage): array {
+                $nodes = array_filter($nodes, static fn (array $node) => \in_array($node['id'], $allowedStorage, true));
+
+                return array_values(array_map(static function (array $node) use ($filterStorage): array {
+                    $node['children'] = $filterStorage($node['children'] ?? []);
+
+                    return $node;
+                }, $nodes));
+            };
+            foreach ($places as &$place) {
+                $place['rooms'] = array_values(array_filter($place['rooms'], static fn (array $room) => \in_array($room['id'], $allowedRooms, true)));
+                foreach ($place['rooms'] as &$room) {
+                    $room['storageLocations'] = $filterStorage($room['storageLocations']);
+                }
+                unset($room);
+            }
+            unset($place);
+            $places = array_values(array_filter($places, static fn (array $place) => [] !== $place['rooms']));
+        }
+
+        return new JsonResponse(['places' => $places]);
     }
 
     #[Route('/places', name: 'api_places_create', methods: ['POST'])]
     public function createPlace(Request $request): JsonResponse
     {
+        if (false === $this->actor->profile()?->isAdult()) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('La gestion des lieux est réservée aux adultes.');
+        }
         $household = $this->actor->requireHousehold();
         $name = $this->nameFromRequest($request);
         $place = new Place($household, $name);
@@ -53,6 +87,9 @@ final class PlaceController extends AbstractController
     #[Route('/places/{placeId}/rooms', name: 'api_places_create_room', methods: ['POST'], requirements: ['placeId' => '\d+'])]
     public function createRoom(int $placeId, Request $request): JsonResponse
     {
+        if (false === $this->actor->profile()?->isAdult()) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('La gestion des lieux est réservée aux adultes.');
+        }
         $household = $this->actor->requireHousehold();
         $place = $this->em->getRepository(Place::class)->findOneBy(['id' => $placeId, 'household' => $household]);
 
@@ -70,6 +107,9 @@ final class PlaceController extends AbstractController
     #[Route('/rooms/{roomId}/storage-locations', name: 'api_rooms_create_storage', methods: ['POST'], requirements: ['roomId' => '\d+'])]
     public function createStorageLocation(int $roomId, Request $request): JsonResponse
     {
+        if (false === $this->actor->profile()?->isAdult()) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('La gestion des lieux est réservée aux adultes.');
+        }
         $household = $this->actor->requireHousehold();
         $room = $this->em->getRepository(Room::class)->findOneBy(['id' => $roomId, 'household' => $household]);
 

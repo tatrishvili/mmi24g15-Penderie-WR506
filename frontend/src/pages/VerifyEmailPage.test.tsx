@@ -29,7 +29,7 @@ function renderVerify(
       <AuthProvider>
         <Routes>
           <Route path="/verifier-email" element={<VerifyEmailPage />} />
-          <Route path="/dressing" element={<p>Compte prêt</p>} />
+          <Route path="/foyer/creer" element={<p>Créer mon foyer</p>} />
         </Routes>
       </AuthProvider>
     </MemoryRouter>,
@@ -39,7 +39,7 @@ function renderVerify(
 describe('VerifyEmailPage', () => {
   afterEach(() => cleanup())
 
-  it('confirms with POST and signs the user in', async () => {
+  it('confirms with POST and opens household setup', async () => {
     let verified = false
     let submitted: Record<string, unknown> = {}
     stubFetch((url, init) => {
@@ -56,7 +56,7 @@ describe('VerifyEmailPage', () => {
     await screen.findByText(/Votre mot de passe n’est jamais envoyé/)
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et créer mon compte' }))
 
-    expect(await screen.findByText('Compte prêt')).toBeInTheDocument()
+    expect(await screen.findByText('Créer mon foyer')).toBeInTheDocument()
     expect(submitted['token']).toBe('abc')
     expect(submitted['password']).toBeUndefined()
   })

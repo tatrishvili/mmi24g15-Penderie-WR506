@@ -38,7 +38,9 @@ const SCAN_RESULT = {
   confidence: 0.85,
 }
 
-function renderScanner(handler: (url: string, init?: RequestInit) => { status: number; body: unknown }) {
+function renderScanner(
+  handler: (url: string, init?: RequestInit) => { status: number; body: unknown },
+) {
   stubFetch(handler)
   render(
     <MemoryRouter initialEntries={['/scanner']}>
@@ -69,6 +71,7 @@ function renderScanner(handler: (url: string, init?: RequestInit) => { status: n
 
 describe('ScanPage', () => {
   beforeEach(() => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     Object.defineProperty(navigator, 'mediaDevices', {
       configurable: true,
       value: undefined,
@@ -110,6 +113,7 @@ describe('ScanPage', () => {
     const form = screen.getByLabelText("Nom de l'article").closest('form')
     if (form === null) throw new Error('Item form not found')
     fireEvent.submit(form)
+    fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer l’article' }))
 
     await waitFor(() => {
       expect(screen.getByText(/dressing est encore vide/)).toBeInTheDocument()
@@ -136,6 +140,85 @@ describe('ScanPage', () => {
     })
 
     expect(await screen.findByText('Photo illisible.')).toBeInTheDocument()
+  })
+
+  it('opens a separate review stage immediately and ignores analysis after removing the photo', async () => {
+    let complete: (response: Response) => void = () => {}
+    renderScanner((url) => (url.endsWith('/api/auth/me') ? ME : { status: 404, body: {} }))
+    const originalFetch = globalThis.fetch
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
+        String(input).endsWith('/api/scan')
+          ? new Promise<Response>((resolve) => {
+              complete = resolve
+            })
+          : originalFetch(input, init),
+      ),
+    )
+    fireEvent.change(await screen.findByLabelText('Choisir depuis la galerie'), {
+      target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] },
+    })
+    expect(await screen.findByRole('heading', { name: 'Vérifier la photo' })).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+    expect(screen.getByAltText('Article photographié')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer la photo' }))
+    complete(
+      new Response(JSON.stringify(SCAN_RESULT), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    expect(await screen.findByRole('radiogroup')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Vérifier et compléter')).not.toBeInTheDocument())
+  })
+
+  it('shows book-specific fields, allows photo removal and saves author separately from brand', async () => {
+    let saved: Record<string, unknown> = {}
+    renderScanner((url, init) => {
+      if (url.endsWith('/api/auth/me')) return ME
+      if (url.endsWith('/api/scan'))
+        return {
+          status: 200,
+          body: {
+            ...SCAN_RESULT,
+            name: 'Un livre',
+            type: 'livre',
+            author: 'Camille',
+            publisher: 'Éditions Test',
+            brand: '',
+          },
+        }
+      if (url.endsWith('/api/places')) return { status: 200, body: { places: [] } }
+      if (url.endsWith('/api/items') && init?.method === 'POST') {
+        saved = jsonBody(init)
+        return { status: 201, body: { item: { id: 9 } } }
+      }
+      if (url.includes('/api/items'))
+        return { status: 200, body: { items: [], total: 0, page: 1, perPage: 20 } }
+      return { status: 404, body: {} }
+    })
+    fireEvent.click(await screen.findByRole('radio', { name: 'Objet' }))
+    fireEvent.change(screen.getByLabelText('Choisir depuis la galerie'), {
+      target: { files: [new File(['photo'], 'book.jpg', { type: 'image/jpeg' })] },
+    })
+    fireEvent.click(await screen.findByRole('button', { name: 'Vérifier et compléter' }))
+    expect(await screen.findByLabelText('Auteur / autrice')).toHaveValue('Camille')
+    expect(screen.queryByLabelText('Marque')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Taille')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('État')).toBeVisible()
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'vinyle' } })
+    expect(screen.getByLabelText('Artiste / groupe')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Auteur / autrice')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'livre' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer la photo' }))
+    expect(screen.queryByAltText('Article photographié')).not.toBeInTheDocument()
+    fireEvent.submit(screen.getByLabelText("Nom de l'article").closest('form')!)
+    fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer l’article' }))
+    await waitFor(() => expect(saved['author']).toBe('Camille'))
+    expect(saved['brand']).toBeUndefined()
+    expect(saved['photos']).toBeUndefined()
+    expect(saved['publisher']).toBe('Éditions Test')
   })
 
   it('redirects anonymous users to the login page', async () => {
@@ -175,8 +258,14 @@ describe('ScanPage', () => {
     const stream = { getTracks: () => [{ stop }] } as unknown as MediaStream
     const getUserMedia = vi.fn(async () => stream)
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
-    Object.defineProperty(HTMLVideoElement.prototype, 'videoWidth', { configurable: true, value: 640 })
-    Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', { configurable: true, value: 480 })
+    Object.defineProperty(HTMLVideoElement.prototype, 'videoWidth', {
+      configurable: true,
+      value: 640,
+    })
+    Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', {
+      configurable: true,
+      value: 480,
+    })
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D)
@@ -267,7 +356,9 @@ describe('ScanPage', () => {
       target: { files: [new File(['photo'], 'jupe.jpg', { type: 'image/jpeg' })] },
     })
 
-    expect(await screen.findByText(/L’analyse photo gratuite est temporairement indisponible/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/L’analyse photo gratuite est temporairement indisponible/),
+    ).toBeInTheDocument()
     expect(screen.getByAltText('Photo conservée pour la saisie manuelle')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Saisir l’article manuellement' }))
 
@@ -278,6 +369,7 @@ describe('ScanPage', () => {
     const form = nameInput.closest('form')
     if (form === null) throw new Error('Item form not found')
     fireEvent.submit(form)
+    fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer l’article' }))
 
     await waitFor(() => expect(saved['name']).toBe('Jupe bleue'))
     expect(saved['photos']).toEqual(['data:image/jpeg;base64,preview'])

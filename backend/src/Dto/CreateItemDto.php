@@ -25,6 +25,12 @@ final class CreateItemDto
         public ?int $storageLocationId = null,
         #[Assert\Length(max: 120)]
         public ?string $brand = null,
+        #[Assert\Length(max: 120)]
+        public ?string $author = null,
+        #[Assert\Length(max: 120)]
+        public ?string $artist = null,
+        #[Assert\Length(max: 120)]
+        public ?string $publisher = null,
         #[Assert\Length(max: 60)]
         public ?string $color = null,
         #[Assert\Length(max: 30)]
@@ -38,6 +44,8 @@ final class CreateItemDto
         public ?string $memory = null,
         public ?string $notes = null,
         public ?array $photos = null,
+        #[Assert\Range(min: 1)]
+        public ?int $ownerProfileId = null,
     ) {
     }
 
@@ -47,12 +55,16 @@ final class CreateItemDto
     public static function fromArray(array $data): self
     {
         return new self(
+            ownerProfileId: self::intOrNull($data['ownerProfileId'] ?? null),
             name: self::stringOrNull($data['name'] ?? null),
             type: self::stringOrNull($data['type'] ?? null),
             category: self::stringOrNull($data['category'] ?? null),
             roomId: self::intOrNull($data['roomId'] ?? null),
             storageLocationId: self::intOrNull($data['storageLocationId'] ?? null),
             brand: self::stringOrNull($data['brand'] ?? null),
+            author: self::stringOrNull($data['author'] ?? null),
+            artist: self::stringOrNull($data['artist'] ?? null),
+            publisher: self::stringOrNull($data['publisher'] ?? null),
             color: self::stringOrNull($data['color'] ?? null),
             size: self::stringOrNull($data['size'] ?? null),
             material: self::stringOrNull($data['material'] ?? null),

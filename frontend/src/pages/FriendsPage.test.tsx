@@ -20,9 +20,9 @@ const ME = {
   },
 }
 
-function renderPage() {
+function renderPage(path = '/amis') {
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <AuthProvider>
         <FriendsPage />
       </AuthProvider>
@@ -74,6 +74,8 @@ describe('FriendsPage', () => {
     renderPage()
 
     expect(await screen.findByText(/Saisissez son nom d’utilisateur/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Sophie.*@sophie_test/ })).toHaveAttribute('href', '/communaute/profils/sophie_test')
+    expect(screen.getByRole('link', { name: 'Voir le fil d’actualité' })).toHaveAttribute('href', '/actualites')
     fireEvent.change(await screen.findByLabelText('Nom d’utilisateur'), {
       target: { value: 'lea_test' },
     })
@@ -90,6 +92,16 @@ describe('FriendsPage', () => {
     })
   })
 
+  it('opens the requested connections list with the approved name, avatar and username', async () => {
+    stubFetch((url) => url.endsWith('/api/auth/me') ? ME : { status: 200, body: { friends: [{ id: 2, user: { id: 2, username: 'camille_test', firstName: 'Moi', displayName: 'Camille Martin', photoUrl: '/avatar.png' } }], followers: [], following: [], incoming: [], outgoing: [] } })
+    renderPage('/amis?liste=amis')
+    const person = await screen.findByRole('link', { name: /Camille Martin.*@camille_test/ })
+    expect(person).toHaveAttribute('href', '/communaute/profils/camille_test')
+    expect(person.querySelector('img')).toHaveAttribute('src', '/avatar.png')
+    expect(screen.queryByRole('heading', { name: 'Ajouter un ami' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Demandes reçues' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Amis' })).toHaveAttribute('aria-current', 'page')
+  })
   it('follows an account directly and shows it in following', async () => {
     let result: FriendsResult = {
       friends: [],

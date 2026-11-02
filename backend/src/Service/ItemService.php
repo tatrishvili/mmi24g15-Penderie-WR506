@@ -36,6 +36,7 @@ final class ItemService
         private EntityManagerInterface $em,
         private ValidatorInterface $validator,
         private string $uploadDir,
+        private CollectionSharing $collectionSharing,
     ) {
     }
 
@@ -49,11 +50,33 @@ final class ItemService
 
         $item = $this->em->getRepository(Item::class)->findOneBy(['id' => $id, 'household' => $household]);
 
-        if (!$item instanceof Item) {
+        if (!$item instanceof Item || !self::canAccess($actor, $item)) {
             throw new NotFoundHttpException('Item not found.');
         }
 
         return $item;
+    }
+
+    public static function canAccess(CurrentActor $actor, Item $item): bool
+    {
+        $profile = $actor->profile();
+        if (null !== $profile && !$profile->isAdult()) {
+            return $profile->getId() === $item->getOwnerProfile()->getId();
+        }
+        if ('personal' === $item->getVisibility()) {
+            return $item->getOwnerProfile()->getUser()?->getId() === $actor->requireUser()->getId()
+                || !$item->getOwnerProfile()->isAdult();
+        }
+
+        return true;
+    }
+
+    private function guardActiveLoan(Item $item): void
+    {
+        $loan = $this->em->getRepository(\App\Entity\Loan::class)->findOneBy(['item' => $item, 'status' => ['accepted', 'active']]);
+        if (null !== $loan) {
+            throw new \Symfony\Component\HttpKernel\Exception\ConflictHttpException('Confirmez le retour dans Mes prêts avant de modifier le statut ou supprimer cet article.');
+        }
     }
 
     /**
@@ -69,10 +92,28 @@ final class ItemService
 
         $household = $actor->requireHousehold();
         $owner = $actor->profile() ?? $actor->requireAdultProfile();
+        if (!$owner->isAdult() && null !== $dto->status && 'disponible' !== $dto->status) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Un enfant ne peut pas prêter ni céder un article.');
+        }
+
+        if (null !== $dto->ownerProfileId && $dto->ownerProfileId !== $owner->getId()) {
+            if (!$owner->isAdult()) {
+                throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Un enfant ne peut pas choisir un autre propriétaire.');
+            }
+            $selectedOwner = $this->em->getRepository(\App\Entity\Profile::class)->findOneBy(['id' => $dto->ownerProfileId, 'household' => $household]);
+            if (!$selectedOwner instanceof \App\Entity\Profile) {
+                throw new NotFoundHttpException('Profil introuvable.');
+            }
+            $owner = $selectedOwner;
+        }
 
         $item = new Item($household, $owner, trim((string) $dto->name));
         $this->applyLocation($item, $household, $dto->roomId, $dto->storageLocationId);
         $item->setType(self::cleanOrNull($dto->type));
+        $item->setAuthor(self::cleanOrNull($dto->author));
+        $item->setArtist(self::cleanOrNull($dto->artist));
+        $item->setPublisher(self::cleanOrNull($dto->publisher));
+
         $item->setCategory(self::cleanOrNull($dto->category));
         $this->apply($item, $dto->brand, $dto->color, $dto->size, $dto->material, $dto->condition, $dto->status, $dto->memory, $dto->notes);
         $this->em->persist($item);
@@ -129,6 +170,18 @@ final class ItemService
             );
         }
 
+        if ($dto->has('author')) {
+            $item->setAuthor(self::cleanOrNull($dto->author));
+        }
+
+        if ($dto->has('artist')) {
+            $item->setArtist(self::cleanOrNull($dto->artist));
+        }
+
+        if ($dto->has('publisher')) {
+            $item->setPublisher(self::cleanOrNull($dto->publisher));
+        }
+
         if ($dto->has('brand')) {
             $item->setBrand(self::cleanOrNull($dto->brand));
         }
@@ -156,6 +209,7 @@ final class ItemService
         }
 
         if ($dto->has('status') && null !== $dto->status) {
+            $this->guardActiveLoan($item);
             $status = ItemStatus::tryFrom($dto->status);
 
             if (null === $status) {
@@ -163,6 +217,12 @@ final class ItemService
             }
 
             $item->setStatus($status);
+            if (ItemStatus::Archive === $status) {
+                $this->collectionSharing->revokeItem($item);
+                foreach ($this->em->getRepository(\App\Entity\ItemShare::class)->findBy(['item' => $item]) as $share) {
+                    $share->revoked = true;
+                }
+            }
         }
 
         if ($dto->has('memory')) {
@@ -181,6 +241,10 @@ final class ItemService
 
     public function delete(Item $item): void
     {
+        $this->guardActiveLoan($item);
+        if (ItemStatus::Loue === $item->getStatus()) {
+            throw new \Symfony\Component\HttpKernel\Exception\ConflictHttpException('Récupérez cet article avant de le supprimer.');
+        }
         $paths = [];
 
         foreach ($item->getPhotos() as $photo) {
@@ -282,6 +346,7 @@ final class ItemService
         return [
             'id' => $item->getId(),
             'name' => $item->getName(),
+            'visibility' => $item->getVisibility(),
             'type' => $item->getType(),
             'category' => $item->getCategory(),
             'room' => null === $item->getRoom() ? null : [
@@ -297,6 +362,9 @@ final class ItemService
                 'name' => $item->getStorageLocation()->getName(),
                 'path' => self::storagePath($item->getStorageLocation()),
             ],
+            'author' => $item->getAuthor(),
+            'artist' => $item->getArtist(),
+            'publisher' => $item->getPublisher(),
             'brand' => $item->getBrand(),
             'color' => $item->getColor(),
             'size' => $item->getSize(),

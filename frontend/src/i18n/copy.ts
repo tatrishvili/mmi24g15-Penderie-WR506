@@ -75,6 +75,7 @@ export interface AppCopy {
     switchLink: string
   }
   verify: {
+    setupLater: string
     titleLines: string[]
     sentLead: string
     sentInstruction: string
@@ -244,6 +245,7 @@ const copies: Record<'fr' | 'en', AppCopy> = {
       switchLink: 'S’inscrire',
     },
     verify: {
+      setupLater: 'Je le ferai plus tard',
       titleLines: ['Vérifiez votre', 'e-mail'],
       sentLead: 'Un e-mail de confirmation a été envoyé à :',
       sentInstruction: 'Cliquez sur le lien reçu pour activer votre compte.',
@@ -414,6 +416,7 @@ const copies: Record<'fr' | 'en', AppCopy> = {
       switchLink: 'Sign up',
     },
     verify: {
+      setupLater: 'I’ll set this up later',
       titleLines: ['Check your', 'e-mail'],
       sentLead: 'A confirmation e-mail has been sent to:',
       sentInstruction: 'Click the link we sent you to activate your account.',

@@ -1,12 +1,9 @@
 describe('Page d’accueil (visiteur)', () => {
-  it('affiche le titre, les accès principaux et l’état de l’API', () => {
-    cy.intercept('GET', '**/api/health').as('health')
+  it('affiche l’accueil original et les accès à l’onboarding et à la connexion', () => {
     cy.visit('/')
-    cy.get('h1').should('be.visible').and('contain', 'Votre dressing, dans votre téléphone.')
-    cy.contains('a', 'Créer mon foyer').should('have.attr', 'href', '/inscription')
+    cy.get('h1').should('be.visible').and('contain', 'Bienvenue chez Penderie')
+    cy.contains('a', 'Suivant').should('have.attr', 'href', '/onboarding/2')
     cy.contains('a', 'Se connecter').should('have.attr', 'href', '/connexion')
-    cy.wait('@health')
-    cy.get('[data-testid="api-badge"]').should('contain', 'API en ligne')
   })
 
   it('redirige une route protégée vers la connexion', () => {

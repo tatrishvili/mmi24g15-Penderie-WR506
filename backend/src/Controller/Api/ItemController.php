@@ -42,7 +42,7 @@ final class ItemController extends AbstractController
         $page = max(1, (int) $request->query->get('page', 1));
         $perPage = min(100, max(1, (int) $request->query->get('perPage', 20)));
 
-        $result = $this->repository->searchInHousehold($household, $query, $status, $page, $perPage);
+        $result = $this->repository->searchInHousehold($household, $query, $status, $page, $perPage, $this->actor, $request->query->has('roomId') ? $request->query->getInt('roomId') : null);
 
         return new JsonResponse([
             'items' => array_map([ItemService::class, 'itemPayload'], $result['items']),
@@ -67,7 +67,7 @@ final class ItemController extends AbstractController
 
         $item = $this->em->getRepository(Item::class)->findOneBy(['qrToken' => $token, 'household' => $household]);
 
-        if (!$item instanceof Item) {
+        if (!$item instanceof Item || !ItemService::canAccess($this->actor, $item)) {
             throw new NotFoundHttpException('Item not found.');
         }
 
@@ -86,13 +86,20 @@ final class ItemController extends AbstractController
     public function update(int $id, Request $request): JsonResponse
     {
         $item = $this->items->findHouseholdItem($this->actor, $id);
+        $body = $this->jsonBody($request);
+        if (false === $this->actor->profile()?->isAdult() && isset($body['status']) && 'archive' !== $body['status']) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Cette action est réservée aux adultes.');
+        }
 
-        return new JsonResponse($this->items->update($item, UpdateItemDto::fromArray($this->jsonBody($request))));
+        return new JsonResponse($this->items->update($item, UpdateItemDto::fromArray($body)));
     }
 
     #[Route('/{id}', name: 'api_items_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
     public function delete(int $id): JsonResponse
     {
+        if (false === $this->actor->profile()?->isAdult()) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('La suppression définitive est réservée aux adultes.');
+        }
         $item = $this->items->findHouseholdItem($this->actor, $id);
         $this->items->delete($item);
 

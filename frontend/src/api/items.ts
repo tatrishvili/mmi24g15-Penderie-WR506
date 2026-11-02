@@ -10,10 +10,12 @@ export function listItems(params?: {
   q?: string
   status?: string
   page?: number
+  roomId?: number
 }): Promise<ItemListResult> {
   const search = new URLSearchParams()
   if (params?.q !== undefined && params.q !== '') search.set('q', params.q)
   if (params?.status !== undefined && params.status !== '') search.set('status', params.status)
+  if (params?.roomId !== undefined) search.set('roomId', String(params.roomId))
   if (params?.page !== undefined) search.set('page', String(params.page))
   const suffix = search.size > 0 ? `?${search.toString()}` : ''
   return api<ItemListResult>(`/api/items${suffix}`)
@@ -37,4 +39,12 @@ export function deleteItem(id: number): Promise<void> {
 
 export function getItemByQr(token: string): Promise<{ item: ItemSummary }> {
   return api<{ item: ItemSummary }>(`/api/items/qr/${encodeURIComponent(token)}`)
+}
+
+export async function listAllItems(): Promise<ItemSummary[]> {
+  const first = await listItems()
+  const items = [...first.items]
+  const pages = Math.ceil(first.total / first.perPage)
+  for (let page = 2; page <= pages; page += 1) items.push(...(await listItems({ page })).items)
+  return items
 }

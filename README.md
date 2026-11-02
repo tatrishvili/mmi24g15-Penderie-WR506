@@ -68,6 +68,15 @@ Then open:
 The whole chain — browser → Vite → nginx → PHP-FPM → MariaDB — is containerised; nothing needs to be
 installed on the host except Docker.
 
+Compose waits for PHP-FPM and the gateway health check before starting the frontend.
+The gateway refreshes Docker DNS every five seconds so recreating the API container
+does not leave it forwarding requests to an obsolete address.
+
+If login reports a gateway/proxy error, check `docker compose ps` and
+`docker compose logs --tail=50 frontend nginx api`. An `ENOTFOUND nginx` error means
+the frontend cannot reach the Docker gateway; start the complete stack with
+`docker compose up -d` and wait for its health checks before retrying login.
+
 Registration emails are captured locally by Mailpit; no external email account is needed for development.
 For deployment, set `MAILER_DSN` to the Symfony Resend transport
 (`resend+api://<API_KEY>@default`), `MAILER_FROM_ADDRESS` to an address on your verified sending domain,
@@ -202,3 +211,12 @@ Recommended next steps:
 4. Add reviewed batch scanning, then invitations, lending, and sharing with their full permission and history flows.
 
 The current working slices and known security/product gaps are tracked in [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) and [WORKFLOWS.md](./WORKFLOWS.md).
+
+### Current Figma household and social screens
+
+See [FIGMA_IMPLEMENTATION.md](./FIGMA_IMPLEMENTATION.md) for all 25 frame-to-route
+mappings, implemented workflows, additive migrations, privacy boundaries and
+remaining backend work. Start at `/foyer` or `/profil` after signing in. On another
+environment, apply pending migrations before using collections, sharing or loans.
+
+Latest session handover: [session.29.10.2026.md](./session.29.10.2026.md). Read it first when resuming the 25-page Figma implementation.

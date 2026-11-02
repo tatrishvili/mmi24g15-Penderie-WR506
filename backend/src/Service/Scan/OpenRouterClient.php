@@ -47,12 +47,19 @@ final class OpenRouterClient
 You are a helpful assistant that identifies clothing and personal items from photos. 
 Respond STRICTLY with a valid JSON object matching this exact schema. 
 Do not add any text before, after, or around the JSON.
+Use French for descriptive text. Use livre for books, vinyle for vinyl records and cd for CDs.
+Only transcribe brand, author, artist, publisher or size when clearly readable in the photo.
+Never guess these facts, material or condition: return an empty string when unknown.
+For books use author and publisher, for music use artist and publisher; leave brand empty.
 
 {
   "name": "string",
-  "type": "pull|tshirt|pantalon|jupe|robe|chaussure|sac|autre",
+  "type": "pull|tshirt|chemise|blouse|polo|debardeur|sweat|gilet|veste|manteau|pantalon|jean|short|jupe|robe|combinaison|costume|sous_vetement|chaussettes|pyjama|maillot|sport|chaussure|sac|ceinture|chapeau|echarpe|gants|bijou|livre|vinyle|cd|decoration|electronique|meuble|jouet|autre",
   "category": "string",
   "brand": "string",
+  "author": "string",
+  "artist": "string",
+  "publisher": "string",
   "color": "string",
   "size": "string",
   "material": "string",
@@ -114,10 +121,13 @@ SYSTEM_PROMPT,
 
         return [
             'name' => \is_string($item['name'] ?? null) ? $item['name'] : '',
-            'type' => \is_string($item['type'] ?? null) && \in_array($item['type'], ['pull', 'tshirt', 'pantalon', 'jupe', 'robe', 'chaussure', 'sac', 'autre'], true)
+            'type' => \is_string($item['type'] ?? null) && \in_array($item['type'], ['pull', 'tshirt', 'chemise', 'blouse', 'polo', 'debardeur', 'sweat', 'gilet', 'veste', 'manteau', 'pantalon', 'jean', 'short', 'jupe', 'robe', 'combinaison', 'costume', 'sous_vetement', 'chaussettes', 'pyjama', 'maillot', 'sport', 'chaussure', 'sac', 'ceinture', 'chapeau', 'echarpe', 'gants', 'bijou', 'livre', 'vinyle', 'cd', 'decoration', 'electronique', 'meuble', 'jouet', 'autre'], true)
                 ? $item['type']
                 : 'autre',
             'category' => \is_string($item['category'] ?? null) ? $item['category'] : '',
+            'author' => \is_string($item['author'] ?? null) ? mb_substr($item['author'], 0, 120) : '',
+            'artist' => \is_string($item['artist'] ?? null) ? mb_substr($item['artist'], 0, 120) : '',
+            'publisher' => \is_string($item['publisher'] ?? null) ? mb_substr($item['publisher'], 0, 120) : '',
             'brand' => \is_string($item['brand'] ?? null) ? $item['brand'] : '',
             'color' => \is_string($item['color'] ?? null) ? $item['color'] : '',
             'size' => \is_string($item['size'] ?? null) ? $item['size'] : '',

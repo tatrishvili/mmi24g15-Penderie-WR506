@@ -96,6 +96,7 @@ final class ItemServicePhotoTest extends TestCase
             $this->createStub(EntityManagerInterface::class),
             Validation::createValidator(),
             $uploadDir,
+            new \App\Service\CollectionSharing($this->createStub(EntityManagerInterface::class), new \App\Service\CommunityIdentityService($this->createStub(EntityManagerInterface::class))),
         );
     }
 

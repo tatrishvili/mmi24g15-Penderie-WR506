@@ -21,7 +21,8 @@ describe('Dressing : recherche et ajout d’article', () => {
     cy.get('#item-name').type('Pull e2e Cypress')
     cy.get('#item-type').select('pull')
     cy.get('#item-condition').select('bon')
-    cy.contains('button', 'Enregistrer').click()
+    cy.contains('button', 'Choisir l’emplacement').click()
+    cy.contains('button', 'Enregistrer l’article').click()
     cy.url().should('include', '/dressing')
     cy.contains('Pull e2e Cypress').should('be.visible')
   })
@@ -29,12 +30,12 @@ describe('Dressing : recherche et ajout d’article', () => {
   it('ne soumet pas un article sans nom', () => {
     cy.loginDemo()
     cy.openManualEntry()
-    cy.contains('button', 'Enregistrer').click()
+    cy.contains('button', 'Choisir l’emplacement').click()
     cy.url().should('include', '/scanner')
     cy.get('#item-name').then(($input) => {
       expect($input[0].checkValidity()).to.equal(false)
     })
-    cy.contains('h2', 'Nouvel article').should('be.visible')
+    cy.contains('h1', 'Nouvel article').should('be.visible')
   })
 
   it('prête un article disponible puis le récupère', () => {

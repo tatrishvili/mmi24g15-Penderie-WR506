@@ -20,9 +20,8 @@ Cypress.Commands.add('registerViaUi', () => {
   cy.get('#register-email').type(email)
   cy.get('#register-birth-date').type('2000-01-02')
   cy.get('#register-password').type(password)
-  cy.get('#register-password-confirm').type(password)
   cy.intercept('POST', '**/api/auth/register').as('registerSubmit')
-  cy.contains('button', "S'inscrire").click()
+  cy.get('button.register__submit').click()
   cy.wait('@registerSubmit')
   cy.contains('h1', 'Vérifiez votre e-mail').should('be.visible')
 
@@ -55,10 +54,11 @@ Cypress.Commands.add('verifyViaMailpit', (email) => {
   })
 })
 
-/** Confirm the verification button and expect the landing on /dressing. */
+/** Confirm the verification button and expect household setup. */
 Cypress.Commands.add('confirmVerification', () => {
   cy.contains('button', 'Confirmer et créer mon compte').click()
-  cy.url().should('include', '/dressing')
+  cy.url().should('include', '/foyer/creer')
+  cy.contains('h1', 'Créer mon foyer').should('be.visible')
 })
 
 /** Log the demo account in through the form; expect the foyer chooser. */
@@ -99,5 +99,5 @@ Cypress.Commands.add('openManualEntry', () => {
   )
   cy.wait('@scanFail')
   cy.contains('button', 'Saisir l’article manuellement').click()
-  cy.contains('h2', 'Nouvel article').should('be.visible')
+  cy.contains('h1', 'Nouvel article').should('be.visible')
 })
