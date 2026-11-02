@@ -138,6 +138,47 @@ describe('Current Figma page families', () => {
     expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('Chargement…')).not.toBeInTheDocument())
   })
+  it('shows real connection counts with links to each own social list', async () => {
+    mount(<SocialProfilePage view="profile" />, '/', '/', (url) =>
+      url.endsWith('/workspace')
+        ? {
+            status: 200,
+            body: { ...WORKSPACE, connections: { friends: 3, followers: 7, following: 5 } },
+          }
+        : response(url),
+    )
+    expect(await screen.findByRole('link', { name: '3 Amis' })).toHaveAttribute(
+      'href',
+      '/amis?liste=amis',
+    )
+    expect(screen.getByRole('link', { name: '7 Abonnés' })).toHaveAttribute(
+      'href',
+      '/amis?liste=abonnes',
+    )
+    expect(screen.getByRole('link', { name: '5 Abonnements' })).toHaveAttribute(
+      'href',
+      '/amis?liste=abonnements',
+    )
+  })
+  it('keeps name and photo sharing opt-in when saving a profile', async () => {
+    let saved: Record<string, unknown> = {}
+    mount(<SocialProfilePage view="edit" />, '/', '/', (url, init) => {
+      if (url.endsWith('/workspace') && init?.method === 'PATCH') {
+        saved = jsonBody(init)
+        return { status: 200, body: WORKSPACE }
+      }
+      return response(url)
+    })
+    const consent = await screen.findByRole('checkbox', {
+      name: 'Afficher ce nom et cette photo aux membres Penderie',
+    })
+    expect(consent).not.toBeChecked()
+    fireEvent.click(consent)
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await waitFor(() =>
+      expect(saved).toMatchObject({ shareIdentity: true, profile: WORKSPACE.profile }),
+    )
+  })
   it.each([
     ['detail', 'Fiche article'],
     ['actions', 'Actions sur un article'],

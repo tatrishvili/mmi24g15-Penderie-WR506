@@ -19,7 +19,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 /** Explicit collection projections never grant access to inventory records. */
 final class CollectionSharing
 {
-    public function __construct(private EntityManagerInterface $em)
+    public function __construct(private EntityManagerInterface $em, private CommunityIdentityService $identities)
     {
     }
 
@@ -148,7 +148,11 @@ final class CollectionSharing
                 'photoUrl' => $photo instanceof ItemPhoto && $photo->getItem()->getId() === $item->getId() ? '/api/social/collection-publications/'.$publication->id.'/photos/'.$key : null];
         }
 
+        $identity = $this->identities->presentation($publication->workspace->owner);
+
         return ['id' => $publication->id, 'name' => $publication->presentation['name'], 'cover' => $publication->presentation['cover'],
-            'visibility' => $publication->audience, 'owner' => $publication->workspace->owner->getUsername(), 'items' => $items];
+            'visibility' => $publication->audience, 'owner' => $publication->workspace->owner->getUsername(),
+            'ownerDisplayName' => $identity['displayName'],
+            'ownerPhotoUrl' => $identity['photoUrl'], 'items' => $items];
     }
 }

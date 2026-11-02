@@ -2,6 +2,8 @@ export interface FriendUser {
   id: number
   username: string | null
   firstName: string
+  displayName?: string
+  photoUrl?: string | null
 }
 
 export interface FriendEntry {

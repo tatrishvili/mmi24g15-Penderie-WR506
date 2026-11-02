@@ -10,6 +10,8 @@ export interface Collection {
 export interface Workspace {
   profile: { displayName: string; bio: string; photo: string }
   username: string | null
+  identityPublished?: boolean
+  connections?: { friends: number; followers: number; following: number }
   collections: Collection[]
   pins: string[]
   version: number
@@ -50,6 +52,7 @@ export const getWorkspace = () => api<Workspace>('/api/social/workspace')
 export const updateWorkspace = (body: {
   version: number
   profile?: Workspace['profile']
+  shareIdentity?: boolean
   pins?: string[]
 }) => api<Workspace>('/api/social/workspace', { method: 'PATCH', body })
 export const createCollection = (
@@ -113,6 +116,8 @@ export interface PublishedCollection {
   cover: string
   visibility: CollectionAudience
   owner: string | null
+  ownerDisplayName?: string
+  ownerPhotoUrl?: string | null
   items: CollectionPresentation[]
 }
 export const previewCollection = (id: string) =>
@@ -142,6 +147,8 @@ export const getPublishedCollection = (id: string) =>
   api<{ collection: PublishedCollection }>(`/api/social/collection-publications/${id}`)
 
 export interface CommunityProfile {
+  displayName?: string
+  photoUrl?: string | null
   username: string
   self: boolean
   friend: boolean

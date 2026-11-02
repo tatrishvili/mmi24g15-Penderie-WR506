@@ -52,7 +52,7 @@ describe('Community feed and profiles', () => {
     expect(await screen.findByRole('article', { name: 'Mes livres' })).toBeInTheDocument()
     expect(screen.getByRole('article', { name: 'Mes vinyles' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Voir plus de partages' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: '@camille' })[0]).toHaveAttribute(
+    expect(screen.getAllByRole('link', { name: /@camille/ })[0]).toHaveAttribute(
       'href',
       '/communaute/profils/camille',
     )
@@ -102,12 +102,21 @@ describe('Community feed and profiles', () => {
       return url.includes('/profiles/')
         ? {
             status: 200,
-            body: { profile: { username: 'camille', friend: true, following: true, self: false } },
+            body: {
+              profile: {
+                username: 'camille',
+                displayName: 'Camille Martin',
+                photoUrl: '/avatar.png',
+                friend: true,
+                following: true,
+                self: false,
+              },
+            },
           }
         : { status: 200, body: { collections: [record('one')], page: 1, hasMore: false } }
     })
     mount('/communaute/profils/camille')
-    expect(await screen.findByRole('heading', { name: '@camille' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Camille Martin' })).toBeInTheDocument()
     expect(screen.getAllByText('Amis')[0]).toBeInTheDocument()
     expect(urls.some((url) => url.includes('owner=camille'))).toBe(true)
     expect(screen.queryByRole('button', { name: 'Découvrir' })).not.toBeInTheDocument()

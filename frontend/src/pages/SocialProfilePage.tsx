@@ -58,6 +58,7 @@ export default function SocialProfilePage({
   const [cover, setCover] = useState('')
   const [audience, setAudience] = useState<Audience | null>(null)
   const [approved, setApproved] = useState(false)
+  const [shareIdentity, setShareIdentity] = useState<boolean | null>(null)
   const [preview, setPreview] = useState<CollectionPreview | null>(null)
   const [profile, setProfile] = useState<Workspace['profile'] | null>(null)
   const [pins, setPins] = useState<string[] | null>(null)
@@ -188,6 +189,29 @@ export default function SocialProfilePage({
                 <p>@{data.username ?? 'sans_identifiant'}</p>
               </div>
             </div>
+            <nav className="profile-connections" aria-label={t('Mes relations', 'My connections')}>
+              <Link
+                to="/amis?liste=amis"
+                aria-label={`${data.connections?.friends ?? 0} ${t('Amis', 'Friends')}`}
+              >
+                <strong>{data.connections?.friends ?? 0}</strong>
+                <span>{t('Amis', 'Friends')}</span>
+              </Link>
+              <Link
+                to="/amis?liste=abonnes"
+                aria-label={`${data.connections?.followers ?? 0} ${t('Abonnés', 'Followers')}`}
+              >
+                <strong>{data.connections?.followers ?? 0}</strong>
+                <span>{t('Abonnés', 'Followers')}</span>
+              </Link>
+              <Link
+                to="/amis?liste=abonnements"
+                aria-label={`${data.connections?.following ?? 0} ${t('Abonnements', 'Following')}`}
+              >
+                <strong>{data.connections?.following ?? 0}</strong>
+                <span>{t('Abonnements', 'Following')}</span>
+              </Link>
+            </nav>
             <p className="social-profile__bio">
               {data.profile.bio || 'Ajoutez quelques mots pour vous présenter.'}
             </p>
@@ -207,6 +231,9 @@ export default function SocialProfilePage({
             <details className="design-page-menu">
               <summary>Plus</summary>
               <div className="design-inline-links">
+                <Link to="/amis">{t('Amis et demandes', 'Friends and requests')}</Link>
+                <Link to="/profils">{t('Famille et profils', 'Family and profiles')}</Link>
+                <Link to="/actualites">{t('Le fil Penderie', 'The Penderie feed')}</Link>
                 <Link to="/vitrine">Personnaliser ma vitrine</Link>
                 <Link to="/acces">Gérer les accès</Link>
                 <Link to="/prets">Mes prêts</Link>
@@ -245,7 +272,11 @@ export default function SocialProfilePage({
               e.preventDefault()
               void run(async () => {
                 setData(
-                  await social.updateWorkspace({ version: data.version, profile: currentProfile }),
+                  await social.updateWorkspace({
+                    version: data.version,
+                    profile: currentProfile,
+                    shareIdentity: shareIdentity ?? data.identityPublished ?? false,
+                  }),
                 )
                 navigate('/profil')
               })
@@ -294,9 +325,33 @@ export default function SocialProfilePage({
                 onChange={(e) => setProfile({ ...currentProfile, bio: e.target.value })}
               />
             </DesignField>
-            <DesignField label="Lien de profil">
-              <input readOnly value="Profil privé · publication bientôt disponible" />
-            </DesignField>
+            <label className="collection-approval">
+              <input
+                type="checkbox"
+                checked={shareIdentity ?? data.identityPublished ?? false}
+                onChange={(e) => setShareIdentity(e.target.checked)}
+              />
+              <span>
+                {t(
+                  'Afficher ce nom et cette photo aux membres Penderie',
+                  'Show this name and photo to Penderie members',
+                )}
+              </span>
+            </label>
+            <p className="design-hint">
+              {t(
+                'Votre bio reste privée. Vous pouvez retirer votre nom et votre photo de la communauté en décochant cette option puis en enregistrant.',
+                'Your bio stays private. Uncheck this option and save to remove your name and photo from the community.',
+              )}
+            </p>
+            {data.username && (
+              <Link
+                className="design-link"
+                to={`/communaute/profils/${encodeURIComponent(data.username)}`}
+              >
+                {t('Voir mon profil côté communauté', 'View my community profile')}
+              </Link>
+            )}
           </DesignForm>
         )}
       </DesignPage>

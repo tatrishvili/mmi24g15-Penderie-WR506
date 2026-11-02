@@ -11,6 +11,7 @@ use App\Entity\SocialWorkspace;
 use App\Entity\User;
 use App\Enum\ItemStatus;
 use App\Service\CollectionSharing;
+use App\Service\CommunityIdentityService;
 use App\Service\CurrentActor;
 use App\Service\ItemService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,7 +29,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/social')]
 final class SocialController
 {
-    public function __construct(private CurrentActor $actor, private EntityManagerInterface $em, private ItemService $items, private CollectionSharing $collectionSharing,
+    public function __construct(private CurrentActor $actor, private EntityManagerInterface $em, private ItemService $items, private CollectionSharing $collectionSharing, private CommunityIdentityService $identities,
         #[Autowire(service: 'limiter.sharing')]
         private RateLimiterFactory $sharingLimiter,
         #[Autowire('%kernel.project_dir%')]
@@ -109,8 +110,15 @@ final class SocialController
 
     private function workspaceResponse(SocialWorkspace $workspace): JsonResponse
     {
+        $profile = array_merge(['displayName' => $workspace->owner->getUsername() ?? 'Mon profil', 'bio' => '', 'photo' => ''], $workspace->profile);
+        if (\in_array(strtolower(trim((string) $profile['displayName'])), ['moi', 'me'], true)) {
+            $profile['displayName'] = $workspace->owner->getUsername() ?? 'Mon profil';
+        }
+
         return new JsonResponse([
-            'profile' => array_merge(['displayName' => $workspace->owner->getFirstName(), 'bio' => '', 'photo' => ''], $workspace->profile),
+            'profile' => $profile,
+            'identityPublished' => null !== $this->identities->find($workspace->owner),
+            'connections' => $this->identities->counts($workspace->owner),
             'username' => $workspace->owner->getUsername(),
             'collections' => $workspace->collections,
             'pins' => $workspace->pins,
@@ -133,6 +141,12 @@ final class SocialController
                 'bio' => $this->text($profile['bio'] ?? '', 500),
                 'photo' => $this->image($profile['photo'] ?? ''),
             ];
+        }
+        if (array_key_exists('shareIdentity', $body)) {
+            if (!\is_bool($body['shareIdentity']) || !isset($body['profile']) || !\is_array($body['profile'])) {
+                throw new UnprocessableEntityHttpException('Approve a profile name and photo before publishing.');
+            }
+            $this->identities->save($workspace->owner, $workspace->profile['displayName'], $workspace->profile['photo'], $body['shareIdentity']);
         }
         if (isset($body['pins'])) {
             if (!\is_array($body['pins']) || \count($body['pins']) > 12) {

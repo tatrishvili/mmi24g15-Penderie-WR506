@@ -13,6 +13,7 @@ use App\Entity\SocialWorkspace;
 use App\Entity\User;
 use App\Enum\FriendRequestStatus;
 use App\Service\CollectionSharing;
+use App\Service\CommunityIdentityService;
 use App\Service\CurrentActor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -28,7 +29,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/social')]
 final class CollectionPublicationController
 {
-    public function __construct(private CurrentActor $actor, private EntityManagerInterface $em, private CollectionSharing $sharing,
+    public function __construct(private CurrentActor $actor, private EntityManagerInterface $em, private CollectionSharing $sharing, private CommunityIdentityService $identities,
         #[Autowire('%kernel.project_dir%')] private string $projectDir,
     ) {
     }
@@ -147,7 +148,21 @@ final class CollectionPublicationController
         $following = !$self && null !== $this->em->getRepository(Follow::class)->findOneBy(['follower' => $viewer, 'followed' => $owner]);
 
         // The private workspace profile (photo, bio, display name) is never published implicitly.
-        return $this->response(['profile' => ['username' => $owner->getUsername(), 'self' => $self, 'friend' => $friend, 'following' => $following]]);
+        return $this->response(['profile' => ['username' => $owner->getUsername(), 'self' => $self, 'friend' => $friend, 'following' => $following,
+            ...$this->identities->presentation($owner)]]);
+    }
+
+    #[Route('/profiles/{username}/photo', methods: ['GET'])]
+    public function profilePhoto(string $username): Response
+    {
+        $this->adult();
+        $identity = $this->identities->find($this->profileOwner($username));
+        if (null === $identity || '' === $identity->photo) {
+            throw new NotFoundHttpException();
+        }
+
+        return new Response((string) base64_decode($identity->photo, true), 200, ['Content-Type' => 'image/png', 'Cache-Control' => 'no-store',
+            'X-Content-Type-Options' => 'nosniff', 'Referrer-Policy' => 'no-referrer']);
     }
 
     #[Route('/collection-publications', methods: ['GET'])]

@@ -83,7 +83,7 @@ final class CollectionPublicationTest extends ApiTestCase
         $profileFeed = '/api/social/collection-publications?owner=CAMILLE_TEST';
         $profilePath = '/api/social/profiles/CAMILLE_TEST';
         $profile = self::decoded(self::api($viewer, 'GET', $profilePath));
-        self::assertSame(['username' => 'camille_test', 'self' => false, 'friend' => false, 'following' => false], $profile['profile']);
+        self::assertSame(['username' => 'camille_test', 'self' => false, 'friend' => false, 'following' => false, 'displayName' => 'camille_test', 'photoUrl' => null], $profile['profile']);
         self::assertCount(0, self::decoded(self::api($viewer, 'GET', $profileFeed))['collections']);
         $request = self::decoded(self::api($viewer, 'POST', '/api/friends/requests', ['username' => 'camille_test']))['request'];
         self::assertCount(0, self::decoded(self::api($viewer, 'GET', $feed))['collections'], 'Pending friendship does not grant friends content.');
@@ -112,6 +112,59 @@ final class CollectionPublicationTest extends ApiTestCase
         self::api($viewer, 'POST', '/api/auth/profiles/'.$child['id'].'/switch');
         self::assertSame(403, self::api($viewer, 'GET', $profilePath)->getStatusCode());
         self::assertSame(403, self::api($viewer, 'GET', $feed)->getStatusCode());
+    }
+
+    public function testApprovedIdentityAndOwnConnectionCounts(): void
+    {
+        $owner = static::createClient();
+        self::registerHousehold($owner);
+        $workspace = self::decoded(self::api($owner, 'GET', '/api/social/workspace'));
+        self::assertSame('camille_test', $workspace['profile']['displayName'], 'Never use the technical Moi name as the community identity.');
+        self::assertFalse($workspace['identityPublished']);
+        self::assertSame(['friends' => 0, 'followers' => 0, 'following' => 0], $workspace['connections']);
+        $private = ['displayName' => 'Camille Martin', 'bio' => 'Private biography', 'photo' => self::PNG];
+        $workspace = self::decoded(self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $private]));
+        $viewer = self::freshClient();
+        self::registerHousehold($viewer, 'viewer@example.com');
+        $profilePath = '/api/social/profiles/camille_test';
+        $photoPath = $profilePath.'/photo';
+        $profile = self::decoded(self::api($viewer, 'GET', $profilePath))['profile'];
+        self::assertSame('camille_test', $profile['displayName']);
+        self::assertNull($profile['photoUrl']);
+        self::assertSame(404, self::api($viewer, 'GET', $photoPath)->getStatusCode());
+        $workspace = self::decoded(self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $private, 'shareIdentity' => true]));
+        self::assertTrue($workspace['identityPublished']);
+        $profile = self::decoded(self::api($viewer, 'GET', $profilePath))['profile'];
+        self::assertSame('Camille Martin', $profile['displayName']);
+        self::assertSame($photoPath, $profile['photoUrl']);
+        self::assertArrayNotHasKey('bio', $profile);
+        self::assertArrayNotHasKey('connections', $profile);
+        $photo = self::api($viewer, 'GET', $photoPath);
+        self::assertSame(200, $photo->getStatusCode());
+        self::assertSame('image/png', $photo->headers->get('Content-Type'));
+        self::assertStringContainsString('no-store', (string) $photo->headers->get('Cache-Control'));
+        $request = self::decoded(self::api($viewer, 'POST', '/api/friends/requests', ['username' => 'camille_test']))['request'];
+        $connections = self::decoded(self::api($owner, 'GET', '/api/social/workspace'))['connections'];
+        self::assertSame(['friends' => 0, 'followers' => 1, 'following' => 0], $connections);
+        self::api($owner, 'POST', '/api/friends/requests/'.$request['id'].'/accept');
+        $connections = self::decoded(self::api($owner, 'GET', '/api/social/workspace'))['connections'];
+        self::assertSame(['friends' => 1, 'followers' => 1, 'following' => 1], $connections);
+        $friend = self::decoded(self::api($viewer, 'GET', '/api/friends'))['friends'][0]['user'];
+        self::assertSame('Camille Martin', $friend['displayName']);
+        self::assertSame($photoPath, $friend['photoUrl']);
+        // Editing private profile data alone does not overwrite an approved snapshot.
+        $private['displayName'] = 'Private new name';
+        $workspace = self::decoded(self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $private]));
+        self::assertSame('Camille Martin', self::decoded(self::api($viewer, 'GET', $profilePath))['profile']['displayName']);
+        $workspace = self::decoded(self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $private, 'shareIdentity' => false]));
+        self::assertFalse($workspace['identityPublished']);
+        self::assertSame('Private new name', $workspace['profile']['displayName']);
+        self::assertSame(self::PNG, $workspace['profile']['photo']);
+        self::assertSame('camille_test', self::decoded(self::api($viewer, 'GET', $profilePath))['profile']['displayName']);
+        self::assertSame(404, self::api($viewer, 'GET', $photoPath)->getStatusCode());
+        self::assertSame(422, self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'shareIdentity' => true])->getStatusCode());
+        $anonymous = self::freshClient();
+        self::assertSame(401, self::api($anonymous, 'GET', $photoPath)->getStatusCode());
     }
 
     public function testOwnerFilteringIsAppliedBeforePagination(): void

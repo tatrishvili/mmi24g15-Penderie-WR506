@@ -258,3 +258,17 @@ publication are separate features and remain outside this change.
 
 Profiles and the feed do not grant access to source inventory, private profile
 photos/bios, household details or standalone bearer-link shares.
+
+From **Mon profil**, click the friends, followers or following count to open that
+specific list. Its entries show the approved name/photo and username and open the
+member profile. **Gérer** opens the existing follow/request management flow.
+
+To show your chosen name and photo on member profiles, friends lists and feed
+cards, open **Personnaliser mon profil**, edit them, enable **Afficher ce nom et
+cette photo aux membres Penderie**, and save. Leaving it off keeps the username
+and initial as the community identity. Uncheck and save to withdraw the approved
+identity; the private profile data remains saved. Bios remain private.
+
+The five main tabs are **Fil**, **Dressing**, **Scanner**, **Foyer** and **Profil**.
+Use the profile counts for connections and **Profil → Plus → Famille et profils**
+for family management and trusted-device profile switching.

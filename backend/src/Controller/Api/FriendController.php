@@ -8,6 +8,7 @@ use App\Entity\Follow;
 use App\Entity\FriendRequest;
 use App\Entity\User;
 use App\Enum\FriendRequestStatus;
+use App\Service\CommunityIdentityService;
 use App\Service\CurrentActor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,6 +27,7 @@ final class FriendController extends AbstractController
     public function __construct(
         private readonly CurrentActor $actor,
         private readonly EntityManagerInterface $em,
+        private readonly CommunityIdentityService $identities,
     ) {
     }
 
@@ -237,10 +239,13 @@ final class FriendController extends AbstractController
     /** @return array<string, mixed> */
     private function userPayload(User $user): array
     {
+        $identity = $this->identities->presentation($user);
+
         return [
             'id' => $user->getId(),
             'username' => $user->getUsername(),
-            'firstName' => $user->getFirstName(),
+            'firstName' => $identity['displayName'],
+            ...$identity,
         ];
     }
 

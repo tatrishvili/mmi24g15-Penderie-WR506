@@ -1,36 +1,62 @@
-import { NavLink } from 'react-router-dom'
-import { Heart, House, MapPin, ScanLine, Shirt, UserRound, UsersRound } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { House, MapPin, ScanLine, Shirt, UserRound } from 'lucide-react'
 import { itemText as t } from '../lib/itemCatalog.ts'
-import { getCopy } from '../i18n/copy.ts'
-
-const BASE_TABS = [
-  { to: '/profil', label: 'Profil', Icon: UserRound },
-  { to: '/scanner', label: 'Scanner', Icon: ScanLine },
-  { to: '/dressing', label: 'Dressing', Icon: Shirt },
-  { to: '/foyer', label: 'Foyer', Icon: MapPin },
-  { to: '/profils', label: 'Profils', Icon: UsersRound },
-] as const
 
 export default function AppNav() {
-  const copy = getCopy()
+  const { pathname } = useLocation()
   const tabs = [
-    { to: '/actualites', label: t('Fil', 'Feed'), Icon: House },
-    ...BASE_TABS.slice(0, 4),
-    { to: '/amis', label: copy.nav.friends, Icon: Heart },
-    ...BASE_TABS.slice(4),
+    {
+      to: '/actualites',
+      label: t('Fil', 'Feed'),
+      Icon: House,
+      active: pathname === '/actualites' || pathname.startsWith('/communaute'),
+    },
+    {
+      to: '/dressing',
+      label: t('Dressing', 'Wardrobe'),
+      Icon: Shirt,
+      active: pathname === '/dressing' || pathname.startsWith('/articles'),
+    },
+    {
+      to: '/scanner',
+      label: t('Scanner', 'Scan'),
+      Icon: ScanLine,
+      active: pathname === '/scanner',
+    },
+    {
+      to: '/foyer',
+      label: t('Foyer', 'Home'),
+      Icon: MapPin,
+      active: pathname.startsWith('/foyer') || pathname === '/lieux',
+    },
+    {
+      to: '/profil',
+      label: t('Profil', 'Profile'),
+      Icon: UserRound,
+      active: [
+        '/profil',
+        '/collections',
+        '/amis',
+        '/profils',
+        '/compte',
+        '/vitrine',
+        '/prets',
+        '/acces',
+      ].some((path) => pathname === path || pathname.startsWith(path + '/')),
+    },
   ]
-
   return (
-    <nav className="app-nav" aria-label="Navigation principale">
-      {tabs.map(({ to, label, Icon }) => (
-        <NavLink
+    <nav className="app-nav" aria-label={t('Navigation principale', 'Main navigation')}>
+      {tabs.map(({ to, label, Icon, active }) => (
+        <Link
           key={to}
           to={to}
-          className={({ isActive }) => (isActive ? 'app-tab app-tab--active' : 'app-tab')}
+          aria-current={active ? 'page' : undefined}
+          className={`app-tab${active ? ' app-tab--active' : ''}${to === '/scanner' ? ' app-tab--scan' : ''}`}
         >
           <Icon size={22} aria-hidden="true" />
           <span>{label}</span>
-        </NavLink>
+        </Link>
       ))}
     </nav>
   )

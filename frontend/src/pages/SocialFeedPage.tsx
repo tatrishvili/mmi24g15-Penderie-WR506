@@ -16,12 +16,17 @@ function PublicationCard({ collection }: { collection: PublishedCollection }) {
     <article className="feed-card" aria-label={collection.name}>
       <header className="feed-card__author">
         <span className="feed-avatar" aria-hidden="true">
-          {collection.owner?.charAt(0).toUpperCase() ?? 'P'}
+          {collection.ownerPhotoUrl ? (
+            <img src={collection.ownerPhotoUrl} alt="" />
+          ) : (
+            ((collection.ownerDisplayName ?? collection.owner)?.charAt(0).toUpperCase() ?? 'P')
+          )}
         </span>
         <div>
           {collection.owner && (
             <Link to={`/communaute/profils/${encodeURIComponent(collection.owner)}`}>
-              @{collection.owner}
+              <strong>{collection.ownerDisplayName ?? collection.owner}</strong>
+              <small>@{collection.owner}</small>
             </Link>
           )}
           <small>{audienceLabel(collection.visibility)}</small>
@@ -143,9 +148,14 @@ function Feed({ username, scope }: { username?: string; scope: Scope }) {
       {profile && (
         <header className="community-profile">
           <span className="feed-avatar feed-avatar--large" aria-hidden="true">
-            {profile.username.charAt(0).toUpperCase()}
+            {profile.photoUrl ? (
+              <img src={profile.photoUrl} alt="" />
+            ) : (
+              (profile.displayName ?? profile.username).charAt(0).toUpperCase()
+            )}
           </span>
-          <h2>@{profile.username}</h2>
+          <h2>{profile.displayName ?? profile.username}</h2>
+          <p className="community-profile__handle">@{profile.username}</p>
           <span className="community-profile__relationship">
             {profile.self
               ? t('Mon profil', 'My profile')
