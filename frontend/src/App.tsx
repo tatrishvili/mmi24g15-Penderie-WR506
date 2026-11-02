@@ -6,6 +6,7 @@ import AccountPage from './pages/AccountPage.tsx'
 import FriendsPage from './pages/FriendsPage.tsx'
 import Home from './pages/Home.tsx'
 import ItemsPage from './pages/ItemsPage.tsx'
+import OnboardingPage from './pages/OnboardingPage.tsx'
 import PlacesPage from './pages/PlacesPage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import ProfilesPage from './pages/ProfilesPage.tsx'
@@ -19,6 +20,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/onboarding/:step" element={<OnboardingPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
           <Route path="/verifier-email" element={<VerifyEmailPage />} />
           <Route path="/connexion" element={<LoginPage />} />

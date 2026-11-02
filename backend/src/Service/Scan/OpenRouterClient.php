@@ -104,12 +104,7 @@ SYSTEM_PROMPT,
         $item = json_decode(trim($message), true);
 
         if (!\is_array($item)) {
-            $fenced = preg_replace('/^```(?:json)?\s*|\s*```$/', '', trim($message));
-
-            if (!\is_string($fenced)) {
-                throw new HttpException(Response::HTTP_BAD_GATEWAY, 'Photo analysis returned invalid data. You can enter the item manually.');
-            }
-
+            $fenced = preg_replace('/^```(?:json)?\s*|\s*```$/', '', trim($message)) ?? '';
             $item = json_decode($fenced, true);
 
             if (!\is_array($item)) {

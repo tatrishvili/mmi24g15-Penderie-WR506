@@ -14,7 +14,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
  * A User can belong to SEVERAL households (see HouseholdMember): the active
  * household lives in the session, not on the User.
  */
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: \App\Repository\UserRepository::class)]
 #[ORM\Table(name: 'app_user')]
 #[ORM\UniqueConstraint(name: 'UNIQ_APP_USER_USERNAME', columns: ['username'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface

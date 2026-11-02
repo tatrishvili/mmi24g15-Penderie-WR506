@@ -5,7 +5,7 @@ import { AuthProvider } from '../auth/AuthContext.tsx'
 import { ProtectedRoute } from '../auth/ProtectedRoute.tsx'
 import ItemsPage from '../pages/ItemsPage.tsx'
 import LoginPage from '../pages/LoginPage.tsx'
-import { stubFetch, unauthorized } from '../test/http.ts'
+import { jsonBody, stubFetch, unauthorized } from '../test/http.ts'
 
 const ITEM = {
   id: 1,
@@ -48,7 +48,9 @@ const ME = {
   },
 }
 
-function renderDressing(handler: (url: string) => { status: number; body: unknown }) {
+function renderDressing(
+  handler: (url: string, init?: RequestInit) => { status: number; body: unknown },
+) {
   stubFetch(handler)
   render(
     <MemoryRouter initialEntries={['/dressing']}>
@@ -126,5 +128,56 @@ describe('ItemsPage', () => {
     renderDressing(() => unauthorized())
 
     expect(await screen.findByLabelText('E-mail')).toBeInTheDocument()
+  })
+
+  it('lends an available item and marks it back as available when recovered', async () => {
+    const patches: { id: number; body: Record<string, unknown> }[] = []
+    let status: 'disponible' | 'loue' = 'disponible'
+
+    renderDressing((url, init) => {
+      if (url.endsWith('/api/auth/me')) return ME
+      if (init?.method === 'PATCH' && /\/api\/items\/\d+$/.test(url)) {
+        const body = jsonBody(init)
+        patches.push({ id: Number(url.split('/').pop()), body })
+        status = body.status === 'loue' ? 'loue' : 'disponible'
+        return { status: 200, body: { item: { ...ITEM, status } } }
+      }
+      if (url.includes('/api/items')) {
+        return { status: 200, body: { items: [{ ...ITEM, status }], total: 1, page: 1, perPage: 20 } }
+      }
+      return { status: 404, body: {} }
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Prêter' }))
+
+    await screen.findByText('Prêté')
+    expect(patches).toHaveLength(1)
+    expect(patches[0]).toEqual({ id: 1, body: { status: 'loue' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Récupérer' }))
+
+    await screen.findByText('Disponible')
+    expect(patches).toHaveLength(2)
+    expect(patches[1].body).toEqual({ status: 'disponible' })
+  })
+
+  it('surfaces an API error when lending fails', async () => {
+    renderDressing((url, init) => {
+      if (url.endsWith('/api/auth/me')) return ME
+      if (init?.method === 'PATCH') {
+        return {
+          status: 403,
+          body: { error: { code: 'forbidden', message: 'Not allowed.' } },
+        }
+      }
+      if (url.includes('/api/items')) {
+        return { status: 200, body: { items: [ITEM], total: 1, page: 1, perPage: 20 } }
+      }
+      return { status: 404, body: {} }
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Prêter' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Not allowed.')
   })
 })

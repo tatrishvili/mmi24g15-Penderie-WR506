@@ -90,6 +90,26 @@ migrate: | api-running ## Apply pending Doctrine migrations
 schema: | api-running ## Validate the Doctrine mapping against the database
 	$(API) php bin/console doctrine:schema:validate
 
+.PHONY: fixtures
+fixtures: | api-running ## Load dev fixtures (backs up the DB to backend/var/backups first)
+	@mkdir -p backend/var/backups
+	@f=backend/var/backups/backup-$(shell date +%Y%m%d-%H%M%S).sql; \
+	echo "Backing up database to $$f ..."; \
+	docker compose exec -T db sh -c 'export MYSQL_PWD="$${MARIADB_PASSWORD:-penderie}"; exec mariadb-dump --single-transaction --routines --triggers -u"$${MARIADB_USER:-penderie}" "$${MARIADB_DATABASE:-penderie}"' > "$$f" \
+		|| { echo "Backup failed - aborting."; rm -f "$$f"; exit 1; }; \
+	echo "Backup written. Applying migrations, then loading fixtures (database will be purged)..."; \
+	$(API) php bin/console doctrine:migrations:migrate --no-interaction -q && \
+	$(API) php bin/console doctrine:fixtures:load --no-interaction && \
+	echo "Fixtures loaded. Restore anytime with: make db-restore FILE=$$f"
+
+.PHONY: db-restore
+db-restore: | api-running ## Restore a SQL dump: make db-restore FILE=backend/var/backups/<dump>.sql
+	@test -n "$(FILE)" || { echo "Usage: make db-restore FILE=backend/var/backups/<dump>.sql"; exit 1; }
+	@test -f "$(FILE)" || { echo "No such file: $(FILE)"; exit 1; }
+	@echo "Restoring $(FILE) (replaces current data) ..."
+	docker compose exec -T db sh -c 'export MYSQL_PWD="$${MARIADB_PASSWORD:-penderie}"; exec mariadb -u"$${MARIADB_USER:-penderie}" "$${MARIADB_DATABASE:-penderie}"' < "$(FILE)"
+	@echo "Restored $(FILE)."
+
 # ----------------------------------------------------------------------------
 #  Backend quality
 # ----------------------------------------------------------------------------
@@ -164,6 +184,15 @@ lighthouse: fe-build ## Lighthouse audit: performance, accessibility, best pract
 	$(FE) npx lhci assert
 	$(FE) npx lhci upload
 	@echo "HTML report: frontend/lighthouse-report/"
+
+# ----------------------------------------------------------------------------
+#  End-to-end (Cypress)
+# ----------------------------------------------------------------------------
+
+.PHONY: test-e2e
+test-e2e: | api-running fe-running ## End-to-end tests (Cypress, headless, in Docker)
+	$(API) php bin/console cache:pool:clear cache.rate_limiter -q ## resets the e-mail-registration limiter (5/hour/IP)
+	$(COMPOSE) --profile e2e run --rm cypress
 
 # ----------------------------------------------------------------------------
 #  Aggregates

@@ -447,7 +447,7 @@ final class ItemService
             return;
         }
 
-        $file = rtrim($this->uploadDir, '/').'/'.substr($path, \strlen('items/'));
+        $file = rtrim($this->uploadDir, '/').'/items/'.substr($path, \strlen('items/'));
 
         if (is_file($file)) {
             @unlink($file);

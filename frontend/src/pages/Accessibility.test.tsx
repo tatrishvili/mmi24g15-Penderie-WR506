@@ -2,11 +2,27 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext.tsx'
+import { ProtectedRoute } from '../auth/ProtectedRoute.tsx'
 import { expectNoA11yViolations } from '../test/a11y.ts'
 import { stubFetch, unauthorized } from '../test/http.ts'
 import Home from './Home.tsx'
+import ItemsPage from './ItemsPage.tsx'
 import LoginPage from './LoginPage.tsx'
 import RegisterPage from './RegisterPage.tsx'
+
+const ME = {
+  status: 200,
+  body: {
+    households: [{ id: 1, name: 'Famille Moreau', slug: 'famille-moreau' }],
+    household: { id: 1, name: 'Famille Moreau', slug: 'famille-moreau' },
+    profiles: [],
+    places: [],
+    activeHouseholdId: 1,
+    activeProfileId: 1,
+    activeProfile: null,
+    user: { id: 1, email: 'camille@example.com' },
+  },
+}
 
 describe('Accessibility (axe-core)', () => {
   afterEach(() => {
@@ -15,11 +31,6 @@ describe('Accessibility (axe-core)', () => {
   })
 
   it('landing page: no violations', async () => {
-    stubFetch((url) =>
-      url.endsWith('/api/health')
-        ? { status: 200, body: { status: 'ok' } }
-        : { status: 404, body: {} },
-    )
     const { container } = render(
       <MemoryRouter>
         <Home />
@@ -27,7 +38,7 @@ describe('Accessibility (axe-core)', () => {
     )
 
     expect(
-      await screen.findByText('Votre dressing, dans votre téléphone.', { exact: false }),
+      await screen.findByRole('heading', { name: 'Bienvenue chez Penderie' }),
     ).toBeInTheDocument()
 
     await expectNoA11yViolations(container)
@@ -79,10 +90,39 @@ describe('Accessibility (axe-core)', () => {
     await waitFor(() => {
       expect(container.querySelectorAll('input, select, textarea').length).toBeGreaterThan(0)
     })
-
     container.querySelectorAll('input, select, textarea').forEach((field) => {
       expect(field).toHaveAccessibleName()
     })
+
+    await expectNoA11yViolations(container)
+  })
+
+  it('inventory page (authenticated): no violations', async () => {
+    stubFetch((url) => {
+      if (url.endsWith('/api/auth/me')) return ME
+      if (url.includes('/api/items')) {
+        return { status: 200, body: { items: [], total: 0, page: 1, perPage: 20 } }
+      }
+      return { status: 404, body: {} }
+    })
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dressing']}>
+        <AuthProvider>
+          <Routes>
+            <Route
+              path="/dressing"
+              element={
+                <ProtectedRoute>
+                  <ItemsPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText(/dressing est encore vide/)).toBeInTheDocument()
 
     await expectNoA11yViolations(container)
   })

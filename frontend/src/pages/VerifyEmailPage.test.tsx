@@ -21,9 +21,11 @@ const ME_AUTHENTICATED = {
   },
 }
 
-function renderVerify(initialEntry = '/verifier-email?token=abc') {
+function renderVerify(
+  entry: string | { pathname: string; state?: Record<string, unknown> } = '/verifier-email?token=abc',
+) {
   render(
-    <MemoryRouter initialEntries={[initialEntry]}>
+    <MemoryRouter initialEntries={[entry]}>
       <AuthProvider>
         <Routes>
           <Route path="/verifier-email" element={<VerifyEmailPage />} />
@@ -51,7 +53,7 @@ describe('VerifyEmailPage', () => {
     })
     renderVerify()
 
-    await screen.findByText(/Votre mot de passe n'est jamais envoyé/)
+    await screen.findByText(/Votre mot de passe n’est jamais envoyé/)
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et créer mon compte' }))
 
     expect(await screen.findByText('Compte prêt')).toBeInTheDocument()
@@ -88,5 +90,18 @@ describe('VerifyEmailPage', () => {
 
     await waitFor(() => expect(resentEmail).toBe('camille@example.com'))
     expect(await screen.findByRole('status')).toHaveTextContent(/nouveau lien/)
+  })
+
+  it('shows the registered address and a resend button after registering', async () => {
+    stubFetch((url) => (url.endsWith('/api/auth/me') ? ME_ANON : { status: 404, body: {} }))
+    renderVerify({ pathname: '/verifier-email', state: { email: 'camille@example.com' } })
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Vérifiez votre e-mail' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('camille@example.com')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Renvoyer le lien' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Se connecter' })).toBeInTheDocument()
   })
 })

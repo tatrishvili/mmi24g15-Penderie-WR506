@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext.tsx'
 import RegisterPage from '../pages/RegisterPage.tsx'
+import VerifyEmailPage from './VerifyEmailPage.tsx'
 import { jsonBody, stubFetch, unauthorized } from '../test/http.ts'
 
 const ME_ANON = unauthorized()
@@ -13,6 +14,7 @@ function renderRegister() {
       <AuthProvider>
         <Routes>
           <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/verifier-email" element={<VerifyEmailPage />} />
           <Route path="/dressing" element={<p>Dressing</p>} />
         </Routes>
       </AuthProvider>
@@ -31,9 +33,6 @@ async function fillRequiredFields(email = 'camille@example.com') {
   fireEvent.change(screen.getByLabelText(/Mot de passe \(8 caractères/), {
     target: { value: 'secret123' },
   })
-  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), {
-    target: { value: 'secret123' },
-  })
 }
 
 describe('RegisterPage', () => {
@@ -49,12 +48,11 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument()
     expect(screen.getByLabelText('Date de naissance')).toHaveAttribute('type', 'date')
     expect(screen.getByLabelText(/Mot de passe \(8 caractères/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Confirmer le mot de passe')).toBeInTheDocument()
     expect(screen.getByText(/pas une vérification officielle/)).toBeInTheDocument()
     expect(screen.queryByLabelText('Votre prenom')).not.toBeInTheDocument()
   })
 
-  it('asks the user to check their email after registering', async () => {
+  it('sends the user to the verification page with their address after registering', async () => {
     stubFetch((url) => {
       if (url.endsWith('/api/auth/register')) {
         return { status: 202, body: { message: 'Verification email sent.' } }
@@ -67,8 +65,10 @@ describe('RegisterPage', () => {
     await fillRequiredFields()
     fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }))
 
-    expect(await screen.findByText('Vérifiez votre e-mail')).toBeInTheDocument()
-    expect(screen.getByText(/camille@example.com/)).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Vérifiez votre e-mail' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('camille@example.com')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Renvoyer le lien' })).toBeInTheDocument()
   })
 
@@ -112,7 +112,9 @@ describe('RegisterPage', () => {
     await fillRequiredFields('  camille@example.com ')
     fireEvent.click(screen.getByRole('button', { name: "S'inscrire" }))
 
-    expect(await screen.findByText('Vérifiez votre e-mail')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Vérifiez votre e-mail' }),
+    ).toBeInTheDocument()
     expect(sent['username']).toBe('camille_moreau')
     expect(sent['email']).toBe('camille@example.com')
     expect(sent['birthDate']).toBe('1990-05-12')

@@ -1,5 +1,5 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import Home from './Home.tsx'
@@ -11,55 +11,33 @@ function renderHome() {
     </MemoryRouter>
   )
 
-  render(page)
+  return render(page)
 }
 
 describe('Home', () => {
   afterEach(() => {
     cleanup()
-    vi.unstubAllGlobals()
   })
 
-  it('renders the Penderie landing page', () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ status: 'ok', environment: 'test' }),
-      }),
-    )
+  it('renders the welcome onboarding screen', () => {
+    const { container } = renderHome()
 
-    renderHome()
-
-    expect(
-      screen.getByText('Votre dressing, dans votre téléphone.', { exact: false }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('Qu’est-ce que je possède ?')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Bienvenue chez Penderie' })).toBeInTheDocument()
+    expect(screen.getByText(/Ajoutez tous vos vêtements/)).toBeInTheDocument()
+    expect(container.querySelector('.welcome__buddie')).toBeInTheDocument()
   })
 
-  it('shows the API as online when the health endpoint answers', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ status: 'ok', environment: 'test' }),
-      }),
-    )
-
+  it('links to the next onboarding step and to sign-in', () => {
     renderHome()
 
-    await waitFor(() => {
-      expect(screen.getByTestId('api-badge')).toHaveTextContent('API en ligne (test)')
-    })
+    expect(screen.getByRole('link', { name: 'Suivant' })).toHaveAttribute('href', '/onboarding/2')
+    expect(screen.getByRole('link', { name: 'Se connecter' })).toHaveAttribute('href', '/connexion')
   })
 
-  it('shows the API as offline when the health endpoint fails', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
+  it('marks the first onboarding step', () => {
+    const { container } = renderHome()
 
-    renderHome()
-
-    await waitFor(() => {
-      expect(screen.getByTestId('api-badge')).toHaveTextContent('API hors ligne')
-    })
+    expect(screen.getByRole('img', { name: 'Étape 1 sur 4' })).toBeInTheDocument()
+    expect(container.querySelectorAll('.dot')).toHaveLength(4)
   })
 })
