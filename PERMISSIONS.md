@@ -207,10 +207,18 @@ Source-item vetoes and photo authorization remain in force. No private collectio
 count, source item ID, email, location, bio or profile photo is exposed by these views.
 
 An optional, explicit profile-save approval now publishes an account-wide name
-and sanitized avatar snapshot in `community_identity`; it never publishes the
-private bio. Profiles, feed cards and own connection lists use only this snapshot
+and sanitized avatar snapshot in `community_identity`. Bio publication requires
+a separate explicit approval and never backfills existing private bios. Profiles, feed cards and own connection lists use only this snapshot
 or the account username/initial fallback. Existing private profile data is not
 migrated into a published identity. Withdrawing approval removes future avatar
 access without deleting the private profile. Avatar GETs require a verified adult
 session and use `no-store`. Connection counts and lists exposed in these new
-profile controls belong to the current account, not to arbitrary member profiles.
+profile controls belong to the current account. Member profiles expose aggregate
+counts only, without revealing their lists.
+
+Profile pins are presentation preferences, not grants. Ranking happens only
+within audience-authorized publications and before pagination. Only a boolean
+pinned badge is returned per visible publication; private pin IDs and collection
+metadata are never returned to external viewers. Pin/unpin reuses the verified
+adult, current-workspace ownership and optimistic-version checks of the existing
+workspace mutation endpoint. Pinning never publishes private collections or items.

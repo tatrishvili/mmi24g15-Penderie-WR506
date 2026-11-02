@@ -1,3 +1,4 @@
+import { Pin } from 'lucide-react'
 import { audienceLabel, collectionItemDetail } from '../lib/collectionAudience.ts'
 import { CollectionAudience, CollectionApproval } from '../components/CollectionAudience.tsx'
 import { itemText as t } from '../lib/itemCatalog.ts'
@@ -58,11 +59,13 @@ export default function SocialProfilePage({
   const [cover, setCover] = useState('')
   const [audience, setAudience] = useState<Audience | null>(null)
   const [approved, setApproved] = useState(false)
+  const [shareBio, setShareBio] = useState<boolean | null>(null)
   const [shareIdentity, setShareIdentity] = useState<boolean | null>(null)
   const [preview, setPreview] = useState<CollectionPreview | null>(null)
   const [profile, setProfile] = useState<Workspace['profile'] | null>(null)
   const [pins, setPins] = useState<string[] | null>(null)
   const [choosePin, setChoosePin] = useState(false)
+  const [collectionFilter, setCollectionFilter] = useState<'all' | 'shared' | 'private'>('all')
   const [items, setItems] = useState<ItemSummary[]>([])
   const [notice, setNotice] = useState<string | null>(null)
   useEffect(() => {
@@ -163,11 +166,6 @@ export default function SocialProfilePage({
         className="social-profile"
         title="Mon profil"
         subtitle="Votre espace personnel"
-        footer={
-          <Link className="btn btn-primary" to="/profil/modifier">
-            Personnaliser mon profil
-          </Link>
-        }
       >
         {errors}
         {load}
@@ -215,24 +213,154 @@ export default function SocialProfilePage({
             <p className="social-profile__bio">
               {data.profile.bio || 'Ajoutez quelques mots pour vous présenter.'}
             </p>
+            <Link className="btn btn-secondary" to="/profil/modifier">
+              {t('Modifier mon profil', 'Edit profile')}
+            </Link>
             <DesignRow
-              icon={icon('imgIconDisc1')}
-              title="Mes collections"
-              detail={`${data.collections.length} collections`}
-              to="/collections"
+              icon={icon('imgIconUser')}
+              title={t('Famille et profils', 'Family and profiles')}
+              detail={t('Voir les membres et ajouter un enfant', 'View members and add a child')}
+              to="/foyer/membres"
             />
-            <h2>À la une</h2>
-            <div className="design-grid">
-              {data.collections.filter((c) => data.pins.includes(c.id)).map((c) => tile(c))}
-            </div>
-            {!data.pins.length && (
-              <p className="design-hint">Épinglez vos collections préférées dans votre vitrine.</p>
-            )}
+            <section
+              className="profile-collections"
+              aria-label={t('Mes collections', 'My collections')}
+            >
+              <div className="profile-collections__heading">
+                <h2>
+                  {t('Mes collections', 'My collections')}{' '}
+                  <small>({data.collections.length})</small>
+                </h2>
+                <Link className="design-link" to="/collections/nouvelle">
+                  {t('Créer', 'Create')}
+                </Link>
+              </div>
+              <div
+                className="feed-tabs"
+                role="group"
+                aria-label={t('Filtrer mes collections', 'Filter my collections')}
+              >
+                {(['all', 'shared', 'private'] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    aria-pressed={collectionFilter === filter}
+                    onClick={() => setCollectionFilter(filter)}
+                  >
+                    {filter === 'all'
+                      ? t('Toutes', 'All')
+                      : filter === 'shared'
+                        ? t('Partagées', 'Shared')
+                        : t('Privées', 'Private')}
+                  </button>
+                ))}
+              </div>
+              <p className="design-hint">
+                {t(
+                  'Vos épingles apparaissent en premier. Les visiteurs voient uniquement les collections partagées avec eux.',
+                  'Pins appear first. Visitors only see collections shared with them.',
+                )}
+              </p>
+              <div className="profile-collection-grid">
+                {data.collections
+                  .filter(
+                    (c) =>
+                      collectionFilter === 'all' ||
+                      (collectionFilter === 'private'
+                        ? c.visibility === 'personal'
+                        : c.visibility !== 'personal'),
+                  )
+                  .sort((a, b) => {
+                    const rank = (id: string) =>
+                      data.pins.includes(id) ? data.pins.indexOf(id) : data.pins.length
+                    return rank(a.id) - rank(b.id)
+                  })
+                  .map((c) => (
+                    <article key={c.id} className="profile-collection-card" aria-label={c.name}>
+                      <Link
+                        className="profile-collection-card__content"
+                        to={`/collections/${c.id}`}
+                      >
+                        <span className="profile-collection-card__image">{collectionIcon(c)}</span>
+                        <strong>{c.name}</strong>
+                        <small>
+                          {c.itemIds.length}{' '}
+                          {c.itemIds.length === 1 ? t('article', 'item') : t('articles', 'items')}
+                        </small>
+                        <span className="profile-collection-card__audience">
+                          {audienceLabel(c.visibility)}
+                        </span>
+                        {data.pins.includes(c.id) && (
+                          <small className="profile-collection-card__pinned">
+                            {t('Épinglée', 'Pinned')}
+                          </small>
+                        )}
+                      </Link>
+                      <button
+                        type="button"
+                        className="profile-collection-card__pin"
+                        aria-label={`${data.pins.includes(c.id) ? t('Désépingler', 'Unpin') : t('Épingler', 'Pin')} ${c.name}`}
+                        aria-pressed={data.pins.includes(c.id)}
+                        disabled={busy || (!data.pins.includes(c.id) && data.pins.length >= 12)}
+                        onClick={() =>
+                          void run(async () => {
+                            const removing = data.pins.includes(c.id)
+                            const pins = removing
+                              ? data.pins.filter((id) => id !== c.id)
+                              : [c.id, ...data.pins]
+                            setData(await social.updateWorkspace({ version: data.version, pins }))
+                            setNotice(
+                              removing
+                                ? t('Collection désépinglée.', 'Collection unpinned.')
+                                : t('Collection épinglée.', 'Collection pinned.'),
+                            )
+                          })
+                        }
+                      >
+                        <Pin size={18} aria-hidden="true" />
+                      </button>
+                    </article>
+                  ))}
+              </div>
+              {data.collections.length === 0 ? (
+                <p className="design-hint">
+                  {t(
+                    'Créez votre première collection pour la retrouver ici.',
+                    'Create your first collection to see it here.',
+                  )}
+                </p>
+              ) : (
+                !data.collections.some(
+                  (c) =>
+                    collectionFilter === 'all' ||
+                    (collectionFilter === 'private'
+                      ? c.visibility === 'personal'
+                      : c.visibility !== 'personal'),
+                ) && (
+                  <p className="design-hint">
+                    {t(
+                      'Aucune collection dans cette sélection.',
+                      'No collections match this filter.',
+                    )}
+                  </p>
+                )
+              )}
+              {data.pins.length >= 12 && (
+                <p className="design-hint">
+                  {t(
+                    'Vous avez épinglé 12 collections. Retirez une épingle pour en ajouter une autre.',
+                    'You have pinned 12 collections. Remove a pin to add another.',
+                  )}
+                </p>
+              )}
+              <Link className="design-link" to="/collections">
+                {t('Gérer mes collections', 'Manage my collections')}
+              </Link>
+            </section>
             <details className="design-page-menu">
               <summary>Plus</summary>
               <div className="design-inline-links">
                 <Link to="/amis">{t('Amis et demandes', 'Friends and requests')}</Link>
-                <Link to="/profils">{t('Famille et profils', 'Family and profiles')}</Link>
+                <Link to="/profils">{t('Changer de profil', 'Switch profile')}</Link>
                 <Link to="/actualites">{t('Le fil Penderie', 'The Penderie feed')}</Link>
                 <Link to="/vitrine">Personnaliser ma vitrine</Link>
                 <Link to="/acces">Gérer les accès</Link>
@@ -276,6 +404,9 @@ export default function SocialProfilePage({
                     version: data.version,
                     profile: currentProfile,
                     shareIdentity: shareIdentity ?? data.identityPublished ?? false,
+                    shareBio:
+                      (shareIdentity ?? data.identityPublished ?? false) &&
+                      (shareBio ?? data.bioPublished ?? false),
                   }),
                 )
                 navigate('/profil')
@@ -338,10 +469,27 @@ export default function SocialProfilePage({
                 )}
               </span>
             </label>
+            <label className="collection-approval">
+              <input
+                type="checkbox"
+                checked={
+                  (shareIdentity ?? data.identityPublished ?? false) &&
+                  (shareBio ?? data.bioPublished ?? false)
+                }
+                disabled={!(shareIdentity ?? data.identityPublished ?? false)}
+                onChange={(e) => setShareBio(e.target.checked)}
+              />
+              <span>
+                {t(
+                  'Afficher aussi ma bio sur mon profil Penderie',
+                  'Also show my bio on my Penderie profile',
+                )}
+              </span>
+            </label>
             <p className="design-hint">
               {t(
-                'Votre bio reste privée. Vous pouvez retirer votre nom et votre photo de la communauté en décochant cette option puis en enregistrant.',
-                'Your bio stays private. Uncheck this option and save to remove your name and photo from the community.',
+                'Votre nom, votre photo et votre bio sont partagés selon ces choix. Décochez une option puis enregistrez pour la retirer de votre profil Penderie.',
+                'Your name, photo and bio are shared according to these choices. Uncheck an option and save to remove it from your Penderie profile.',
               )}
             </p>
             {data.username && (
@@ -633,7 +781,7 @@ export default function SocialProfilePage({
       frame={frame}
       className="social-showcase"
       title="Personnaliser ma vitrine"
-      subtitle="Choisir ce qui apparaît sur le profil"
+      subtitle={t('Organiser mes collections épinglées', 'Organize my pinned collections')}
       footer={
         <button
           className="btn btn-primary"
@@ -642,7 +790,7 @@ export default function SocialProfilePage({
             void run(async () => {
               if (data) {
                 setData(await social.updateWorkspace({ version: data.version, pins: currentPins }))
-                setNotice('Vitrine enregistrée. Elle reste privée.')
+                setNotice(t('Épingles enregistrées.', 'Pins saved.'))
                 setPins(null)
               }
             })
@@ -657,7 +805,10 @@ export default function SocialProfilePage({
       <DesignRow
         icon={icon('imgIconEye')}
         title="Aperçu de ma vitrine"
-        detail="Votre aperçu personnel · privé"
+        detail={t(
+          'Les visiteurs voient seulement les collections partagées avec eux',
+          'Visitors only see collections shared with them',
+        )}
         to="/profil"
       />
       <h2>Éléments épinglés</h2>
@@ -670,7 +821,7 @@ export default function SocialProfilePage({
       <DesignRow
         icon={icon('imgIconPin')}
         title="Ajouter une épingle"
-        detail="Choisir un objet ou une collection"
+        detail={t('Choisir une collection', 'Choose a collection')}
         onClick={() => setChoosePin(!choosePin)}
       />
       {choosePin && (

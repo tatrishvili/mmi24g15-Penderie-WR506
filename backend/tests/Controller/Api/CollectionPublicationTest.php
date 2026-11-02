@@ -83,7 +83,7 @@ final class CollectionPublicationTest extends ApiTestCase
         $profileFeed = '/api/social/collection-publications?owner=CAMILLE_TEST';
         $profilePath = '/api/social/profiles/CAMILLE_TEST';
         $profile = self::decoded(self::api($viewer, 'GET', $profilePath));
-        self::assertSame(['username' => 'camille_test', 'self' => false, 'friend' => false, 'following' => false, 'displayName' => 'camille_test', 'photoUrl' => null], $profile['profile']);
+        self::assertSame(['username' => 'camille_test', 'self' => false, 'friend' => false, 'following' => false, 'bio' => '', 'connections' => ['friends' => 0, 'followers' => 0, 'following' => 0], 'displayName' => 'camille_test', 'photoUrl' => null], $profile['profile']);
         self::assertCount(0, self::decoded(self::api($viewer, 'GET', $profileFeed))['collections']);
         $request = self::decoded(self::api($viewer, 'POST', '/api/friends/requests', ['username' => 'camille_test']))['request'];
         self::assertCount(0, self::decoded(self::api($viewer, 'GET', $feed))['collections'], 'Pending friendship does not grant friends content.');
@@ -137,8 +137,8 @@ final class CollectionPublicationTest extends ApiTestCase
         $profile = self::decoded(self::api($viewer, 'GET', $profilePath))['profile'];
         self::assertSame('Camille Martin', $profile['displayName']);
         self::assertSame($photoPath, $profile['photoUrl']);
-        self::assertArrayNotHasKey('bio', $profile);
-        self::assertArrayNotHasKey('connections', $profile);
+        self::assertSame('', $profile['bio']);
+        self::assertSame(['friends' => 0, 'followers' => 0, 'following' => 0], $profile['connections']);
         $photo = self::api($viewer, 'GET', $photoPath);
         self::assertSame(200, $photo->getStatusCode());
         self::assertSame('image/png', $photo->headers->get('Content-Type'));
@@ -167,6 +167,80 @@ final class CollectionPublicationTest extends ApiTestCase
         self::assertSame(401, self::api($anonymous, 'GET', $photoPath)->getStatusCode());
     }
 
+    public function testBioPublicationIsExplicitAndCanBeWithdrawn(): void
+    {
+        $owner = static::createClient();
+        self::registerHousehold($owner);
+        $workspace = self::decoded(self::api($owner, 'GET', '/api/social/workspace'));
+        $profile = ['displayName' => 'Camille', 'photo' => '', 'bio' => 'My private biography'];
+        $workspace = self::decoded(self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $profile, 'shareIdentity' => true]));
+        self::assertFalse($workspace['bioPublished']);
+        $viewer = self::freshClient();
+        self::registerHousehold($viewer, 'viewer@example.com');
+        $path = '/api/social/profiles/camille_test';
+        self::assertSame('', self::decoded(self::api($viewer, 'GET', $path))['profile']['bio']);
+        $workspace = self::decoded(self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $profile, 'shareIdentity' => true, 'shareBio' => true]));
+        self::assertTrue($workspace['bioPublished']);
+        self::assertSame($profile['bio'], self::decoded(self::api($viewer, 'GET', $path))['profile']['bio']);
+        $profile['bio'] = 'Changed privately';
+        $workspace = self::decoded(self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $profile, 'shareIdentity' => true]));
+        self::assertSame('My private biography', self::decoded(self::api($viewer, 'GET', $path))['profile']['bio']);
+        $request = self::decoded(self::api($viewer, 'POST', '/api/friends/requests', ['username' => 'camille_test']))['request'];
+        self::api($owner, 'POST', '/api/friends/requests/'.$request['id'].'/accept');
+        self::assertSame(['friends' => 1, 'followers' => 1, 'following' => 1], self::decoded(self::api($viewer, 'GET', $path))['profile']['connections']);
+        $workspace = self::decoded(self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $profile, 'shareIdentity' => true, 'shareBio' => false]));
+        self::assertFalse($workspace['bioPublished']);
+        self::assertTrue($workspace['identityPublished']);
+        self::assertSame('Changed privately', $workspace['profile']['bio']);
+        self::assertSame('', self::decoded(self::api($viewer, 'GET', $path))['profile']['bio']);
+        self::assertSame(422, self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $profile, 'shareIdentity' => false, 'shareBio' => true])->getStatusCode());
+        self::assertSame(422, self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'profile' => $profile, 'shareBio' => true])->getStatusCode());
+    }
+
+    public function testProfilePinsPersistAndNeverPublishPrivateCollections(): void
+    {
+        $owner = static::createClient();
+        self::registerHousehold($owner);
+        $old = self::decoded(self::api($owner, 'POST', '/api/social/collections', ['name' => 'Older shared']))['collections'][0]['id'];
+        $created = self::decoded(self::api($owner, 'POST', '/api/social/collections', ['name' => 'Newer shared']));
+        $new = $created['collections'][1]['id'];
+        $created = self::decoded(self::api($owner, 'POST', '/api/social/collections', ['name' => 'Secret private collection']));
+        $private = $created['collections'][2]['id'];
+        $this->publish($owner, $old, 'app');
+        $this->publish($owner, $new, 'app');
+        $em = static::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class);
+        $older = $em->find(\App\Entity\CollectionPublication::class, $old);
+        $newer = $em->find(\App\Entity\CollectionPublication::class, $new);
+        self::assertNotNull($older);
+        self::assertNotNull($newer);
+        $older->updatedAt = new \DateTimeImmutable('2026-01-01');
+        $newer->updatedAt = new \DateTimeImmutable('2026-01-02');
+        $em->flush();
+        $workspace = self::decoded(self::api($owner, 'GET', '/api/social/workspace'));
+        $saved = self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'pins' => [$private, $old]]);
+        self::assertSame(200, $saved->getStatusCode());
+        $workspace = self::decoded(self::api($owner, 'GET', '/api/social/workspace'));
+        self::assertSame([$private, $old], $workspace['pins']);
+        self::assertSame('personal', $workspace['collections'][2]['visibility']);
+        $viewer = self::freshClient();
+        self::registerHousehold($viewer, 'viewer@example.com');
+        $profileFeed = '/api/social/collection-publications?owner=camille_test';
+        $response = self::api($viewer, 'GET', $profileFeed);
+        $visible = self::decoded($response)['collections'];
+        self::assertSame([$old, $new], array_column($visible, 'id'));
+        self::assertTrue($visible[0]['pinned']);
+        self::assertFalse($visible[1]['pinned']);
+        self::assertStringNotContainsString($private, (string) $response->getContent());
+        self::assertStringNotContainsString('Secret private collection', (string) $response->getContent());
+        self::assertSame(404, self::api($viewer, 'GET', '/api/social/collection-publications/'.$private)->getStatusCode());
+        self::assertSame([$new, $old], array_column(self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications'))['collections'], 'id'), 'Pinning must not change chronological feed order.');
+        self::assertSame(409, self::api($owner, 'PATCH', '/api/social/workspace', ['version' => 0, 'pins' => []])->getStatusCode());
+        self::api($owner, 'PATCH', '/api/social/workspace', ['version' => $workspace['version'], 'pins' => [$private]]);
+        $visible = self::decoded(self::api($viewer, 'GET', $profileFeed))['collections'];
+        self::assertSame([$new, $old], array_column($visible, 'id'));
+        self::assertFalse($visible[1]['pinned']);
+    }
+
     public function testOwnerFilteringIsAppliedBeforePagination(): void
     {
         $owner = static::createClient();
@@ -182,12 +256,15 @@ final class CollectionPublicationTest extends ApiTestCase
         for ($i = 0; $i < 26; ++$i) {
             $em->persist(new \App\Entity\CollectionPublication(str_pad((string) $i, 24, '0', STR_PAD_LEFT), $workspace, 'app', ['name' => 'Collection '.$i, 'cover' => '', 'items' => []]));
         }
+        $workspace->pins = [str_pad('25', 24, '0', STR_PAD_LEFT)];
         $em->flush();
         $viewer = self::freshClient();
         self::registerHousehold($viewer, 'viewer@example.com');
         $pageOne = self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications?owner=camille_test&page=1'));
         $pageTwo = self::decoded(self::api($viewer, 'GET', '/api/social/collection-publications?owner=camille_test&page=2'));
         self::assertCount(24, $pageOne['collections']);
+        self::assertSame(str_pad('25', 24, '0', STR_PAD_LEFT), $pageOne['collections'][0]['id']);
+        self::assertTrue($pageOne['collections'][0]['pinned']);
         self::assertTrue($pageOne['hasMore']);
         self::assertCount(2, $pageTwo['collections']);
         self::assertFalse($pageTwo['hasMore']);

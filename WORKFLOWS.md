@@ -267,8 +267,23 @@ To show your chosen name and photo on member profiles, friends lists and feed
 cards, open **Personnaliser mon profil**, edit them, enable **Afficher ce nom et
 cette photo aux membres Penderie**, and save. Leaving it off keeps the username
 and initial as the community identity. Uncheck and save to withdraw the approved
-identity; the private profile data remains saved. Bios remain private.
+identity; the private profile data remains saved. To publish a bio, separately
+enable **Afficher aussi ma bio sur mon profil Penderie** before saving.
 
 The five main tabs are **Fil**, **Dressing**, **Scanner**, **Foyer** and **Profil**.
-Use the profile counts for connections and **Profil → Plus → Famille et profils**
-for family management and trusted-device profile switching.
+Use the profile counts for connections and the visible **Profil → Famille et profils**
+card for household members and child setup. **Profil → Plus → Changer de profil**
+opens existing profile management and trusted-device switching. Secure adult email
+invitations are still unavailable.
+
+### Own profile collections and pins
+
+Open **Profil** to see all your collections immediately, including private ones.
+Use **Toutes / Partagées / Privées** to filter the grid. Each card opens its
+collection and shows its audience and item count. **Créer** starts a new collection.
+Click the pin button on a card to pin or unpin it; the change saves immediately
+and survives reload. Up to 12 collections may be pinned. Pinned cards move first.
+
+Visitors see only collections shared with their audience, with eligible pinned
+collections first. Pinning never grants visibility or changes chronological feed
+order. The existing **Personnaliser ma vitrine** screen can still reorder pins.

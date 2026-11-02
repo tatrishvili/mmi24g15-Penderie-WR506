@@ -106,6 +106,8 @@ describe('Community feed and profiles', () => {
               profile: {
                 username: 'camille',
                 displayName: 'Camille Martin',
+                bio: 'Passionnée de vinyles et de jolies trouvailles.',
+                connections: { friends: 7, followers: 12, following: 5 },
                 photoUrl: '/avatar.png',
                 friend: true,
                 following: true,
@@ -118,6 +120,10 @@ describe('Community feed and profiles', () => {
     mount('/communaute/profils/camille')
     expect(await screen.findByRole('heading', { name: 'Camille Martin' })).toBeInTheDocument()
     expect(screen.getAllByText('Amis')[0]).toBeInTheDocument()
+    expect(screen.getByText('Passionnée de vinyles et de jolies trouvailles.')).toBeInTheDocument()
+    expect(screen.getByText('7')).toBeInTheDocument()
+    expect(screen.getByText('12')).toBeInTheDocument()
+    expect(screen.getByText('5')).toBeInTheDocument()
     expect(urls.some((url) => url.includes('owner=camille'))).toBe(true)
     expect(screen.queryByRole('button', { name: 'Découvrir' })).not.toBeInTheDocument()
   })

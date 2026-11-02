@@ -10,6 +10,7 @@ export interface Collection {
 export interface Workspace {
   profile: { displayName: string; bio: string; photo: string }
   username: string | null
+  bioPublished?: boolean
   identityPublished?: boolean
   connections?: { friends: number; followers: number; following: number }
   collections: Collection[]
@@ -52,6 +53,7 @@ export const getWorkspace = () => api<Workspace>('/api/social/workspace')
 export const updateWorkspace = (body: {
   version: number
   profile?: Workspace['profile']
+  shareBio?: boolean
   shareIdentity?: boolean
   pins?: string[]
 }) => api<Workspace>('/api/social/workspace', { method: 'PATCH', body })
@@ -111,6 +113,7 @@ export interface CollectionPreview {
   excludedCount: number
 }
 export interface PublishedCollection {
+  pinned?: boolean
   id: string
   name: string
   cover: string
@@ -147,6 +150,8 @@ export const getPublishedCollection = (id: string) =>
   api<{ collection: PublishedCollection }>(`/api/social/collection-publications/${id}`)
 
 export interface CommunityProfile {
+  bio?: string
+  connections?: { friends: number; followers: number; following: number }
   displayName?: string
   photoUrl?: string | null
   username: string

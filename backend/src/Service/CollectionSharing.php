@@ -151,6 +151,7 @@ final class CollectionSharing
         $identity = $this->identities->presentation($publication->workspace->owner);
 
         return ['id' => $publication->id, 'name' => $publication->presentation['name'], 'cover' => $publication->presentation['cover'],
+            'pinned' => \in_array($publication->id, $publication->workspace->pins, true),
             'visibility' => $publication->audience, 'owner' => $publication->workspace->owner->getUsername(),
             'ownerDisplayName' => $identity['displayName'],
             'ownerPhotoUrl' => $identity['photoUrl'], 'items' => $items];

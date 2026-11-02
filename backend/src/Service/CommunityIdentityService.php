@@ -31,7 +31,7 @@ final class CommunityIdentityService
                 ? '/api/social/profiles/'.rawurlencode($owner->getUsername()).'/photo' : null];
     }
 
-    public function save(User $owner, string $name, string $photo, bool $publish): void
+    public function save(User $owner, string $name, string $photo, bool $publish, string $bio = '', ?bool $shareBio = null): void
     {
         $identity = $this->find($owner);
         if (!$publish) {
@@ -58,14 +58,19 @@ final class CommunityIdentityService
             }
         }
         if (null === $identity) {
-            $this->em->persist(new CommunityIdentity($owner, $name, $safePhoto));
+            $identity = new CommunityIdentity($owner, $name, $safePhoto);
+            $this->em->persist($identity);
         } else {
             $identity->displayName = $name;
             $identity->photo = $safePhoto;
         }
+        if (null !== $shareBio) {
+            $identity->bioShared = $shareBio;
+            $identity->bio = $shareBio ? $bio : '';
+        }
     }
 
-    /** Own-account counts only; other members' social graphs stay private.
+    /** Aggregate counts; connection lists are restricted to their owner.
      * @return array{friends: int, followers: int, following: int}
      */
     public function counts(User $owner): array

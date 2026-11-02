@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext.tsx'
@@ -159,6 +159,76 @@ describe('Current Figma page families', () => {
       'href',
       '/amis?liste=abonnements',
     )
+    expect(screen.getByRole('link', { name: /Famille et profils/ })).toHaveAttribute(
+      'href',
+      '/foyer/membres',
+    )
+  })
+  it('shows all own collections, filters private/shared content and persists pins directly', async () => {
+    let workspace = {
+      ...WORKSPACE,
+      pins: [] as string[],
+      collections: [
+        { id: 'private', name: 'Mes souvenirs', cover: '', visibility: 'personal', itemIds: [] },
+        { id: 'shared', name: 'Mes trouvailles', cover: '', visibility: 'friends', itemIds: [1] },
+      ],
+    }
+    let saved: Record<string, unknown> = {}
+    const handler = (url: string, init?: RequestInit) => {
+      if (url.endsWith('/workspace')) {
+        if (init?.method === 'PATCH') {
+          saved = jsonBody(init)
+          workspace = { ...workspace, version: workspace.version + 1, pins: saved.pins as string[] }
+        }
+        return { status: 200, body: workspace }
+      }
+      return response(url)
+    }
+    const page = mount(<SocialProfilePage view="profile" />, '/', '/', handler)
+    expect(await screen.findByRole('article', { name: 'Mes souvenirs' })).toBeInTheDocument()
+    expect(screen.getByRole('article', { name: 'Mes trouvailles' })).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('article', { name: 'Mes souvenirs' })).getByText('Privée'),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Partagées' }))
+    expect(screen.queryByRole('article', { name: 'Mes souvenirs' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Toutes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Épingler Mes trouvailles' }))
+    expect(
+      await screen.findByRole('button', { name: 'Désépingler Mes trouvailles' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(saved).toEqual({ version: 1, pins: ['shared'] })
+    expect(screen.getAllByRole('article')[0]).toHaveAccessibleName('Mes trouvailles')
+    page.unmount()
+    mount(<SocialProfilePage view="profile" />, '/', '/', handler)
+    expect(
+      await screen.findByRole('button', { name: 'Désépingler Mes trouvailles' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Désépingler Mes trouvailles' }))
+    expect(await screen.findByRole('button', { name: 'Épingler Mes trouvailles' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Privées' }))
+    expect(screen.getByRole('article', { name: 'Mes souvenirs' })).toBeInTheDocument()
+    expect(screen.queryByRole('article', { name: 'Mes trouvailles' })).not.toBeInTheDocument()
+  })
+  it('leaves a collection unpinned and reports a failed save', async () => {
+    mount(<SocialProfilePage view="profile" />, '/', '/', (url, init) => {
+      if (url.endsWith('/workspace') && init?.method === 'PATCH')
+        return {
+          status: 409,
+          body: { error: { code: 'conflict', message: 'Rechargez le profil.' } },
+        }
+      if (url.endsWith('/workspace')) return { status: 200, body: { ...WORKSPACE, pins: [] } }
+      return response(url)
+    })
+    fireEvent.click(await screen.findByRole('button', { name: 'Épingler Mes vinyles' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Rechargez le profil.')
+    expect(screen.getByRole('button', { name: 'Épingler Mes vinyles' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
   })
   it('keeps name and photo sharing opt-in when saving a profile', async () => {
     let saved: Record<string, unknown> = {}
@@ -173,10 +243,21 @@ describe('Current Figma page families', () => {
       name: 'Afficher ce nom et cette photo aux membres Penderie',
     })
     expect(consent).not.toBeChecked()
+    const bioConsent = screen.getByRole('checkbox', {
+      name: 'Afficher aussi ma bio sur mon profil Penderie',
+    })
+    expect(bioConsent).toBeDisabled()
+    expect(bioConsent).not.toBeChecked()
     fireEvent.click(consent)
+    expect(bioConsent).toBeEnabled()
+    fireEvent.click(bioConsent)
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
     await waitFor(() =>
-      expect(saved).toMatchObject({ shareIdentity: true, profile: WORKSPACE.profile }),
+      expect(saved).toMatchObject({
+        shareIdentity: true,
+        shareBio: true,
+        profile: WORKSPACE.profile,
+      }),
     )
   })
   it.each([
