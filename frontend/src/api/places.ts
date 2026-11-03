@@ -9,10 +9,14 @@ export function createPlace(name: string): Promise<{ place: Place }> {
   return api<{ place: Place }>('/api/places', { method: 'POST', body: { name } })
 }
 
-export function createRoom(placeId: number, name: string): Promise<{ room: Room }> {
+export function createRoom(
+  placeId: number,
+  name: string,
+  access: { kind?: string; common?: boolean; assignedProfileIds?: number[] } = {},
+): Promise<{ room: Room }> {
   return api<{ room: Room }>(`/api/places/${placeId}/rooms`, {
     method: 'POST',
-    body: { name },
+    body: { name, ...access },
   })
 }
 
@@ -26,3 +30,8 @@ export function createStorageLocation(
     body: { name, parentId },
   })
 }
+
+export const updateRoom = (
+  id: number,
+  body: { name: string; kind?: string; common: boolean; assignedProfileIds: number[] },
+) => api<{ room: Room }>(`/api/rooms/${id}`, { method: 'PATCH', body })

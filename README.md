@@ -127,9 +127,13 @@ create it through registration the first time. Do not use this password for a re
    room choose a preset such as **Dressing**, **Salon**, or **Garage** (or enter a custom name). Add a
    rangement such as **Penderie**; use **Dans un rangement existant** to add a nested shelf or
    box such as **Boîte hiver**.
-6. To test child profiles, sign in as the adult, open **Profils**, and add a child. The PIN is optional and
-   only unlocks that profile on the already-authenticated device; it is not a child sign-in password. Child
-   sign-in on another device is intentionally unavailable until item-level permissions are enforced.
+6. To test child accounts, sign in as the verified parent, open **Profil → Famille et profils → Comptes
+   enfants**, choose mother/father and create the child username and initial long password for age 12–17.
+   On a separate browser/device, choose **Connexion enfant**, change that initial password and sign in
+   again. Assign common/child rooms from **Foyer → Ajouter une pièce**. Set individual object audiences
+   from **Visibilité et partage**; child requests require a parent decision in **Notifications**.
+   See [CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md) for parent invitations, collections,
+   approved contacts and revocation. Optional PINs remain trusted-parent-device unlock only.
 7. Open **Amis** to send friend requests by username. Requests require acceptance; friendship does not share
    inventory. Only verified adult accounts can send or accept them. To test both sides, register and verify
    another disposable adult account with a different username.
@@ -219,4 +223,4 @@ mappings, implemented workflows, additive migrations, privacy boundaries and
 remaining backend work. Start at `/foyer` or `/profil` after signing in. On another
 environment, apply pending migrations before using collections, sharing or loans.
 
-Latest session handover: [session02/11/26.md](./session02/11/26.md). Read it first when resuming, especially the child-account system decisions and remaining implementation. The October Figma handover is historical.
+Latest session handover: [session03/11/26.md](./session03/11/26.md). It records the implemented child accounts, household item audiences, repeated rooms, approval inbox and recurring Docker mount repair.

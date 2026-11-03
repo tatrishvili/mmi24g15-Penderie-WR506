@@ -113,6 +113,20 @@ final class AuthController extends AbstractController
             throw new UnauthorizedHttpException('', 'Invalid profile or PIN.');
         }
 
+        if (!$profile->isAdult() && !(new \App\Service\FamilyAccess($this->em))->isGuardian($user, $profile)) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Only the responsible mother or father can unlock this profile.');
+        }
+        if ($profile->isAdult() && $profile->getUser()?->getId() !== $user->getId()) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Each adult must sign in with their own account.');
+        }
+
+        if (!$profile->isAdult()) {
+            $account = $this->em->getRepository(\App\Entity\ChildAccount::class)->findOneBy(['profile' => $profile]);
+            if ($account instanceof \App\Entity\ChildAccount && !(new \App\Service\FamilyAccess($this->em))->childEnabled($account)) {
+                throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Child access is disabled.');
+            }
+            $request->getSession()->set('penderie.child_session_version', $account?->sessionVersion);
+        }
         $request->getSession()->set('penderie.active_profile_id', $profile->getId());
 
         return new JsonResponse([

@@ -18,6 +18,7 @@ type AuthStatus = 'loading' | 'anonymous' | 'authenticated'
 
 export interface AuthContextValue {
   status: AuthStatus
+  childAccount?: { username: string; mustChangePassword: boolean } | null
   user: UserSummary | null
   households: HouseholdSummary[]
   household: HouseholdSummary | null
@@ -30,7 +31,7 @@ export interface AuthContextValue {
   register: (payload: RegisterPayload) => Promise<void>
   verifyEmail: (token: string) => Promise<void>
   resendVerification: (email: string) => Promise<void>
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string, child?: boolean) => Promise<void>
   unlockProfileWithPin: (profileId: number, pin: string) => Promise<void>
   logout: () => Promise<void>
   switchProfile: (profileId: number) => Promise<void>
@@ -45,6 +46,7 @@ export { AuthContext }
 
 function emptyState() {
   return {
+    childAccount: null as { username: string; mustChangePassword: boolean } | null,
     user: null as UserSummary | null,
     households: [] as HouseholdSummary[],
     household: null as HouseholdSummary | null,
@@ -61,7 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(emptyState)
 
   const applyMe = useCallback((data: MeResult) => {
+    if (data.restrictedSessionRevoked) {
+      setState(emptyState())
+      setStatus('anonymous')
+      return
+    }
     setState({
+      childAccount: data.childAccount ?? null,
       user: data.user ?? null,
       households: data.households ?? [],
       household: data.household,
@@ -110,12 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [applyMe])
 
-  const register = useCallback(
-    async (payload: RegisterPayload) => {
-      await authApi.register(payload)
-    },
-    [],
-  )
+  const register = useCallback(async (payload: RegisterPayload) => {
+    await authApi.register(payload)
+  }, [])
 
   const verifyEmail = useCallback(
     async (token: string) => {
@@ -130,8 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(
-    async (email: string, password: string) => {
-      await authApi.login(email, password)
+    async (email: string, password: string, child = false) => {
+      if (child) await authApi.childLogin(email, password)
+      else await authApi.login(email, password)
       await refresh()
     },
     [refresh],

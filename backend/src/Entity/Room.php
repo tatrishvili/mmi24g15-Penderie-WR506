@@ -28,6 +28,21 @@ class Room
     #[ORM\Column(length: 120)]
     private string $name;
 
+    #[ORM\Column(length: 30, nullable: true)]
+    public ?string $kind = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    public bool $common = false;
+
+    /** @var list<int> */
+    #[ORM\Column(type: 'json')]
+    public array $assignedProfileIds = [];
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
     /** @var Collection<int, StorageLocation> */
     #[ORM\OneToMany(targetEntity: StorageLocation::class, mappedBy: 'room')]
     private Collection $storageLocations;

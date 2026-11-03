@@ -1,3 +1,4 @@
+import { useAuth } from '../auth/useAuth.ts'
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -13,6 +14,8 @@ import { conditionLabel, statusLabel } from '../types/item.ts'
  */
 export default function ItemsPage() {
   const [searchParams] = useSearchParams()
+  const { activeProfile } = useAuth()
+  const child = activeProfile?.role === 'child'
   const [items, setItems] = useState<ItemSummary[]>([])
   const [total, setTotal] = useState(0)
   const [query, setQuery] = useState('')
@@ -91,7 +94,7 @@ export default function ItemsPage() {
             {searchParams.get('status') === 'archive' ? 'Mon dressing actif' : 'Voir les archives'}
           </Link>
           <Link to="/articles/nouveau">Ajouter manuellement</Link>
-          <Link to="/prets">Mes prêts</Link>
+          {!child && <Link to="/prets">Mes prêts</Link>}
         </div>
 
         <form className="auth-form" onSubmit={onSearch} noValidate>
@@ -182,7 +185,7 @@ export default function ItemsPage() {
                     <span className="item-status" data-status={item.status}>
                       {statusLabel(item.status)}
                     </span>
-                    {item.status === 'disponible' && (
+                    {!child && item.canEdit !== false && item.status === 'disponible' && (
                       <button
                         type="button"
                         className="btn btn-secondary btn-inline"
@@ -192,7 +195,7 @@ export default function ItemsPage() {
                         Prêter
                       </button>
                     )}
-                    {item.status === 'loue' && (
+                    {!child && item.canEdit !== false && item.status === 'loue' && (
                       <button
                         type="button"
                         className="btn btn-primary btn-inline"

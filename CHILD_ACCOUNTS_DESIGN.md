@@ -1,138 +1,149 @@
 # Parent-managed child accounts
 
-Status: implementation design, 3 November 2026. The restricted-profile hardening
-described below is implemented. Independent child accounts, room grants, child
-collections, approved connections and the approval inbox are not implemented yet.
-The confirmed product decisions come from [the November handover](session02/11/26.md).
+Status: implemented locally, 3 November 2026. This supersedes the earlier design
+proposal and follows the user's latest mother/father, per-person item visibility
+and repeated-room decisions. The earlier history is in [the handover](session02/11/26.md).
 
-## Confirmed behavior
+## Parents and independent child sign-in
 
-The service is intended for people aged 12+. Parents create accounts for children
-aged 12–17 and give them a username and password. Children sign in independently,
-manage their own items and create private collections. Approved contacts can be
-other parent-managed children or specifically approved adult relatives. Sharing
-requires a guardian to review and approve the exact content and named recipients
-through Notifications before anything becomes visible. Children can withdraw a
-share immediately. No child directory, anonymous child links, public publication,
-direct messages, selling or lending are included.
+- Accounts are created for self-declared ages 12–17 by a verified adult explicitly
+  identifying themselves as the child's mother or father. This is a product rule,
+  not proof of biological parenthood or verified age.
+- Creating the account establishes the responsible parent. A second mother/father
+  can be invited by their existing verified account username. They must accept in
+  Notifications before receiving guardianship and household membership. Invitations
+  expire after seven days and can be declined. At most two parents manage a child.
+- Other adults/relatives never receive parental controls just from being household
+  members or approved contacts. The inviting parent may revoke the additional
+  parent; that additional parent cannot revoke the original creating parent.
+- `Profile.createdBy` records creators going forward. Legacy profiles have no
+  trustworthy creator record: only the original household parent may explicitly
+  activate them, declaring mother/father. Migration does not assign every adult
+  guardianship or invent historical relationships.
+- `ChildAccount` is a separate security principal, not an adult User or a Profile
+  PIN token. The child signs in through **Connexion enfant** using their username
+  and password. No child email is needed.
+- Initial/reset passwords expire after 24 hours. Passwords contain 15–128 characters;
+  the service rejects a local set of common/repeated passwords. The child chooses
+  a different password at first sign-in and signs in again. Before that change,
+  the session permits only password setup, auth state and sign-out.
+- Login uses independent account and IP rate limits, generic errors and Symfony's
+  session fixation protection. Password changes/resets, disabling access and
+  revoking the additional parent invalidate existing child sessions. Session
+  refresh checks that at least one responsible verified parent remains a member.
+- Selected-child mode also stays restricted. Returning to adult authority requires
+  real adult sign-in. Adults cannot switch/PIN-unlock another adult's identity.
 
-Sharing a room never grants access to somebody else's belongings. Guardians can
-manage their own children's inventory. Explain that private collections are hidden
-from contacts and remain accessible to the responsible guardian.
+## Rooms, storage and ownership
 
-## Security foundation implemented
+Every room has its own ID and name and an optional type. Three bedrooms, two
+bathrooms and two garages are ordinary independent records. A room is common or
+assigned to one/multiple profiles; siblings can share a room. Storage inherits
+its room's child access. Household adults retain room administration.
 
-Selected-child mode cannot use `CurrentActor::requireUser()` for adult account
-operations or inherit an adult profile through `requireAdultProfile()`. Thus
-household creation/selection, PIN unlock, adult friendships and account updates
-cannot escape child mode. Returning to adult mode requires a successful adult
-login. `/api/auth/me` returns only the selected child's profile, the current
-household and no parent account/email, sibling list, other household list or
-unfiltered place summaries. Existing item ownership guards remain in place.
+Child location choices contain only common or assigned rooms and their storage.
+Forbidden room/storage IDs are rejected on item creation and updates. If access
+changes, existing items are preserved and forbidden locations are redacted on
+list, detail, QR and update responses. The parent can correct the assignment.
+Existing rooms start without child grants; parents explicitly assign them or
+mark them common. No item or existing room is deleted by these migrations.
 
-Legacy Profile principal tokens remain rejected. No new child login route is
-enabled by this slice. A profile PIN remains a trusted-device unlock.
+Room access never grants access to someone else's belongings. Owner, physical
+location and item audience are independent.
 
-## Required policy decisions for existing data
+## Per-object visibility inside the household
 
-These questions were presented to the product owner on 3 November and must be
-answered before migrating existing child/room permissions:
+New objects default to **Only me**. Owners and responsible parents of child owners
+may manage them. An object's family audience can be:
 
-1. Does the adult explicitly enabling an existing child's new login become its
-   guardian, or may only the household creator enable it? Do not silently grant
-   guardianship to every adult household member.
-2. Do existing rooms require explicit common/child assignments, or become common
-   by default? Recommended: require explicit access, preserve existing inventory,
-   hide restricted location names and let guardians correct assignments.
+1. `owner`: hidden from other household members; responsible parents still manage
+   their own child's object;
+2. `selected`: a reviewed list of household profiles;
+3. `household`: everyone currently in the household, frozen to the reviewed set.
 
-Temporary initial passwords with expiry and a required first-login change remain
-a recommendation, rather than a previously confirmed product constraint.
+New household members do not silently receive old approvals. A child can view an
+adult's/sibling's explicitly approved object. That grants read-only access to
+approved name, type, color, brand, author/artist/publisher, condition and photos.
+Notes, memories, QR tokens, precise locations, category/size/material and private
+profile/security fields are omitted. All mutation/photo-write routes separately
+require management authority. Viewing never grants editing or lending.
 
-## Data boundaries and proposed records
+A child asks for parent approval before expanding visibility, including for a
+sibling. No pending request grants access. The child can hide their object or
+withdraw a request/share immediately. A parent may approve a reviewed audience
+for their own object or an object belonging to their child.
 
-| Record | Ownership and invariants |
+Existing database objects receive `familyAudience=legacy`, preserving previous
+non-Personal adult household access rather than silently broadening publication
+or rewriting saved data. Children receive no implicit legacy-object access.
+All newly created objects use owner-only access. Explicitly saving an audience
+replaces that object's legacy behavior.
+
+This household audience is separate from existing adult collection-publication
+consent. It does not settle the still-pending general item-versus-adult-collection
+precedence question. `Personal` and archive remain source vetoes for sharing.
+
+## Collections, contacts and external child sharing
+
+- Child collections belong to the child's Profile, independently of adult
+  SocialWorkspace records. They are private, versioned and limited to that child's
+  active items. Their responsible parents can create/edit them too.
+- Contacts are requested by a known child username, or a verified adult username
+  explicitly identified as a relative. There is no child directory.
+- A child/child connection needs the invited child's acceptance plus approval from
+  each child's responsible parent. An adult-relative connection needs the adult's
+  acceptance plus approval from the child's parent. Being a relative gives no
+  guardianship or inventory-management authority.
+- Item/collection publication requests freeze exact safe content, named recipients
+  and connection versions. Notifications shows the reviewed content and names.
+- Approval creates a limited publication for those named approved contacts only.
+  Recipients use **Partages familiaux**, without access to original inventory IDs,
+  source records, home paths, notes, QR codes or source photo URLs.
+- Data and photo reads recheck current guardianship, source versions/vetoes,
+  connection eligibility and the frozen connection proof. Removing and re-adding
+  a contact does not restore old shares. Restoring/renaming content back to its
+  old value does not restore an old approval.
+- Parents and child owners can stop publications. Children cannot use adult social
+  feeds, adult friendships, public/anonymous publication, lending, selling or DMs.
+
+## Approval inbox and revocation
+
+`InboxNotification` is durable and addressed to one adult or child identity.
+Unread counts, older-page loading and marking read are separate from approval.
+`ChildApproval` stores the immutable proposal, content digest, status, version,
+responsible decision maker and timestamps. Pending review expires after seven
+days. Rejection and withdrawal do not publish content.
+
+Approval checks guardian authority and source/recipient freshness inside a
+transaction. Optimistic versions reject duplicate decision races. Changed source
+content or disabled child access prevents approval. Parent revocation invalidates
+that parent's approved shares/connections and closes child sessions. Photos use
+protected endpoints and `private, no-store` responses.
+
+## Entry points and persistence
+
+| Entry point | Purpose |
 | --- | --- |
-| ChildAccount | One child Profile, normalized unique child username, password hash, enabled flag, credential/session version; no fabricated adult User or child email. Explicit age-policy acknowledgement during parent setup. |
-| GuardianLink | Named adult User and child Profile, accepted/revoked state and audit timestamps. Creation establishes the explicitly responsible guardian; later guardians require an invitation and acceptance. Household membership alone is insufficient. |
-| Room access | Common flag or explicit profile assignments. Storage inherits room access. Existing-data defaults require the decision above. |
-| ChildCollection | Owned by child Profile, private by default, versioned membership. Never expose the adult-owned SocialWorkspace as a child's workspace. |
-| ChildConnection | Named child/child or child/adult-relative identities. Both sides accept; each child side also needs its own guardian's approval. Revocation invalidates dependent access immediately. |
-| ApprovalRequest | Child requester, action, immutable preview and recipient snapshot, source version/digest, pending/approved/rejected/withdrawn/invalidated state, expiry and decision audit. |
-| ApprovedShare | Exact approved snapshot and named recipients. Source ownership, vetoes, current guardian authority, connection eligibility and version remain necessary on every data/photo read. |
-| Notification | Recipient identity, authoritative request reference, event type, created/read timestamps. Viewing a notification never approves a request. |
+| `/connexion` → Connexion enfant | Child username/password sign-in |
+| `/enfant/mot-de-passe` | Initial password change |
+| `/foyer/enfants` | Create/activate child, reset/suspend, invite second parent |
+| `/foyer/pieces/ajouter` | Add repeated room types, rename, assign/common rooms |
+| `/articles/:id/visibilite` | Household item audience and child approval request |
+| `/enfant` | Own child items, private collections, contacts and sharing requests |
+| `/enfant?enfant=:id` | Responsible parent's child management view |
+| `/notifications` | Approval decisions, parent/contact invitations, child decisions |
+| `/partages-famille` | Read approved child publications, including for adult relatives |
 
-Use additive migrations. Never infer a legacy guardian from an arbitrary adult
-membership, convert a PIN into a remote password, purge fixtures or delete items
-when their room permissions change.
+Additive migrations `Version20261103185817` and `Version20261103191334` are applied
+locally. They add child accounts, parent links, collections, connections, approval
+requests, publications, notifications, family audiences and room assignments.
+Other environments must apply migrations before using these flows. Fixtures and
+existing inventory were preserved. New UI copy is localizable in French/English.
 
-## Restricted session and API design
-
-Use a distinct child security principal. It resolves exactly one Profile and its
-Household, independent of active-profile/household IDs in session data. Adult
-methods always reject it. Parent reset, disable, guardian removal and session
-revocation must invalidate existing child sessions on the next request. Rotate
-session identifiers at login and credential changes. Returning to adult mode
-requires real adult credentials, including the existing trusted-device flow.
-
-Proposed API surface:
-
-| Endpoint | Authority and effect |
-| --- | --- |
-| POST `/api/children` | Verified adult, explicit guardianship setup; creates child profile/account. |
-| POST `/api/auth/child-login` | Username/password, generic failure, independent account and IP throttles; restricted session only. |
-| POST `/api/children/{id}/credentials` | Responsible guardian only; reset credentials and revoke earlier sessions. |
-| PATCH `/api/children/{id}/access` | Responsible guardian only; enable/disable and revoke sessions. |
-| PUT `/api/rooms/{id}/access` | Authorized guardian/room administrator; common or explicit assignments, no cross-household IDs. |
-| GET/POST/PATCH `/api/child-collections` | Child's own records or explicitly authorized guardian, version checks, private by default. |
-| POST `/api/child-connections` | Named contact only; reciprocal acceptance and guardian approvals. No directory. |
-| POST `/api/child-approvals` | Restricted child creates a frozen review request for eligible named recipients. |
-| GET `/api/notifications` | Recipient-only inbox, unread count, pagination. |
-| POST `/api/child-approvals/{id}/decision` | Current responsible guardian, exact version/digest, transactional accept/reject. |
-| DELETE `/api/child-shares/{id}` | Owning child or responsible guardian; immediate withdrawal. |
-
-Use long hashed passwords; reject common/compromised choices without sending
-passwords to an external service. Do not log credentials or include them in inbox
-payloads. Keep usernames separate from public adult discovery. Password setup,
-expiry, recovery and failure copy must be localized in French and English.
-
-## Endpoint audit before enabling independent login
-
-| Surface | Current result and remaining requirement |
-| --- | --- |
-| Account/profile/household changes | Child-mode adult fallback closed; HTTP regression covers account mutation, household reselection, PIN escape and child creation. Independent principal must receive the same denial. |
-| Adult friends/feed/community/collection publications | Keep adult and verification guards. Child connections/publications need separate authorized flows. |
-| Items, search, QR, photos | Existing selected-child ownership checks retained. Add independent-session positive/negative coverage, explicit guardianship and room redaction across every payload. Photo responses should use no-store for restricted/revocable access. |
-| Place lists and item location writes | Existing lists derive child locations from owned items. Replace with explicit room grants; reject forbidden room/storage writes and redact legacy restricted paths. Storage must never broaden room access. |
-| Scan | Authenticated endpoint accepts untrusted images; verify child session validity before provider work and preserve existing reviewed-save behavior. |
-| Notifications and approvals | Not implemented. Enforce recipient-only reads, guardian authority, immutable preview, duplicate-decision races, withdrawal and stale-source invalidation. |
-| Guardian inventory management | Existing household adult behavior is not explicit guardianship. Add object-level guardian checks and tests before enabling child accounts. |
-
-## Approval transaction and revocation
-
-On submission, freeze the reviewed names, selected photos, safe fields, recipient
-IDs and source versions. The parent sees this exact representation. Approval
-locks/checks the pending request and verifies the guardian link, source ownership,
-live vetoes, recipient eligibility and digest inside the same transaction. A
-second decision is idempotent or conflicts; it cannot publish twice. Editing
-content or recipients invalidates approval and requires a new review.
-
-Each share/photo/feed request checks the approved snapshot, current recipients,
-connections, guardian authority and live source state. Archived/deleted/Personal
-items, revoked guardians, removed contacts and withdrawn shares deny access.
-Restoring content or adding new friends never silently republishes it. Keep
-decision history without retaining unnecessary copies of revoked private photos.
-
-## Delivery and validation
-
-1. Restricted actors and adult-operation denial (current slice).
-2. Explicit guardianship, child credentials, session revocation and parent setup.
-3. Room assignments, storage inheritance and location redaction.
-4. Private child-owned collections and guardian management.
-5. Reciprocal, guardian-approved connections.
-6. Durable Notifications, frozen approval and revocable publication.
-7. End-to-end parent/child tests with isolated accounts and data.
-
-Each step needs server allow/deny tests plus the French/English UI and explicit
-errors. Independent login stays disabled until the item, location and guardian
-checks protect all child request paths. The unrelated pending item-audience versus
-collection-audience policy remains unresolved and must not change in this work.
+Validation includes isolated HTTP allow/deny tests for child credentials,
+revocation, repeated rooms, location redaction, per-person read-only access,
+parent invitations, cross-family contact/publication approval, photo revocation,
+review versions, frozen household recipients and account throttling across IPs;
+frontend tests exercise the forms, read-only controls, approval versus read state,
+child login and route restrictions. Browser checks use sample API responses, not
+the user's live family data.

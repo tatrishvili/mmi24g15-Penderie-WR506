@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use App\Entity\ChildAccount;
 use App\Entity\Profile;
 use App\Entity\User;
+use App\Service\FamilyAccess;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
@@ -30,6 +32,15 @@ final class AppUserProvider implements UserProviderInterface
 
     public function refreshUser(UserInterface $user): UserInterface
     {
+        if ($user instanceof ChildAccount) {
+            $fresh = $this->em->getRepository(ChildAccount::class)->find($user->id);
+            if (!$fresh instanceof ChildAccount || !(new FamilyAccess($this->em))->childEnabled($fresh)
+                || ($fresh->mustChangePassword && null !== $fresh->initialPasswordExpiresAt && $fresh->initialPasswordExpiresAt < new \DateTimeImmutable())) {
+                throw new UserNotFoundException('Child access is unavailable.');
+            }
+
+            return $fresh;
+        }
         if ($user instanceof User) {
             $fresh = null !== $user->getId()
                 ? $this->em->getRepository(User::class)->find($user->getId())
@@ -59,7 +70,7 @@ final class AppUserProvider implements UserProviderInterface
 
     public function supportsClass(string $class): bool
     {
-        return is_a($class, User::class, true) || is_a($class, Profile::class, true);
+        return is_a($class, ChildAccount::class, true) || is_a($class, User::class, true) || is_a($class, Profile::class, true);
     }
 
     public function loadUserByIdentifier(string $identifier): UserInterface

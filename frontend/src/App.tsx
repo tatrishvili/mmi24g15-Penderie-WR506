@@ -1,3 +1,8 @@
+import FamilySharedPage from './pages/FamilySharedPage.tsx'
+import FamilyAccountsPage from './pages/FamilyAccountsPage.tsx'
+import ChildHubPage from './pages/ChildHubPage.tsx'
+import ChildPasswordPage from './pages/ChildPasswordPage.tsx'
+import NotificationsPage from './pages/NotificationsPage.tsx'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext.tsx'
 import { ProtectedRoute } from './auth/ProtectedRoute.tsx'
@@ -39,6 +44,11 @@ function App() {
               </ProtectedRoute>
             }
           >
+            <Route path="/foyer/enfants" element={<FamilyAccountsPage />} />
+            <Route path="/enfant" element={<ChildHubPage />} />
+            <Route path="/enfant/mot-de-passe" element={<ChildPasswordPage />} />
+            <Route path="/partages-famille" element={<FamilySharedPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/foyer" element={<HouseholdSetupPage key="overview" step="overview" />} />
             <Route
               path="/foyer/creer"

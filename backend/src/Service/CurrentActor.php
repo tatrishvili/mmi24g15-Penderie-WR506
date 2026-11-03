@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\ChildAccount;
 use App\Entity\Household;
 use App\Entity\HouseholdMember;
+use App\Entity\Item;
 use App\Entity\Profile;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -63,6 +65,10 @@ final class CurrentActor
     {
         $user = $this->tokenUser();
 
+        if ($user instanceof ChildAccount) {
+            return (new FamilyAccess($this->em))->childEnabled($user) ? $user->profile->getHousehold() : null;
+        }
+
         if (!$user instanceof User) {
             return null;
         }
@@ -84,6 +90,16 @@ final class CurrentActor
             $profile = \is_int($profileId) ? $this->em->getRepository(Profile::class)->find($profileId) : null;
             if (!$profile instanceof Profile || $profile->getHousehold()->getId() !== $household->getId()) {
                 return null;
+            }
+            if ($profile->isAdult() && $profile->getUser()?->getId() !== $user->getId()) {
+                return null;
+            }
+            if (!$profile->isAdult()) {
+                $account = $this->em->getRepository(ChildAccount::class)->findOneBy(['profile' => $profile]);
+                if ($account instanceof ChildAccount && (!(new FamilyAccess($this->em))->childEnabled($account)
+                    || $this->requests->getSession()->get('penderie.child_session_version') !== $account->sessionVersion)) {
+                    return null;
+                }
             }
         }
 
@@ -140,6 +156,10 @@ final class CurrentActor
     {
         $user = $this->tokenUser();
 
+        if ($user instanceof ChildAccount) {
+            return null !== $this->household() ? $user->profile : null;
+        }
+
         if (!$user instanceof User) {
             return null;
         }
@@ -167,6 +187,9 @@ final class CurrentActor
 
     public function isRestrictedProfile(): bool
     {
+        if ($this->tokenUser() instanceof ChildAccount) {
+            return true;
+        }
         $profile = $this->profile();
 
         // A removed/invalid selected profile must not restore the adult identity
@@ -174,6 +197,16 @@ final class CurrentActor
         return null !== $profile
             ? !$profile->isAdult()
             : null !== $this->requests->getSession()->get('penderie.active_profile_id');
+    }
+
+    public function canViewItem(Item $item): bool
+    {
+        return (new FamilyAccess($this->em))->canView($this, $item);
+    }
+
+    public function canManageItem(Item $item): bool
+    {
+        return (new FamilyAccess($this->em))->canManage($this, $item);
     }
 
     /**

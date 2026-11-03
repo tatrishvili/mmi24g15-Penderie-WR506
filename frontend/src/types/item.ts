@@ -11,6 +11,10 @@ export interface ItemPhoto {
 }
 
 export interface ItemSummary {
+  canEdit?: boolean
+  familyAudience?: string
+  familyViewerIds?: number[]
+  sharingVersion?: number
   id: number
   name: string
   type: string | null

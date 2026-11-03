@@ -51,6 +51,8 @@ export interface LoginResult {
 }
 
 export interface MeResult {
+  restrictedSessionRevoked?: boolean
+  childAccount?: { username: string; mustChangePassword: boolean }
   households: HouseholdSummary[]
   household: HouseholdSummary | null
   profiles: ProfileSummary[]

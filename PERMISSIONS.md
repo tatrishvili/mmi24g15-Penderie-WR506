@@ -1,13 +1,12 @@
 # Penderie — Resource access and permissions
 
-3 November security update: selected-child mode cannot inherit adult authority
-through `requireUser()` or `requireAdultProfile()`, including household reselection
-and PIN unlock. Adult login is required to restore adult authority. Auth session
-responses omit parent account data, siblings, other households and unfiltered
-place summaries in child mode. This is the first slice of
-[CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md), not independent child login.
-The confirmed November child friendship/sharing plan supersedes older statements
-that the planned child feature forbids all sharing; no child publication is yet enabled.
+3 November implementation: [CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md)
+defines the current child/household boundaries. A mother/father creator and an
+explicitly invited/accepting second parent manage their own child. New items are
+owner-private; selected/current-household viewers receive reviewed read-only
+fields. Children may view explicitly shared objects and request parent approval
+for their own sharing. Rooms are common or profile-assigned, independently of
+object visibility. This supersedes older own-items-only/PIN-only assertions.
 
 **Status:** Product policy agreed in discussion on 8 October 2026.  
 This document defines the intended policy. It does not claim the current API enforces every rule.
@@ -21,7 +20,7 @@ Read [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) for the product/domain model and [WORK
 3. Private is the default. Public means deliberately visible to anyone; an unlisted link means anyone possessing the link may have access.
 4. A share grants only its explicit resource scope and capabilities. It must not reveal neighboring items, hidden parent resources, or private metadata.
 5. `PERSONAL` is a veto against peers and external viewers. A parent/guardian with responsibility for a child retains management access to that child's items, including items marked Personal.
-6. A child can manage their own permitted items, but cannot manage household membership, security, sharing, sale, or lending in the first version.
+6. A child manages their own permitted items, may read explicitly approved objects, and requests parental approval before sharing. They cannot manage household membership/security, sell or lend.
 7. A published outfit/look is a separate, deliberately published presentation. It does not make the underlying item records public.
 8. Never treat a household slug, item ID, QR code, or short PIN as proof of authorization.
 9. Friendship requires an accepted request between verified adult accounts; it is a relationship, not a resource grant or household membership.
@@ -44,7 +43,7 @@ Capabilities are separate, explicit grants, for example:
 | **COMMENT** | Add a comment. Requires a signed-in account with verified email, and an explicit grant. |
 | **LEND** | Start a lending workflow. First release: no share link grants this; require an authorized, verified adult and an implemented loan flow. |
 | **BUY** | Start a purchase/offer workflow. First release: no public marketplace; require an explicitly eligible, verified account and an implemented sale flow. |
-| **SHARE / MANAGE ACCESS** | Create, edit, or revoke a share. Only the owner or an authorized adult manager with verified email; never a child in v1. |
+| **SHARE / MANAGE ACCESS** | Create, edit, or revoke a share. Only the owner or an authorized adult manager with verified email; a child may request approval and may withdraw their own share, but cannot grant new access unilaterally. |
 
 “VIEW + capabilities” therefore means **base level VIEW plus a separate capability set**. A capability never upgrades VIEW to EDIT or bypasses a DENIED decision.
 
@@ -54,7 +53,7 @@ Capabilities are separate, explicit grants, for example:
 
 - The creator must be signed in as an **adult account with verified email**.
 - They must own the resource or have the applicable adult/guardian management authority.
-- A child cannot create a share, publish an outfit, or grant capabilities in v1.
+- A child may request an item/collection publication to named approved contacts; a responsible parent must approve the exact preview first. Child public/anonymous publication and capability grants remain unavailable.
 - When an adult shares a child-owned resource externally, require an explicit parent/guardian approval step showing exactly what will be visible.
 - The owner may revoke a share at any time. Revocation must block future requests even if the recipient previously opened the link.
 
@@ -89,7 +88,7 @@ For both modes:
 | **Owner** | Adult account/profile that owns the resource. |
 | **Household adult** | An invited, authenticated adult member of the same private space. |
 | **Parent/guardian** | Adult explicitly responsible for a child's profile. Has management access to that child's items, including Personal items. |
-| **Child owner** | Child session acting as its own profile, limited to its own permitted items. |
+| **Child owner** | Child session managing its own permitted items, with read-only access to explicitly approved objects. |
 | **Other child** | Another child's profile in the same space; no implicit access to a peer's items. |
 | **Friend** | A signed-in, email-verified account in the owner's accepted friend relationship. |
 | **Follower** | A signed-in, email-verified account following the owner, without friend-level trust. |
@@ -98,7 +97,7 @@ For both modes:
 
 Do not use “adult sub-account” as a synonym for another person's credentials. Each adult has their own account; household membership grants an adult role within a space.
 
-Friend requests are limited to adult accounts and do not grant any resource visibility. The recipient must accept; either party may remove the relationship. A child profile cannot create, accept, or manage requests. Every later friend-only share must independently verify the relationship and apply its own explicit scope/capabilities.
+Friend requests are limited to adult accounts and do not grant any resource visibility. The recipient must accept; either party may remove the relationship. A child profile cannot manage adult friend requests. The separate child connection workflow requires recipient acceptance plus parental approval on every child side. Every later friend-only share must independently verify the relationship and apply its own explicit scope/capabilities.
 
 ## 5. Resource visibility matrix
 
@@ -106,21 +105,22 @@ The table shows the default base access for the named resource status. Capabilit
 
 | Resource/status | Owner | Household adult | Child owner | Other child | Friend | Follower | Stranger |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| **Private item** | ADMIN | EDIT | EDIT if own | DENIED | DENIED | DENIED | DENIED |
+| **New private item** | ADMIN | DENIED unless responsible parent | EDIT if own | DENIED | DENIED | DENIED | DENIED |
+| **Reviewed household item** | ADMIN | VIEW if included; responsible parent manages child item | EDIT if own | VIEW if included | DENIED outside household | DENIED | DENIED |
 | **Friends item** | ADMIN | EDIT | EDIT if own | DENIED unless explicitly shared to household | VIEW | DENIED | DENIED |
 | **Followers item** | ADMIN | EDIT | EDIT if own | DENIED unless explicitly shared to household | VIEW | VIEW | DENIED |
 | **Public item** | ADMIN | EDIT | EDIT if own | DENIED unless explicitly shared to household | VIEW | VIEW | VIEW |
 | **Custom item** | ADMIN | EDIT | EDIT if own | DENIED unless explicitly granted | DENIED unless granted | DENIED unless granted | DENIED unless granted |
 | **Personal item** | ADMIN | DENIED, except responsible parent/guardian | EDIT if own | DENIED | DENIED | DENIED | DENIED |
 | **Category** | ADMIN | EDIT | VIEW when needed for own inventory | DENIED unless shared to household | VIEW if explicitly shared | DENIED | DENIED |
-| **Room / storage location** | ADMIN | EDIT | VIEW only for locations needed by own items | DENIED unless shared to household | VIEW only if explicitly shared | DENIED | DENIED |
+| **Room / storage location** | ADMIN | EDIT | VIEW/use assigned or common rooms only | VIEW/use only if independently assigned/common | DENIED by normal item shares | DENIED | DENIED |
 | **Home/place details or address** | ADMIN | EDIT | VIEW only as needed for own inventory | DENIED unless parent-approved | DENIED | DENIED | DENIED |
 | **Loan record** | ADMIN | VIEW if household-authorized | VIEW only if own participant/item and parent policy permits | DENIED | DENIED | DENIED | DENIED |
 | **Sale record** | ADMIN | VIEW if household-authorized | DENIED in v1 | DENIED | VIEW only in an explicit friends sale | VIEW only if an explicit follower stage is enabled | DENIED in v1 |
 
 ### Reading the matrix
 
-- “Private” means private from external users, but non-Personal household inventory remains editable by household adults, as agreed. “Personal” is the stronger owner-only setting for peers; a child's responsible parent/guardian remains an exception for safety and management.
+- New objects default to owner-only family access. Existing `legacy` objects retain previous non-Personal adult household behavior until an audience is saved. Selected/current-household audiences grant reviewed read-only fields, not editing. “Personal” is the stronger owner-only setting for peers; a child's responsible parent/guardian remains an exception for safety and management.
 - A child owner may add/edit its own items. A child does not automatically see siblings' items just because they share a household.
 - Public item visibility does not include purchase price, private notes, precise location, home address, loan details, or other fields not explicitly published.
 - External sharing of room/storage labels should not reveal the home address or an item's precise path. Prefer showing a sanitized/omitted location on all external views.
@@ -167,8 +167,8 @@ The repository has a pure permission resolver and matrix tests, but they are not
 - The current resolver represents `LinkHolder` as a separate viewer type rather than an access method combined with the actual viewer's identity/verification status.
 - `PermissionResolver::filterCapabilities()` and its tests allow **COMMENT** for `Stranger`; the share-link test consequently allows an anonymous forwarded link holder to comment. This policy conflicts with the verified-account requirement above.
 - `PermissionMatrixTest` describes PERSONAL as an absolute veto for all non-owner roles; this conflicts with the agreed parent/guardian management exception for a child's Personal item.
-- Current item endpoints are household-scoped and do not consistently enforce item-owner/child permissions.
-- The permission classes do not currently establish email verification, parent approval, verified viewer status, link expiry/revocation, or privacy-safe field projections.
+- The November application layer now enforces owner, explicit parent, reviewed family-viewer and room checks on item endpoints. The older pure matrix is not used as proof of that enforcement.
+- The pure permission classes alone do not establish verification, approval, revocation or safe projections. FamilyAccess, ChildService, security principal refresh and controllers enforce these for the implemented family workflows.
 - Current item and look APIs do not yet implement the full resources described in this matrix.
 
 Before enabling sharing or child sign-in in production, align the resolver, authorization service, endpoint checks, share-token model, and positive/negative integration tests with this policy. Do not treat a passing pure matrix test as proof that every HTTP route enforces the matrix.

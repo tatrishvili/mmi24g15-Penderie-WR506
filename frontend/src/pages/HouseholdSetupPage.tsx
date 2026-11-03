@@ -1,3 +1,6 @@
+import { itemText as t } from '../lib/itemCatalog.ts'
+import RoomAccessPage from './RoomAccessPage.tsx'
+import FamilyAccountsPage from './FamilyAccountsPage.tsx'
 import { getCopy } from '../i18n/copy.ts'
 import FigmaGlyph from '../components/FigmaGlyph.tsx'
 import houseSymbol from '../images/figma/house-symbol.svg'
@@ -5,7 +8,7 @@ import { errorText } from '../lib/errors.ts'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.ts'
-import { createRoom, createStorageLocation, listPlaces } from '../api/places.ts'
+import { createStorageLocation, listPlaces } from '../api/places.ts'
 import type { Place } from '../types/location.ts'
 import {
   DesignPage,
@@ -71,16 +74,12 @@ export default function HouseholdSetupPage({
   const [name, setName] = useState('')
   const [housingType, setHousingType] = useState('Maison')
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState<string[]>([])
-  const [placeId, setPlaceId] = useState(search.get('place') ?? '')
   const [roomId, setRoomId] = useState(search.get('room') ?? '')
   const [kind, setKind] = useState('Armoire')
   const [parentId, setParentId] = useState('')
-  const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [invite, setInvite] = useState(false)
-  const place = places.find((p) => String(p.id) === placeId) ?? places[0]
   const allRooms = places.flatMap((p) =>
     p.rooms.map((r) => ({ ...r, placeName: p.name, placeId: p.id })),
   )
@@ -232,6 +231,9 @@ export default function HouseholdSetupPage({
               invitation n’a été créé.
             </DesignNotice>
           )}
+          <Link className="btn btn-secondary" to="/foyer/enfants">
+            {t('Comptes enfants et parents responsables', 'Child accounts and responsible parents')}
+          </Link>
           <DesignRow
             icon="+"
             title="Ajouter un enfant"
@@ -240,7 +242,10 @@ export default function HouseholdSetupPage({
           />
         </div>
         <p className="design-hint">
-          Les pièces sont partagées. Les objets peuvent appartenir à des personnes différentes.
+          {t(
+            'Plusieurs chambres ou salles de bain sont possibles. Chaque objet garde sa propre visibilité.',
+            'Multiple bedrooms and bathrooms are supported. Each belonging keeps its own visibility.',
+          )}
         </p>
         <Link className="design-link" to="/profils">
           Gérer les profils et accès existants
@@ -248,150 +253,9 @@ export default function HouseholdSetupPage({
       </DesignPage>
     )
 
-  if (step === 'child')
-    return (
-      <DesignPage
-        frame="160:57"
-        household
-        className="household-child"
-        title="Ajouter un enfant"
-        subtitle="Choisissez son mode d’accès."
-        footer={submit('Ajouter au foyer', 'child-form')}
-      >
-        <DesignForm
-          id="child-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            void run(async () => {
-              await auth.createProfile({ role: 'child', name, pin })
-              navigate('/foyer/membres')
-            })
-          }}
-        >
-          <DesignField label="Prénom">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              maxLength={100}
-              placeholder="Ex. Léa"
-            />
-          </DesignField>
-          <div className="household-child__access">
-            <h2>Type de compte</h2>
-            <DesignRow
-              icon="○"
-              title="Profil sur cet appareil"
-              detail="Accès limité avec un adulte connecté"
-            />
-            <DesignField label="Code de déverrouillage (4 à 6 chiffres)">
-              <input
-                inputMode="numeric"
-                pattern="[0-9]{4,6}"
-                required
-                type="password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                autoComplete="new-password"
-              />
-            </DesignField>
-            <small>
-              La connexion autonome sur l’appareil de l’enfant n’est pas encore disponible.
-            </small>
-          </div>
-        </DesignForm>
-      </DesignPage>
-    )
+  if (step === 'child') return <FamilyAccountsPage />
 
-  if (step === 'rooms')
-    return (
-      <DesignPage
-        frame="160:81"
-        household
-        className="household-rooms"
-        title="Ajouter les pièces"
-        subtitle="Choisissez uniquement les pièces présentes."
-        footer={submit(
-          `Continuer · ${selected.length} pièce${selected.length > 1 ? 's' : ''}`,
-          'rooms-form',
-        )}
-      >
-        <ErrorMessage error={placeError} />
-        <DesignForm
-          id="rooms-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            void run(async () => {
-              if (!place) throw new Error('Créez d’abord un lieu dans Lieux.')
-              for (const label of selected) {
-                if (!place.rooms.some((r) => r.name.toLowerCase() === label.toLowerCase())) {
-                  await createRoom(place.id, label)
-                  setSelected((v) => v.filter((s) => s !== label))
-                }
-              }
-              navigate('/foyer/rangements')
-            })
-          }}
-        >
-          {places.length > 1 && (
-            <DesignField label="Lieu">
-              <select
-                value={place?.id ?? ''}
-                onChange={(e) => {
-                  setPlaceId(e.target.value)
-                  setSelected([])
-                }}
-              >
-                {places.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </DesignField>
-          )}
-          <div className="design-search-wrap">
-            <FigmaGlyph name="roomSearch" />
-            <input
-              className="design-search"
-              aria-label="Rechercher une pièce"
-              type="search"
-              placeholder="Rechercher une pièce…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-          <div className="household-room-grid">
-            {rooms
-              .filter(([label]) => label.toLowerCase().includes(query.toLowerCase()))
-              .map(([label, asset]) => (
-                <button
-                  type="button"
-                  key={label}
-                  className={selected.includes(label) ? 'is-selected' : ''}
-                  aria-pressed={selected.includes(label)}
-                  onClick={() =>
-                    setSelected((v) =>
-                      v.includes(label) ? v.filter((s) => s !== label) : [...v, label],
-                    )
-                  }
-                >
-                  <FrameIcon frame="160:81" name={asset} />
-                  <strong>{label}</strong>
-                  {selected.includes(label) && (
-                    <span className="household-room-grid__check" aria-hidden="true">
-                      <FigmaGlyph name="roomCheck" />
-                    </span>
-                  )}
-                </button>
-              ))}
-          </div>
-          <Link className="design-link" to="/lieux">
-            Voir toutes les pièces ›
-          </Link>
-        </DesignForm>
-      </DesignPage>
-    )
+  if (step === 'rooms') return <RoomAccessPage />
 
   if (step === 'storage')
     return (

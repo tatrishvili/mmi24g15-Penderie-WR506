@@ -1,7 +1,8 @@
+import { errorText } from '../lib/errors.ts'
+import { itemText as t } from '../lib/itemCatalog.ts'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
-import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
 import { getCopy } from '../i18n/copy.ts'
 import cuteIcon from '../images/icons/cute_icon.svg'
@@ -9,12 +10,13 @@ import passwordIcon from '../images/icons/password_icon.svg'
 import profilIcon from '../images/icons/profil_icon.svg'
 
 export default function LoginPage() {
-  const { status, login } = useAuth()
+  const { status, login, activeProfile } = useAuth()
   const location = useLocation()
   const from = (location.state as { from?: unknown } | null)?.from
   const destination =
     typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/profils'
   const copy = getCopy()
+  const [child, setChild] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -22,7 +24,7 @@ export default function LoginPage() {
   const [loggingIn, setLoggingIn] = useState(false)
 
   if (status === 'authenticated') {
-    return <Navigate to={destination} replace />
+    return <Navigate to={activeProfile?.role === 'child' ? '/enfant' : destination} replace />
   }
 
   async function onPasswordSubmit(event: FormEvent) {
@@ -31,10 +33,10 @@ export default function LoginPage() {
     setLoggingIn(true)
 
     try {
-      await login(email.trim(), password)
+      await login(email.trim(), password, child)
     } catch (error) {
       setLoginError(
-        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+        errorText(error),
       )
     } finally {
       setLoggingIn(false)
@@ -47,6 +49,30 @@ export default function LoginPage() {
       <p className="login__subtitle">{copy.login.subtitle}</p>
       <img src={cuteIcon} alt="" className="login__mascot" />
 
+      <div className="family-actions">
+        <button
+          className="design-link"
+          type="button"
+          aria-pressed={!child}
+          onClick={() => {
+            setChild(false)
+            setLoginError(null)
+          }}
+        >
+          {t('Connexion adulte', 'Adult sign-in')}
+        </button>
+        <button
+          className="design-link"
+          type="button"
+          aria-pressed={child}
+          onClick={() => {
+            setChild(true)
+            setLoginError(null)
+          }}
+        >
+          {t('Connexion enfant', 'Child sign-in')}
+        </button>
+      </div>
       <form className="login__form" onSubmit={onPasswordSubmit} noValidate>
         {loginError !== null && (
           <p role="alert" className="form-error">
@@ -58,14 +84,18 @@ export default function LoginPage() {
           <div className="pill-field">
             <img src={profilIcon} alt="" className="pill-field__icon" />
             <label className="sr-only" htmlFor="login-email">
-              {copy.login.emailLabel}
+              {child ? t('Nom d’utilisateur enfant', 'Child username') : copy.login.emailLabel}
             </label>
             <input
               id="login-email"
               className="pill-field__input"
-              type="email"
-              autoComplete="email"
-              placeholder={copy.login.emailPlaceholder}
+              type={child ? 'text' : 'email'}
+              autoComplete={child ? 'username' : 'email'}
+              placeholder={
+                child
+                  ? t('Nom donné par ton parent', 'Username given by your parent')
+                  : copy.login.emailPlaceholder
+              }
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required

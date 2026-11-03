@@ -1,12 +1,7 @@
 # Penderie — Product specification
 
-Latest child-account implementation design: [CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md).
-The November handover's confirmed 12–17 age range, parent-issued username/password
-and guardian-approved child connections/sharing supersede older restrictions
-describing the future child feature as wholly unavailable by policy. That feature
-is still unimplemented. The first security slice now denies adult account actions
-and adult-profile fallback in selected-child mode, hides parent account/sibling
-data from `/api/auth/me`, and requires adult login to recover adult authority.
+Latest implemented family/child behavior (3 November): [CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md).
+This update supersedes older child-only-own-item and PIN-only implementation notes.
 
 **Status:** Working product direction after discussion on 8 October 2026. Personal-first onboarding, optional family setup, restricted child access on the child's own device using a parent-authorized username/password, and France-first/French-first localization reflect the user's stated preferences; remaining authentication and legal controls are recommendations to confirm before implementation.  
 **First market:** France. **Product languages:** French first; English must be supported by the product architecture.
@@ -45,43 +40,58 @@ These decisions resolve earlier ambiguities. Treat them as defaults for the firs
 
 The current database already uses a `Household` as the item scope. Preserve that boundary initially: create a private household automatically and hide the technical “household” concept in the UI. Do not redesign or migrate this model casually.
 
-### 2.2 Family is optional; children have restricted access
+### 2.2 Family is optional; parents manage child accounts
 
-Initial permission matrix:
+A verified mother or father creates a restricted account for a self-declared age
+12–17. The creator is responsible for that child. Another mother/father can be
+invited by verified account username and must accept; other adults and relatives
+never automatically gain parental controls. A maximum of two responsible parents
+manage each child. See CHILD_ACCOUNTS_DESIGN for legacy profile activation.
 
-| Action | Parent/adult | Child |
+| Action | Responsible parent | Child |
 | --- | --- | --- |
-| View own items | Yes | Yes |
-| View child items | Yes, for children they manage | Own items only |
-| Add items | For any profile they manage | Own profile only |
-| Edit item details/location | For any profile they manage | Own items only |
-| Archive/restore | For any profile they manage | Archive own items; parent can restore |
-| Permanently delete | Confirmed parent action | No |
-| View/edit another child's or adult's private items | Per adult membership/permissions | No |
-| Change members, security, sharing, sale, lending | Per adult role | No in the first version |
+| View/manage own objects | Yes | Yes |
+| Manage a child's objects/account | Only their own children | No |
+| View another person's object | Explicit audience, read-only; legacy adult rules preserved | Explicit parent-approved audience, read-only |
+| Add/edit/archive child objects | Yes, for their own children | Own objects only |
+| Restore/permanently delete | Responsible parent | No |
+| Expand an object's visibility | Explicit review/approval | Request parent approval, including within the family |
+| Withdraw own share | Yes | Immediately, without waiting for approval |
+| Household/security/sale/lending | Per adult authority | No |
 
-The child can choose an approved place/room/storage location for their own item. A parent remains able to correct the item, archive it, and revoke the child's session.
+New objects are hidden from others by default. Owners choose specific household
+people or everyone currently in the family. Sharing freezes the reviewed people
+and safe fields; future members do not silently receive old access. Viewers cannot
+edit and do not receive notes, memories, QR codes or precise storage paths.
+Personal and archived items cannot be shared. Responsible parents retain access
+to their own child's private inventory. Existing objects keep explicit legacy
+adult household behavior until their audience is saved; migration never broadens
+child access or silently publishes existing content.
 
-- An adult can use Penderie alone indefinitely.
-- From **Settings → Family and profiles**, an adult may add a child profile, invite another adult, or manage existing members.
-- A parent can see and manage a child's wardrobe, correct or archive its items, and disable the child's access.
-- A child may sign in on their own device and add or manage **their own** items within explicit limits.
-- A child must not see another child's or an adult's private items, manage family settings, invite people, change permissions, or share/sell/lend items unless a parent explicitly enables a future capability.
-- The server—not merely the frontend—must enforce these restrictions for every endpoint.
-- A child account/profile is created or activated only by an authenticated parent/guardian. The parent can revoke its sessions and reset its access.
+Rooms can repeat any type and have separate names, e.g. three bedrooms and two
+bathrooms. They can be common or assigned to one/multiple profiles. Sharing a
+room never shares inventory. Storage inherits room access. Existing restricted
+locations are redacted from child responses without deleting the objects.
 
-### 2.3 A PIN is not a child's remote account password
+Children can create private profile-owned collections and request connections to
+other parent-managed children or named adult relatives. Connections require
+recipient acceptance and parent approval for each child side. External child
+sharing requires a frozen preview and named approved contacts, accepted by a
+responsible parent through Notifications. Relatives receive no parental control.
 
-Do **not** treat a 4–6 digit PIN plus a public/guessable household code as secure sign-in for a child on the internet. Hashing the PIN protects it if the database is exposed, but does not make the PIN hard to guess. An IP-only request limit is also not enough to protect an account against distributed attempts.
+### 2.3 Independent child credentials; a PIN stays a device unlock
 
-Recommended separation:
+The parent gives a child username and an initial 15–128-character password. Initial
+and reset passwords expire after 24 hours. The child chooses a different password
+at first sign-in and signs in again. No child email is required. Account and IP
+rate limits are independent; failures do not reveal account existence. The child
+receives a ChildAccount security principal with no adult User privileges.
 
-- **Child sign-in on their own device:** a parent-authorized child credential and a restricted server-side session. Prefer a one-time, high-entropy parent-issued setup link/code, followed by a child username and password (no child email required for the first version). Parent recovery/reset and session revocation are mandatory.
-- **PIN on a parent's already trusted device:** optional convenience lock/profile switch only. It must require the parent's existing authenticated session, be rate-limited by account/profile and device/IP, and never replace or elevate that session.
-- Do not publish household codes or child profile lists as a security boundary. Login errors should not reveal whether a household, child, username, or PIN exists.
-- Add stronger sign-in protection, secure cookies, CSRF protection appropriate to the deployed architecture, and session rotation/revocation before production.
-
-The standalone child PIN login has been removed. A PIN can only unlock a profile within a parent's existing authenticated session; the child cannot yet sign in on a separate device. Item endpoints still need consistent child-to-own-profile authorization, so do not add child credentials until that server-side work and its allowed/denied tests are complete.
+Parents may reset credentials, suspend/reactivate access and revoke the additional
+parent. Credential/access changes invalidate sessions. Returning from child mode
+to adult authority always requires real adult sign-in. Each adult uses their own
+account. An optional 4–6 digit PIN only unlocks a permitted profile on an already
+signed-in parent device; it is never remote authentication.
 
 ### 2.4 Verification, age assurance, and two-factor authentication
 
@@ -130,11 +140,11 @@ The owner profile and category are not levels in the location tree. A place, roo
 ### 2.7 Privacy and sharing
 
 - All spaces, profiles, items, photos, and precise storage locations are private by default.
-- Adult users may follow another adult account directly; follows are one-way and do not require recipient approval. A friend request also follows its recipient. Accepting a request makes the relationship mutual; declining does not remove the requester as a follower. Either party can unfollow, and blocking prevents future contact. A child profile cannot follow, send, accept, or manage adult social relationships.
+- Adult users may follow another adult account directly; follows are one-way and do not require recipient approval. A friend request also follows its recipient. Accepting a request makes the relationship mutual; declining does not remove the requester as a follower. Either party can unfollow, and blocking prevents future contact. Child profiles use the separate parent-approved contact workflow; they cannot manage adult follows/friendships.
 - Being friends does not grant access to an inventory, item, collection, profile, home, room, or storage location. Every future share must still be explicit, scoped, and revocable.
 - Normal follow and friend-request use must not be blocked by an arbitrary low hourly quota. Use idempotent relationship actions and proportionate, abuse-focused protections; do not charge failed lookups or duplicate actions as new requests.
-- A child’s items are not visible to strangers. A parent/guardian with the proper household role can manage them.
-- Only a signed-in adult with verified email and authority over the resource can create or revoke a share. A child cannot publish/share in v1; a parent/guardian must explicitly approve any external publication of a child's item or look.
+- A child’s items are not visible to strangers. Only the explicitly responsible mother/father can manage their child's items.
+- Only a signed-in adult with verified email and authority over the resource can create or revoke a share. A child may request publication; a responsible mother/father must approve the exact snapshot and recipients before any child item/collection becomes visible.
 - For each share link, the owner chooses whether anyone possessing the unguessable link can view read-only without signing in, or whether a signed-in account with verified email is required. Anyone-with-link is a bearer credential and can be forwarded; it does not verify the recipient's identity.
 - Published adult looks can be viewed without signing in, but show only a deliberately selected representation. A look does not make its underlying item records public. Child looks remain private unless parent-approved.
 - Interactive capabilities such as commenting require an authenticated account with verified email plus an explicit grant. Link-only anonymous viewers cannot comment. Lending and buying require separate eligible, authenticated workflows; no public marketplace in v1.
@@ -211,10 +221,10 @@ The following are known differences between this specification and the repositor
 | Area | Current code | Required direction |
 | --- | --- | --- |
 | Registration | Pending email registration, unique account username, self-declared date-of-birth age gate (18+), single-use confirmation, rate-limited resend, and automatic private-space setup are implemented. The username is displayed in the signed-in account page; verified email remains the login identifier. Existing verified accounts without a username can set one once from that page. Local delivery uses Mailpit; production delivery still needs a verified sender/domain and provider credentials. | Do not call the birth-date check age verification. Review the lawfulness, retention, deletion, and data minimization of collecting birth dates before production; use a reviewed provider only if stronger age assurance is required. |
-| Family | Child/partner creation appears in the profile flow after a household is created. | Optional family management in Settings. Another adult should accept an invitation and use their own account. |
-| Child sign-in | Standalone PIN sign-in and public household/profile lookup are removed. A parent can optionally unlock a child profile on their already authenticated device. | Parent-managed one-time child setup and child credentials for another device; enforce per-profile permissions on every server request before enabling it. |
+| Family | Optional family management, explicit mother/father child responsibility and invitation/acceptance for a second parent are implemented. | General adult household invitations remain a separate feature; adults always use their own credentials. |
+| Child sign-in | Separate child username/password principal, initial password change, account/IP throttles, parent recovery/reset/suspend and session revocation are implemented. PIN is trusted-device unlock only. | Keep every child request scoped and retain allowed/denied tests. Age/parent relationship declarations are not identity proof. |
 | Friends and followers | Verified adults can follow/unfollow, see follower/following lists, and send, accept, decline, cancel, or remove friend relationships by username. A friend request follows its recipient; accepting creates mutual follows, while declining/cancelling preserves the follow. Repeated direct follows are idempotent. A verified legacy account can set a missing username once. Following does not grant inventory visibility. The former fixed hourly friend-request limiter has been removed. | Add account search/discovery and block/report controls. Add proportionate abuse protection that does not block ordinary use or count invalid/duplicate actions as new relationships. |
-| Item authorization | Item list/show/update/delete are household-scoped. Items store an owner profile, but endpoint access is not consistently restricted to that owner/role. | Parent may manage child items; a child sees and changes only allowed items. Add authorization tests before child access is treated as safe. |
+| Item authorization | Ownership, explicit parent management, reviewed read-only family audiences, source vetoes, room grants and protected photos are enforced in application endpoints. | Preserve scope and projection on future endpoints; existing legacy objects retain previous adult behavior until their audience is saved. |
 | Item structure | Items persist optional type/category and an optional room plus nested storage location. The “Lieux” workflow manages places, rooms, and storage; item forms allow assigning or leaving the current location unknown. API references are scoped to the active private space. The hierarchy migration is applied to the local development database; target deployments must run pending migrations. | Keep location optional and separate from item ownership and category. Add explicit place-only assignment only if the product needs it. |
 | Scan | Opening the scanner requests the device camera automatically and shows an in-app preview with a simple guide for T-shirt, trousers, skirt, or other/object. Gallery selection remains available while the camera is active. Camera access requires browser permission on HTTPS or localhost. The guide is visual framing assistance, not real-time object detection. | Preserve clear camera permission guidance and continue to let the user review or enter the item manually. |
 | Scan error behavior | Provider failures, including temporary free-provider rate limits, are shown as errors; the captured photo is retained for retry or manual entry. Results remain editable before saving. | Keep invalid configuration, provider failures, and invalid model output explicit; never return blank success-shaped identification or guess fields the photo cannot establish. |
@@ -224,6 +234,8 @@ The following are known differences between this specification and the repositor
 These gaps mean “there is a screen or endpoint” must not be reported as “the user workflow is complete.” Keep this table current when implementation changes.
 
 ## 7. Decision log
+
+- **2026-11-03:** Mother/father-only child responsibility; creating parent manages and may invite the other parent. Child username/password sign-in, private collections, approved contacts/sharing and Notifications are implemented. New objects are owner-private; per-person/current-family visibility is read-only for recipients. Rooms can repeat types, have distinct names and be common or profile-assigned. Room access never grants inventory access.
 
 - **2026-10-08:** Personal-first onboarding; no required family name or family-member setup during registration.
 - **2026-10-08:** Parents manage child collections; children should be able to sign in on their own device with restricted permissions.

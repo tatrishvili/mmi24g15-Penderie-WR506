@@ -33,6 +33,7 @@ final class JsonLoginSuccessHandler implements AuthenticationSuccessHandlerInter
         $session = $request->getSession();
         $session->remove('penderie.active_household_id');
         $session->remove('penderie.active_profile_id');
+        $session->remove('penderie.child_session_version');
 
         $user = $token->getUser();
         \assert($user instanceof User);

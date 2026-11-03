@@ -1,5 +1,13 @@
 framework:
     rate_limiter:
+        child_login_account:
+            policy: fixed_window
+            limit: 5
+            interval: 1 minute
+        child_login_ip:
+            policy: fixed_window
+            limit: 30
+            interval: 1 minute
         pin:
             policy: 'fixed_window'
             limit: 5

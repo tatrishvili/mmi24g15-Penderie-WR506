@@ -39,18 +39,6 @@ final class ItemRepository extends ServiceEntityRepository
             ->setParameter('household', $household)
             ->orderBy('i.id', 'DESC');
 
-        if (null !== $actor) {
-            $profile = $actor->profile();
-            if (null !== $profile && !$profile->isAdult()) {
-                $qb->andWhere('i.ownerProfile = :profile')->setParameter('profile', $profile);
-            } else {
-                $qb->join('i.ownerProfile', 'owner')
-                    ->andWhere("i.visibility != 'personal' OR owner.user = :viewer OR owner.role = :childRole")
-                    ->setParameter('viewer', $actor->requireUser())
-                    ->setParameter('childRole', \App\Enum\ProfileRole::Child);
-            }
-        }
-
         if (null !== $roomId) {
             $qb->andWhere('IDENTITY(i.room) = :roomId')->setParameter('roomId', $roomId);
         }
@@ -66,14 +54,11 @@ final class ItemRepository extends ServiceEntityRepository
             $qb->andWhere('i.status = :status')->setParameter('status', $status);
         }
 
-        $total = (int) (clone $qb)->select('COUNT(i.id)')->getQuery()->getSingleScalarResult();
+        /** @var list<Item> $candidates */
+        $candidates = $qb->getQuery()->getResult();
+        $visible = array_values(array_filter($candidates, static fn (Item $item): bool => null === $actor
+            || ($actor->canViewItem($item) && (null === $roomId || $actor->canManageItem($item)))));
 
-        /** @var list<Item> $items */
-        $items = $qb->setFirstResult(($page - 1) * $perPage)
-            ->setMaxResults($perPage)
-            ->getQuery()
-            ->getResult();
-
-        return ['items' => $items, 'total' => $total];
+        return ['items' => array_slice($visible, ($page - 1) * $perPage, $perPage), 'total' => \count($visible)];
     }
 }

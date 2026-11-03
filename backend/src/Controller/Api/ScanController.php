@@ -16,12 +16,14 @@ final class ScanController extends AbstractController
 {
     public function __construct(
         private OpenRouterClient $openRouterClient,
+        private \App\Service\CurrentActor $actor,
     ) {
     }
 
     #[Route('/api/scan', name: 'api_scan', methods: ['POST'])]
     public function scan(Request $request): JsonResponse
     {
+        $this->actor->requireHousehold();
         $data = $request->toArray();
 
         if (!isset($data['image']) || !is_string($data['image'])) {

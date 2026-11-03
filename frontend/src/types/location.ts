@@ -6,6 +6,9 @@ export interface StorageLocation {
 }
 
 export interface Room {
+  kind?: string | null
+  common?: boolean
+  assignedProfileIds?: number[]
   id: number
   name: string
   storageLocations: StorageLocation[]
@@ -28,9 +31,6 @@ export function flattenStorageLocations(
 ): { id: number; label: string }[] {
   return locations.flatMap((location) => {
     const label = prefix === '' ? location.name : `${prefix} › ${location.name}`
-    return [
-      { id: location.id, label },
-      ...flattenStorageLocations(location.children, label),
-    ]
+    return [{ id: location.id, label }, ...flattenStorageLocations(location.children, label)]
   })
 }

@@ -59,16 +59,46 @@ final class ItemService
 
     public static function canAccess(CurrentActor $actor, Item $item): bool
     {
-        $profile = $actor->profile();
-        if (null !== $profile && !$profile->isAdult()) {
-            return $profile->getId() === $item->getOwnerProfile()->getId();
-        }
-        if ('personal' === $item->getVisibility()) {
-            return $item->getOwnerProfile()->getUser()?->getId() === $actor->requireUser()->getId()
-                || !$item->getOwnerProfile()->isAdult();
+        return $actor->canViewItem($item);
+    }
+
+    public function findManagedHouseholdItem(CurrentActor $actor, int $id): Item
+    {
+        $item = $this->findHouseholdItem($actor, $id);
+        if (!$actor->canManageItem($item)) {
+            throw new NotFoundHttpException('Item not found.');
         }
 
-        return true;
+        return $item;
+    }
+
+    /** @return array<string, mixed> */
+    public static function payloadFor(CurrentActor $actor, Item $item): array
+    {
+        $managed = $actor->canManageItem($item);
+        $payload = self::itemPayload($item);
+        $payload['canEdit'] = $managed;
+        $payload['familyAudience'] = $managed ? $item->familyAudience : 'shared';
+        $payload['familyViewerIds'] = $managed ? $item->familyViewerIds : [];
+        $payload['sharingVersion'] = $managed ? $item->sharingVersion : null;
+        if (!$managed) {
+            $snapshot = FamilyAccess::snapshot($item);
+            foreach (['name', 'type', 'color', 'brand', 'author', 'artist', 'publisher', 'condition', 'photos'] as $field) {
+                $payload[$field] = $snapshot[$field];
+            }
+            foreach (['category', 'size', 'material', 'memory', 'notes', 'qrToken', 'room', 'storageLocation'] as $field) {
+                $payload[$field] = null;
+            }
+            $payload['ownerProfile'] = ['id' => $item->getOwnerProfile()->getId(), 'name' => $item->getOwnerProfile()->getName()];
+        }
+        $profile = $actor->profile();
+        if (null !== $profile && !$profile->isAdult() && null !== $item->getRoom()
+            && !FamilyAccess::canUseRoom($profile, $item->getRoom())) {
+            $payload['room'] = null;
+            $payload['storageLocation'] = null;
+        }
+
+        return $payload;
     }
 
     private function guardActiveLoan(Item $item): void
@@ -108,6 +138,10 @@ final class ItemService
         }
 
         $item = new Item($household, $owner, trim((string) $dto->name));
+        $this->guardLocation($actor, $dto->roomId, $dto->storageLocationId);
+        if (!$actor->canManageItem($item)) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Only the owner or responsible parent can add this item.');
+        }
         $this->applyLocation($item, $household, $dto->roomId, $dto->storageLocationId);
         $item->setType(self::cleanOrNull($dto->type));
         $item->setAuthor(self::cleanOrNull($dto->author));
@@ -130,7 +164,7 @@ final class ItemService
     /**
      * @return array<string, mixed>
      */
-    public function update(Item $item, UpdateItemDto $dto): array
+    public function update(Item $item, UpdateItemDto $dto, ?CurrentActor $actor = null): array
     {
         $violations = $this->validator->validate($dto);
 
@@ -162,6 +196,9 @@ final class ItemService
                 ? $dto->storageLocationId
                 : ($roomChanged ? null : $item->getStorageLocation()?->getId());
 
+            if (null !== $actor) {
+                $this->guardLocation($actor, $roomId, $storageLocationId);
+            }
             $this->applyLocation(
                 $item,
                 $item->getHousehold(),
@@ -309,6 +346,7 @@ final class ItemService
             }
         }
 
+        $item->touch();
         $this->em->flush();
 
         return ['photos' => array_map(self::photoPayload(...), $created)];
@@ -322,6 +360,7 @@ final class ItemService
             throw new NotFoundHttpException('Photo not found.');
         }
 
+        $item->touch();
         $wasPrimary = $photo->isPrimary();
         $path = $photo->getPath();
         $this->em->remove($photo);
@@ -427,6 +466,25 @@ final class ItemService
         $clean = trim($value);
 
         return '' === $clean ? null : $clean;
+    }
+
+    private function guardLocation(CurrentActor $actor, ?int $roomId, ?int $storageId): void
+    {
+        $profile = $actor->profile();
+        if (null === $profile || $profile->isAdult()) {
+            return;
+        }
+        $room = null !== $roomId ? $this->em->getRepository(Room::class)->find($roomId) : null;
+        if (null !== $storageId) {
+            $storage = $this->em->getRepository(StorageLocation::class)->find($storageId);
+            if (!$storage instanceof StorageLocation || !FamilyAccess::canUseRoom($profile, $storage->getRoom())) {
+                throw new NotFoundHttpException('Storage location not found.');
+            }
+            $room ??= $storage->getRoom();
+        }
+        if (null !== $roomId && (!$room instanceof Room || !FamilyAccess::canUseRoom($profile, $room))) {
+            throw new NotFoundHttpException('Room not found.');
+        }
     }
 
     private function applyLocation(Item $item, Household $household, ?int $roomId, ?int $storageLocationId): void

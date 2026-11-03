@@ -11,7 +11,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * A household member. Adults (parent/partner) own a User for credentials;
- * children currently use a restricted profile on an authenticated adult device.
+ * children use a separate ChildAccount for independent sign-in, or a restricted
+ * profile on an authenticated parent device.
  * A PIN is only a trusted-device unlock, never a remote sign-in credential.
  * Profiles own items independently of physical location.
  */
@@ -19,6 +20,9 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Table(name: 'profile')]
 class Profile implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    public ?User $createdBy = null;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
