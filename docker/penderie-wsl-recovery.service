@@ -1,0 +1,8 @@
+[Unit]
+Description=Repair stale Penderie mounts after Docker Desktop restarts
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/atatrishvili/penderie
+ExecStart=/bin/bash /home/atatrishvili/penderie/docker/recover-wsl-mounts.sh
+TimeoutStartSec=180

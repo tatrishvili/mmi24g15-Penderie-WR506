@@ -29,15 +29,20 @@ help: ## Show this help
 
 .PHONY: up
 up: ## Build and start the development stack
-	$(COMPOSE) up -d --build
+	$(COMPOSE) build
+	$(MAKE) restart
 
 .PHONY: down
 down: ## Stop the stack (keeps the database volume)
 	$(COMPOSE) down
 
 .PHONY: restart
-restart: ## Restart the stack without rebuilding
-	$(COMPOSE) restart
+restart: ## Recreate app containers and wait for readiness (keeps database data)
+	@test -f backend/public/index.php -a -f backend/vendor/autoload.php -a -f frontend/package.json || { echo "Project files/dependencies missing on the WSL host; refusing to start with empty mounts."; exit 1; }
+	$(COMPOSE) up -d --wait db mailpit
+	$(COMPOSE) up -d --no-deps --force-recreate --wait api
+	$(COMPOSE) up -d --build --no-deps --force-recreate --wait nginx
+	$(COMPOSE) up -d --no-deps --force-recreate --wait frontend
 
 .PHONY: ps
 ps: ## Show the status of every service

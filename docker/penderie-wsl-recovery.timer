@@ -1,0 +1,10 @@
+[Unit]
+Description=Check Penderie Docker Desktop mounts after startup
+
+[Timer]
+OnStartupSec=20
+OnUnitInactiveSec=30
+AccuracySec=5
+
+[Install]
+WantedBy=timers.target

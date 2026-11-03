@@ -77,6 +77,40 @@ If login reports a gateway/proxy error, check `docker compose ps` and
 the frontend cannot reach the Docker gateway; start the complete stack with
 `docker compose up -d` and wait for its health checks before retrying login.
 
+After restarting Docker Desktop/WSL, use `make restart`. This recreates the
+application containers to refresh their bind mounts and waits for API/gateway
+readiness, while keeping the database and its data. A plain `docker compose restart`
+reuses existing mounts and does not apply updated Compose settings. If nginx
+returns `File not found.`, check that `backend/public/index.php` is visible inside
+the API container; an empty mount requires container recreation. The API health
+check verifies both the entry point and Composer autoloader are present.
+
+The recurring 3 November failure was confirmed in Docker's container state:
+Docker Desktop restored an empty WSL backend mount, and nginx failed before its
+process could start because the saved config-file mount appeared as a directory.
+Restart policies cannot repair stale mounts; a health check reports the failure
+but does not recreate a container. nginx now builds its configuration into a
+small image and has no source/config bind mounts. Rebuild it with `make restart`
+after editing `docker/nginx/default.conf`. `make up` also recreates application
+containers, and frontend startup refuses an empty source mount.
+
+This workstation additionally has `penderie-wsl-recovery.timer` installed as a WSL
+user service, with user lingering enabled for startup. It checks every 30 seconds
+while WSL is running and recreates application containers only when it observes
+the known empty-mount/config-mount failure. It preserves the database and leaves
+a healthy or deliberately stopped stack alone. The service and timer definitions
+are in `docker/`; another workstation must install them explicitly and adjust
+their project path. This does not start Docker Desktop or WSL from Windows.
+
+```bash
+systemctl --user status penderie-wsl-recovery.timer
+journalctl --user -u penderie-wsl-recovery.service -n 30 --no-pager
+# Optional: disable background recovery
+systemctl --user disable --now penderie-wsl-recovery.timer
+# Recovery decision tests, without touching Docker/data
+python3 docker/test_wsl_recovery.py
+```
+
 Registration emails are captured locally by Mailpit; no external email account is needed for development.
 For deployment, set `MAILER_DSN` to the Symfony Resend transport
 (`resend+api://<API_KEY>@default`), `MAILER_FROM_ADDRESS` to an address on your verified sending domain,
