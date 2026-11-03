@@ -1,5 +1,13 @@
 # Penderie — Product specification
 
+Latest child-account implementation design: [CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md).
+The November handover's confirmed 12–17 age range, parent-issued username/password
+and guardian-approved child connections/sharing supersede older restrictions
+describing the future child feature as wholly unavailable by policy. That feature
+is still unimplemented. The first security slice now denies adult account actions
+and adult-profile fallback in selected-child mode, hides parent account/sibling
+data from `/api/auth/me`, and requires adult login to recover adult authority.
+
 **Status:** Working product direction after discussion on 8 October 2026. Personal-first onboarding, optional family setup, restricted child access on the child's own device using a parent-authorized username/password, and France-first/French-first localization reflect the user's stated preferences; remaining authentication and legal controls are recommendations to confirm before implementation.  
 **First market:** France. **Product languages:** French first; English must be supported by the product architecture.
 

@@ -1,5 +1,14 @@
 # Penderie — Resource access and permissions
 
+3 November security update: selected-child mode cannot inherit adult authority
+through `requireUser()` or `requireAdultProfile()`, including household reselection
+and PIN unlock. Adult login is required to restore adult authority. Auth session
+responses omit parent account data, siblings, other households and unfiltered
+place summaries in child mode. This is the first slice of
+[CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md), not independent child login.
+The confirmed November child friendship/sharing plan supersedes older statements
+that the planned child feature forbids all sharing; no child publication is yet enabled.
+
 **Status:** Product policy agreed in discussion on 8 October 2026.  
 This document defines the intended policy. It does not claim the current API enforces every rule.
 

@@ -15,10 +15,10 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 /**
  * Single user provider for the two security identities of the app:
  * - User (e-mail login, json_login)
- * - Profile (standalone PIN login, Mode C — identifier "profile:{id}")
+ * - Profile (legacy token refresh only; CurrentActor rejects profile sign-in)
  *
- * Both must be refreshable: after a PIN login, every subsequent request
- * refreshes the Profile from the session token through this provider.
+ * Trusted-device PIN unlock keeps the adult User token. It does not authenticate
+ * a Profile or grant permission to return from child mode to adult mode.
  *
  * @implements UserProviderInterface<UserInterface>
  */

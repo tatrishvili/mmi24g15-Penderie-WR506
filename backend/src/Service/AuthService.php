@@ -457,7 +457,10 @@ final class AuthService
             'activeProfile' => null,
         ];
 
-        if ($tokenUser instanceof User) {
+        $active = $actor->profile();
+        $childMode = null !== $active && !$active->isAdult();
+
+        if ($tokenUser instanceof User && !$childMode) {
             $payload['user'] = AuthResponse::userPayload($tokenUser);
         }
 
@@ -467,10 +470,12 @@ final class AuthService
             return $payload;
         }
 
-        $active = $actor->profile();
+        $profiles = $childMode ? [$active] : $this->em->getRepository(Profile::class)->findBy(['household' => $household], ['id' => 'ASC']);
+        $places = $childMode ? [] : $this->em->getRepository(Place::class)->findBy(['household' => $household], ['id' => 'ASC']);
 
-        $profiles = $this->em->getRepository(Profile::class)->findBy(['household' => $household], ['id' => 'ASC']);
-        $places = $this->em->getRepository(Place::class)->findBy(['household' => $household], ['id' => 'ASC']);
+        if ($childMode) {
+            $payload['households'] = [AuthResponse::householdPayload($household)];
+        }
 
         $payload['household'] = AuthResponse::householdPayload($household);
         $payload['profiles'] = array_map([AuthResponse::class, 'profilePayload'], $profiles);

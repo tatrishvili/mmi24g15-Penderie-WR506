@@ -52,6 +52,10 @@ final class CurrentActor
             throw new AccessDeniedHttpException('Only an account holder can perform this action.');
         }
 
+        if (false === $this->profile()?->isAdult()) {
+            throw new AccessDeniedHttpException('Sign in again as an adult to perform this action.');
+        }
+
         return $user;
     }
 
@@ -155,8 +159,8 @@ final class CurrentActor
 
     /**
      * Returns an adult profile allowed to manage the ACTIVE household: the active
-     * profile when it is an adult, otherwise the logged-in user's own
-     * parent/partner profile in that household.
+     * profile when it is an adult, otherwise the logged-in user's own profile
+     * only when no profile is selected. A selected child never inherits it.
      *
      * @throws AccessDeniedHttpException when the actor is a child
      */
@@ -166,6 +170,10 @@ final class CurrentActor
         $household = $this->household();
 
         $active = $this->profile();
+
+        if (null !== $active && !$active->isAdult()) {
+            throw new AccessDeniedHttpException('Only an adult profile can perform this action. Sign in again as an adult.');
+        }
 
         if ($active instanceof Profile && $active->isAdult()) {
             return $active;

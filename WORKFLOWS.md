@@ -1,5 +1,12 @@
 # Penderie — User workflows
 
+See [CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md) for the November child
+account plan and remaining existing-data decisions. Selected-child mode now
+blocks adult account/household/PIN operations and omits the parent's account,
+siblings, other households and unfiltered place summaries from `/api/auth/me`.
+To return to adult mode, sign out and sign in with the adult credentials. This
+hardening does not enable independent child login or guardian-approved sharing.
+
 Use this document for the intended user journeys. [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) is the source of truth for product decisions, domain boundaries, privacy, and implementation gaps.
 
 ## 1. First visit and adult registration
