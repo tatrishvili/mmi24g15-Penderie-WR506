@@ -52,7 +52,7 @@ final class CurrentActor
             throw new AccessDeniedHttpException('Only an account holder can perform this action.');
         }
 
-        if (false === $this->profile()?->isAdult()) {
+        if ($this->isRestrictedProfile()) {
             throw new AccessDeniedHttpException('Sign in again as an adult to perform this action.');
         }
 
@@ -77,6 +77,14 @@ final class CurrentActor
 
         if (!$household instanceof Household || !$this->isMember($user, $household)) {
             return null;
+        }
+
+        $profileId = $this->requests->getSession()->get('penderie.active_profile_id');
+        if (null !== $profileId) {
+            $profile = \is_int($profileId) ? $this->em->getRepository(Profile::class)->find($profileId) : null;
+            if (!$profile instanceof Profile || $profile->getHousehold()->getId() !== $household->getId()) {
+                return null;
+            }
         }
 
         return $household;
@@ -157,6 +165,17 @@ final class CurrentActor
         return $profile;
     }
 
+    public function isRestrictedProfile(): bool
+    {
+        $profile = $this->profile();
+
+        // A removed/invalid selected profile must not restore the adult identity
+        // still carried by a trusted-device session.
+        return null !== $profile
+            ? !$profile->isAdult()
+            : null !== $this->requests->getSession()->get('penderie.active_profile_id');
+    }
+
     /**
      * Returns an adult profile allowed to manage the ACTIVE household: the active
      * profile when it is an adult, otherwise the logged-in user's own profile
@@ -171,7 +190,7 @@ final class CurrentActor
 
         $active = $this->profile();
 
-        if (null !== $active && !$active->isAdult()) {
+        if ($this->isRestrictedProfile()) {
             throw new AccessDeniedHttpException('Only an adult profile can perform this action. Sign in again as an adult.');
         }
 

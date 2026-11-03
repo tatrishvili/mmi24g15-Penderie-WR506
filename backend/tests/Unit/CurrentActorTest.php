@@ -133,6 +133,20 @@ final class CurrentActorTest extends TestCase
         $actor->requireAdultProfile();
     }
 
+    public function testMissingSelectedProfileCannotRestoreTheAdultAccount(): void
+    {
+        $actor = $this->actor($this->user);
+        $this->householdFind = $this->household;
+        $this->memberFindOneBy = new HouseholdMember($this->user, $this->household);
+        $this->session->set('penderie.active_household_id', 5);
+        $this->session->set('penderie.active_profile_id', 999);
+
+        self::assertNull($actor->household());
+
+        $this->expectException(AccessDeniedHttpException::class);
+        $actor->requireUser();
+    }
+
     public function testRequireAdultRejectsAChildProfile(): void
     {
         $actor = $this->actor($this->user);

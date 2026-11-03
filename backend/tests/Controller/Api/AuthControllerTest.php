@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller\Api;
 
 use App\Entity\PendingRegistration;
+use App\Entity\Profile;
 use App\Tests\ApiTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -466,6 +467,32 @@ final class AuthControllerTest extends ApiTestCase
             'email' => 'camille@example.com', 'password' => 'secret123',
         ])->getStatusCode());
         self::assertSame($home['profile']['id'], self::decoded(self::api($client, 'GET', '/api/auth/me'))['activeProfileId']);
+    }
+
+    public function testRemovedSelectedChildDoesNotRestoreAdultDataOrInventoryAccess(): void
+    {
+        $client = static::createClient();
+        self::registerHousehold($client);
+        $childId = self::decoded(self::api($client, 'POST', '/api/auth/profiles', [
+            'role' => 'child', 'name' => 'Léo',
+        ]))['profile']['id'];
+        self::assertSame(200, self::api($client, 'POST', '/api/auth/profiles/'.$childId.'/switch')->getStatusCode());
+
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $child = $em->getRepository(Profile::class)->find($childId);
+        self::assertNotNull($child);
+        $em->remove($child);
+        $em->flush();
+
+        $me = self::decoded(self::api($client, 'GET', '/api/auth/me'));
+        self::assertArrayNotHasKey('user', $me);
+        self::assertSame([], $me['households']);
+        self::assertSame([], $me['profiles']);
+        self::assertSame([], $me['places']);
+        self::assertSame(401, self::api($client, 'GET', '/api/items')->getStatusCode());
+        self::assertSame(403, self::api($client, 'POST', '/api/auth/households', [
+            'householdName' => 'Escape', 'firstName' => 'Adult',
+        ])->getStatusCode());
     }
 
     public function testSwitchToForeignProfileReturns404(): void
