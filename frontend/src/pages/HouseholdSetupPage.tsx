@@ -1,7 +1,6 @@
 import { itemText as t } from '../lib/itemCatalog.ts'
 import RoomAccessPage from './RoomAccessPage.tsx'
 import FamilyAccountsPage from './FamilyAccountsPage.tsx'
-import { getCopy } from '../i18n/copy.ts'
 import FigmaGlyph from '../components/FigmaGlyph.tsx'
 import houseSymbol from '../images/figma/house-symbol.svg'
 import { errorText } from '../lib/errors.ts'
@@ -138,7 +137,7 @@ export default function HouseholdSetupPage({
           <>
             {submit('Créer mon foyer', 'household-create')}
             <Link className="design-link" to="/dressing">
-              {getCopy().verify.setupLater}
+              {t('verify.setupLater')}
             </Link>
           </>
         }

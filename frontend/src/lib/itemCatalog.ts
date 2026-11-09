@@ -1,3 +1,5 @@
+import { t } from 'i18next'
+
 const labels = {
   pull: ['Pull', 'Sweater'],
   tshirt: ['T-shirt', 'T-shirt'],
@@ -40,12 +42,23 @@ const labels = {
 export type ItemType = keyof typeof labels
 export const ITEM_TYPES = Object.keys(labels) as ItemType[]
 export const isItemType = (value: string): value is ItemType => value in labels
-export const itemText = (fr: string, en: string) =>
-  document.documentElement.lang.toLowerCase().startsWith('en') ? en : fr
-export const itemTypeLabel = (type: ItemType) => itemText(labels[type][0], labels[type][1])
 export const isBook = (type: string) => type === 'livre'
 export const isMusic = (type: string) => type === 'vinyle' || type === 'cd'
 export const isClothing = (type: string) =>
   !['livre', 'vinyle', 'cd', 'decoration', 'electronique', 'meuble', 'jouet', 'autre'].includes(
     type,
   )
+
+export const itemText = (type: ItemType) => t(`itemTypes.${type}`) || labels[type][0]
+export const itemTypeLabel = (type: ItemType) => t(`itemTypes.${type}`) || labels[type][0]
+
+/**
+ * Get a translation for a general key, with fallback to the key itself.
+ * Used by components like AppNav that use i18next keys directly.
+ * When i18next is not available, returns the key or the default value.
+ */
+export const getCopy = (key: string, defaultValue?: string): string => {
+  const translation = t(key)
+  if (translation !== undefined && translation !== '') return translation
+  return defaultValue ?? key
+}

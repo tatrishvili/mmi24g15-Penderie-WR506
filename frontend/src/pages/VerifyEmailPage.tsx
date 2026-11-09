@@ -3,13 +3,12 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { getCopy } from '../i18n/copy.ts'
+import { t } from 'i18next'
 import cuteIcon from '../images/icons/cute_icon_email_verif.svg'
 import mailIcon from '../images/icons/mail_icon.svg'
 
 export default function VerifyEmailPage() {
   const { verifyEmail, resendVerification } = useAuth()
-  const copy = getCopy().verify
   const [searchParams] = useSearchParams()
   const location = useLocation()
   const navigate = useNavigate()
@@ -34,7 +33,7 @@ export default function VerifyEmailPage() {
       navigate('/foyer/creer', { replace: true })
     } catch (cause) {
       setError(
-        cause instanceof ApiError ? copy.expiredError : copy.genericError,
+        cause instanceof ApiError ? t('verify.expiredError') : t('verify.genericError'),
       )
     } finally {
       setSubmitting(false)
@@ -48,9 +47,9 @@ export default function VerifyEmailPage() {
 
     try {
       await resendVerification(email.trim())
-      setNotice(copy.resendSuccess)
+      setNotice(t('verify.resendSuccess'))
     } catch {
-      setNotice(copy.resendFailure)
+      setNotice(t('verify.resendFailure'))
     } finally {
       setResending(false)
     }
@@ -59,7 +58,7 @@ export default function VerifyEmailPage() {
   return (
     <div className="verify">
       <h1 className="verify__title">
-        {copy.titleLines.map((line, index) => (
+        {t('verify.titleLines').map((line, index) => (
           <Fragment key={line}>
             {index > 0 && ' '}
             <span>{line}</span>
@@ -76,13 +75,13 @@ export default function VerifyEmailPage() {
       <div className="verify__card">
         {sent && (
           <>
-            <p>{copy.sentLead}</p>
+            <p>{t('verify.sentLead')}</p>
             <p className="verify__email">{stateEmail}</p>
-            <p>{copy.sentInstruction}</p>
+            <p>{t('verify.sentInstruction')}</p>
           </>
         )}
-        {!sent && token !== null && error === null && <p>{copy.tokenNotice}</p>}
-        {!sent && token === null && <p>{copy.noTokenLead}</p>}
+        {!sent && token !== null && error === null && <p>{t('verify.tokenNotice')}</p>}
+        {!sent && token === null && <p>{t('verify.noTokenLead')}</p>}
       </div>
 
       <img src={cuteIcon} alt="" className="verify__mascot" />
@@ -95,7 +94,7 @@ export default function VerifyEmailPage() {
             onClick={onVerify}
             disabled={submitting}
           >
-            {submitting ? copy.confirmingButton : copy.confirmButton}
+            {submitting ? t('verify.confirmingButton') : t('verify.confirmButton')}
           </button>
         </div>
       ) : (
@@ -105,7 +104,7 @@ export default function VerifyEmailPage() {
               <div className="pill-field">
                 <img src={mailIcon} alt="" className="pill-field__icon" />
                 <label className="sr-only" htmlFor="verification-email">
-                  {copy.emailLabel}
+                  {t('verify.emailLabel')}
                 </label>
                 <input
                   id="verification-email"
@@ -120,7 +119,7 @@ export default function VerifyEmailPage() {
             </div>
           )}
           <button type="submit" className="btn btn-primary verify__action" disabled={resending}>
-            {resending ? copy.resendingButton : copy.resendButton}
+            {resending ? t('verify.resendingButton') : t('verify.resendButton')}
           </button>
         </form>
       )}
@@ -133,11 +132,11 @@ export default function VerifyEmailPage() {
 
       {token === null ? (
         <p className="verify__switch">
-          {copy.switchPrompt} <Link to="/connexion">{copy.switchLink}</Link>
+          {t('verify.switchPrompt')} <Link to="/connexion">{t('verify.switchLink')}</Link>
         </p>
       ) : (
         <p className="verify__switch">
-          <Link to="/connexion">{copy.backToLogin}</Link>
+          <Link to="/connexion">{t('verify.backToLogin')}</Link>
         </p>
       )}
     </div>

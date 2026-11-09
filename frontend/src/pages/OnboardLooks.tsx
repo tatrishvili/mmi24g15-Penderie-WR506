@@ -1,14 +1,12 @@
 import { Fragment } from 'react'
 import OnboardingFoot from '../components/OnboardingFoot.tsx'
-import { getCopy } from '../i18n/copy.ts'
 import dislike from '../images/icons/dislike.svg'
 import like from '../images/icons/like.svg'
 import sun from '../images/icons/sun.svg'
 import outfit from '../images/outfit_of_the_day_example.png'
 
 export default function OnboardLooks() {
-  const copy = getCopy().onboard
-  const { titleLines, bodyLines, temperature, today, like: likeLabel, skip, caption, stepLabel } = copy.look
+  const { titleLines, bodyLines, temperature, today, like: likeLabel, skip, caption, stepLabel } = t('onboard.look')
 
   return (
     <section className="welcome welcome--step">
@@ -61,9 +59,9 @@ export default function OnboardLooks() {
         <OnboardingFoot
           step={4}
           stepLabel={stepLabel}
-          nextLabel={copy.next}
+          nextLabel={t('onboard.next')}
           nextTo="/inscription"
-          signInLabel={copy.signIn}
+          signInLabel={t('onboard.signIn')}
         />
       </div>
     </section>

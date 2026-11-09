@@ -1,10 +1,9 @@
 import { errorText } from '../lib/errors.ts'
-import { itemText as t } from '../lib/itemCatalog.ts'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.ts'
-import { getCopy } from '../i18n/copy.ts'
+import { t } from 'i18next'
 import cuteIcon from '../images/icons/cute_icon.svg'
 import passwordIcon from '../images/icons/password_icon.svg'
 import profilIcon from '../images/icons/profil_icon.svg'
@@ -15,7 +14,6 @@ export default function LoginPage() {
   const from = (location.state as { from?: unknown } | null)?.from
   const destination =
     typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/profils'
-  const copy = getCopy()
   const [child, setChild] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,8 +43,8 @@ export default function LoginPage() {
 
   return (
     <div className="login">
-      <h1 className="login__title">{copy.login.title}</h1>
-      <p className="login__subtitle">{copy.login.subtitle}</p>
+      <h1 className="login__title">{t('login.title')}</h1>
+      <p className="login__subtitle">{t('login.subtitle')}</p>
       <img src={cuteIcon} alt="" className="login__mascot" />
 
       <div className="family-actions">
@@ -84,7 +82,7 @@ export default function LoginPage() {
           <div className="pill-field">
             <img src={profilIcon} alt="" className="pill-field__icon" />
             <label className="sr-only" htmlFor="login-email">
-              {child ? t('Nom d’utilisateur enfant', 'Child username') : copy.login.emailLabel}
+              {child ? t('childUsernameLabel') : t('login.emailLabel')}
             </label>
             <input
               id="login-email"
@@ -93,8 +91,8 @@ export default function LoginPage() {
               autoComplete={child ? 'username' : 'email'}
               placeholder={
                 child
-                  ? t('Nom donné par ton parent', 'Username given by your parent')
-                  : copy.login.emailPlaceholder
+                  ? t('usernameGivenByYourParent')
+                  : t('login.emailPlaceholder')
               }
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -107,14 +105,14 @@ export default function LoginPage() {
           <div className="pill-field">
             <img src={passwordIcon} alt="" className="pill-field__icon" />
             <label className="sr-only" htmlFor="login-password">
-              {copy.login.passwordLabel}
+              {t('login.passwordLabel')}
             </label>
             <input
               id="login-password"
               className="pill-field__input"
               type="password"
               autoComplete="current-password"
-              placeholder={copy.login.passwordPlaceholder}
+              placeholder={t('login.passwordPlaceholder')}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
@@ -129,9 +127,9 @@ export default function LoginPage() {
               checked={rememberMe}
               onChange={(event) => setRememberMe(event.target.checked)}
             />
-            {copy.login.rememberMe}
+            {t('login.rememberMe')}
           </label>
-          <span className="login__forgot">{copy.login.forgotPassword}</span>
+          <span className="login__forgot">{t('login.forgotPassword')}</span>
         </div>
 
         <button
@@ -139,14 +137,14 @@ export default function LoginPage() {
           className="btn btn-primary login__submit"
           disabled={loggingIn || status === 'loading'}
         >
-          {loggingIn ? 'Connexion…' : copy.login.submit}
+          {loggingIn ? 'Connexion…' : t('login.submit')}
         </button>
       </form>
 
-      <p className="sr-only">{copy.childSignInNotice}</p>
+      <p className="sr-only">{t('login.childSignInNotice')}</p>
 
       <p className="login__switch">
-        {copy.login.switchPrompt} <Link to="/inscription">{copy.login.switchLink}</Link>
+        {t('login.switchPrompt')} <Link to="/inscription">{t('login.switchLink')}</Link>
       </p>
     </div>
   )
