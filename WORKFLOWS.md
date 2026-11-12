@@ -1,5 +1,10 @@
 # Penderie — User workflows
 
+The implemented November family journeys are specified in
+[CHILD_ACCOUNTS_DESIGN.md](./CHILD_ACCOUNTS_DESIGN.md). Child credentials, explicit
+mother/father responsibility, item audiences, repeated rooms and Notifications
+now supersede the older PIN-only implementation notes.
+
 Use this document for the intended user journeys. [PRODUCT_SPEC.md](./PRODUCT_SPEC.md) is the source of truth for product decisions, domain boundaries, privacy, and implementation gaps.
 
 ## 1. First visit and adult registration
@@ -26,14 +31,45 @@ For registration, do not describe an “I am 18+” checkbox as age verification
 
 ### Parent adds a child
 
-1. An authenticated adult opens **Settings → Family and profiles → Add child**.
-2. The adult gives the child a display name and creates/activates restricted child access.
-3. The parent authorizes the child's own device with a high-entropy, short-lived, one-time setup link/code. The child sets a username/password; a child email address is not required for the first version.
-4. The child signs in and receives a child-scoped session. On their own device they can add and manage their own items within the permissions described in section 3.
-5. The parent can view and manage the child's inventory, reset the child's credentials, revoke sessions, disable access, and archive/remove the child's items.
+1. Open **Profil → Famille et profils → Comptes enfants** (`/foyer/enfants`).
+2. Create a child or explicitly activate an eligible existing profile. Enter the
+   name, age 12–17, child username, initial long password and mother/father role.
+3. Give the child the username/password. They choose **Connexion enfant** on the
+   login page, change the initial password within 24 hours and sign in again.
+4. Their session can manage only their own belongings and private collections,
+   plus view objects deliberately shared with them without editing others' data.
+5. The responsible parent can reset/suspend access and manage that child's items.
+   Invite the other mother/father by their verified account username; they accept
+   in Notifications before receiving access. General adult invitation below is a
+   separate, still-pending workflow.
 
-Do not use a household slug plus a 4–6 digit PIN as the child's only internet sign-in. A short PIN may be an optional quick unlock on a trusted parent device; it must not grant adult permissions or replace a child account session on another device.
-The current app supports only this trusted-device profile unlock: the adult must already be signed in, choose a profile, and enter its optional PIN. The former public household-code/profile-list sign-in is intentionally unavailable. Children cannot yet sign in on a separate device; do not treat the current profile screen as a child account.
+### Rooms and object visibility
+
+1. Open **Foyer → Ajouter une pièce**. Choose a type and a distinct name. Repeat
+   for every bedroom, bathroom, garage or other room. Existing rooms can be renamed.
+2. Mark a room common or assign the profiles using it. Siblings may share a room.
+   Storage inherits room access; room assignment never reveals other people's items.
+3. On an object, open **Visibilité et partage**. Choose Only me, selected household
+   people, or the reviewed current household. New objects default to Only me.
+4. Adult owners/parents approve the safe preview explicitly. A child sends a parent
+   approval request, even for siblings. Nothing new is visible while pending.
+5. Parents review the exact fields/photos and named recipients in Notifications,
+   then approve or decline. Reading a notification does not approve it. Source
+   edits require a new review; owners/children can withdraw visibility immediately.
+6. A recipient sees a read-only representation; notes, memories, QR and precise
+   room/storage paths stay hidden. Room-access changes preserve existing items and
+   hide restricted paths from child responses.
+
+### Private child collections and approved contacts
+
+1. In **Mon espace** (`/enfant`), create a private collection from the child's own items.
+2. Request a contact by known child username, or mark a named adult as a relative.
+   The contact accepts; each child side also needs their responsible parent's approval.
+3. Choose an item/collection and approved contacts, inspect the exact preview and
+   request approval. Parents decide in Notifications. Adult relatives see approved
+   snapshots under **Partages familiaux**, without parental management permissions.
+4. Removing a contact or withdrawing publication blocks subsequent data and photo
+   requests. Re-adding a contact never restores old shares automatically.
 
 ### Parent invites another adult
 
@@ -50,7 +86,7 @@ Never ask the first adult to set or know another adult's password. The current �
 2. The adult may also send a friend request. Sending the request follows the recipient, and the recipient sees the pending request without either account's email being disclosed.
 3. The recipient can accept to become mutual friends or decline. Declining the request does not remove the sender as a follower.
 4. Either person can unfollow. Blocking prevents future follows and friend requests.
-5. Following or friendship alone does not show items, profiles, collections, places, or storage locations. Sharing remains a separate, explicit, scoped action. Child profiles cannot follow or send/accept friend requests.
+5. Following or friendship alone does not show items, profiles, collections, places, or storage locations. Sharing remains a separate, explicit, scoped action. Child profiles use their separate parent-approved contact workflow and cannot manage adult follows/friend requests.
 6. Ordinary follow and friend-request use must not hit an arbitrary low hourly quota. Duplicate actions should be safe, invalid lookups should not consume new-relationship allowance, and any targeted anti-abuse delay must explain when the action can be retried.
 
 The app now implements direct follow/unfollow and follower/following lists alongside friend requests. Account search/discovery and blocking/reporting remain to be implemented. Apply the latest database migration before testing follows. See [FRIENDS_AND_FOLLOWERS.md](./FRIENDS_AND_FOLLOWERS.md) for the observed problems and acceptance checks.
@@ -60,7 +96,7 @@ The app now implements direct follow/unfollow and follower/following lists along
 - Adults sign in with their own verified account. If multiple spaces are supported later, choose a space after sign-in.
 - A child signs in with their parent-authorized child credential and receives a restricted session. Child sessions must not be implemented as an adult session with only a different frontend screen.
 - An adult may switch the active owner profile when adding an item. A child may act only as their own profile.
-- A parent can manage all child inventory in their space. A child may view/add/edit their own permitted items, but cannot view siblings' or adults' private items, change family/security settings, manage access, or share/sell/lend unless a parent-enabled feature explicitly allows it.
+- A responsible mother/father can manage their own child's inventory. A child may view/add/edit their own permitted items and read explicitly approved shared objects. They cannot edit other people's objects, change family/security settings, sell or lend. Expansion of visibility requires parent approval.
 - Every list, detail, create, update, delete, photo, QR, and action endpoint must enforce the actor's permissions server-side. Test both allowed and denied access across profiles and spaces.
 - Signing out revokes the current session. Parents need a way to revoke a child's other sessions and reset the child's access.
 
@@ -145,7 +181,7 @@ An item may have many closed historical loans but at most one open loan. Do not 
 
 ## 9. Share, sell, give away, and archive
 
-- Only a signed-in adult with verified email and authority over the resource can create or revoke a share. A child cannot share/publish in v1; a parent must explicitly approve external sharing of a child's item or look.
+- Only a signed-in adult with verified email and authority over the resource can create or revoke a share. A child can request sharing of an item/collection; a responsible parent must approve the exact preview and recipients first.
 - For each share link, let the owner choose: **anyone with this unguessable link can view read-only without signing in**, or **a signed-in account with verified email is required**. Anyone-with-link is a forwardable bearer credential, not proof of who the viewer is.
 - Adult users may deliberately publish a look for anonymous viewing. Show only the selected look representation; do not grant access to the underlying item or its private fields. Child looks require explicit parent approval and default to private.
 - Private is the default. Sharing must be an explicit, revocable action scoped to selected items or a collection.
@@ -164,15 +200,15 @@ This describes the repository snapshot, not a claim of production readiness:
 | Area | Current state / gap |
 | --- | --- |
 | Adult registration | Unique username, self-declared birth date with an 18+ registration gate, pending email registration, single-use confirmation, rate-limited resend, and automatic private-space setup are implemented. Email remains the login identifier and the birth date is not returned by auth APIs. This does not verify age. Delivery uses Mailpit locally or a configured Symfony mail transport; a verified production sender/domain is still needed before real delivery. |
-| Child access | Profile PIN login exists with a 4–6 digit PIN and IP-based throttling. It is not the intended secure own-device credential flow. Public household/profile discovery and rate limits do not replace account-level security. |
-| Authorization | Item endpoints are household-scoped, while item ownership is stored on a profile. Current list/update/delete paths do not consistently enforce child-to-own-profile access; fix and test this before describing child access as secure. |
+| Child access | Separate username/password child principal, parent setup/reset/disable, first-login password change and explicit parent links are implemented. PIN remains a trusted-device unlock only. |
+| Authorization | Item, search, detail, QR, photo and write paths check ownership, explicit parent authority or approved read-only audience. Child room restrictions are checked on reads and location writes. |
 | Permission matrix | A pure resolver and tests exist, but tests currently allow a stranger/link holder with a COMMENT grant to comment and apply PERSONAL as an absolute veto. Both conflict with the agreed verified-comment and parent/guardian-management rules; see [PERMISSIONS.md](./PERMISSIONS.md). |
 | Item model and locations | Optional type/category and room/nested storage assignment are wired through item persistence, household-scoped APIs, forms, inventory display, and the Lieux manager. The hierarchy migration is applied to the current local development database; existing deployments must run pending migrations before using these endpoints. |
 | Scan capture | Opening the scanner requests the in-app camera automatically. A selected T-shirt/trousers/skirt/object hint updates the visual framing guide; gallery selection is available while the camera preview is active. This guide is not live object detection and requires browser camera permission on HTTPS or localhost. |
 | Scan provider/errors | Provider errors and temporary rate limits remain explicit; photos can be retried or used for manual entry. AI assistance is optional and no paid provider is required for item entry. The user reviews all suggestions before saving. |
 | Places and batch scan | Place → room → nested storage is implemented as an optional single-item location workflow. Batch scan remains future work. |
 | Email verification and 2FA | Email confirmation is implemented; adult 2FA and its recovery workflow are not. |
-| Loans, user-facing sharing, sale, outfits | Future work unless a complete persistence/API/UI/permission flow is added. |
+| Loans, sharing, sale, outfits | Existing adult workflows remain. Child private collections, approved contacts, approval inbox and limited revocable item/collection publications are implemented; child sale/lending/public publication/DMs are unavailable. |
 
 ## 11. Recommended build order
 

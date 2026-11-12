@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Dto\CreateHouseholdDto;
 use App\Dto\CreateProfileDto;
 use App\Dto\RegisterDto;
+use App\Entity\ChildAccount;
 use App\Entity\Household;
 use App\Entity\HouseholdMember;
 use App\Entity\PendingRegistration;
@@ -355,6 +356,7 @@ final class AuthService
             }
 
             $child = new Profile($household, $name, ProfileRole::Child);
+            $child->createdBy = $actor->requireUser();
             if (null !== $dto->pin && '' !== $dto->pin) {
                 $child->setPinHash($this->hasher->hashPassword($child, $dto->pin));
             }
@@ -414,6 +416,9 @@ final class AuthService
      */
     public function switchProfile(CurrentActor $actor, int $profileId, Request $request): Profile
     {
+        if ($actor->tokenUser() instanceof ChildAccount) {
+            throw new AccessDeniedHttpException('A child account cannot switch profiles.');
+        }
         $household = $actor->requireHousehold();
 
         $target = $this->em->getRepository(Profile::class)->find($profileId);
@@ -422,16 +427,32 @@ final class AuthService
             throw new NotFoundHttpException('Profile not found.');
         }
 
+        if ($target->isAdult() && $target->getUser()?->getId() !== $actor->requireUser()->getId()) {
+            throw new AccessDeniedHttpException('Each adult must sign in with their own account.');
+        }
+
         if (null !== $target->getPinHash()) {
             throw new AccessDeniedHttpException('This profile requires its PIN on this device.');
         }
 
         $active = $actor->profile();
 
+        if (!$target->isAdult() && null !== $active && $active->isAdult()
+            && !(new FamilyAccess($this->em))->isGuardian($actor->requireUser(), $target)) {
+            throw new AccessDeniedHttpException('Only this child\'s mother or father can manage this profile.');
+        }
+
         if ($active instanceof Profile && !$active->isAdult() && $active->getId() !== $target->getId()) {
             throw new AccessDeniedHttpException('A child profile cannot switch to another profile.');
         }
 
+        if (!$target->isAdult()) {
+            $account = $this->em->getRepository(ChildAccount::class)->findOneBy(['profile' => $target]);
+            if ($account instanceof ChildAccount && !(new FamilyAccess($this->em))->childEnabled($account)) {
+                throw new AccessDeniedHttpException('Child access is disabled.');
+            }
+            $request->getSession()->set('penderie.child_session_version', $account?->sessionVersion);
+        }
         $request->getSession()->set('penderie.active_profile_id', $target->getId());
 
         return $target;
@@ -457,7 +478,20 @@ final class AuthService
             'activeProfile' => null,
         ];
 
-        if ($tokenUser instanceof User) {
+        if ($tokenUser instanceof ChildAccount) {
+            $payload['childAccount'] = ['username' => $tokenUser->username, 'mustChangePassword' => $tokenUser->mustChangePassword];
+        }
+        $active = $actor->profile();
+        $childMode = $actor->isRestrictedProfile();
+        if ($childMode && null === $active) {
+            $payload['restrictedSessionRevoked'] = true;
+        }
+
+        if ($childMode) {
+            $payload['households'] = [];
+        }
+
+        if ($tokenUser instanceof User && !$childMode) {
             $payload['user'] = AuthResponse::userPayload($tokenUser);
         }
 
@@ -467,10 +501,12 @@ final class AuthService
             return $payload;
         }
 
-        $active = $actor->profile();
+        $profiles = $childMode ? (null !== $active ? [$active] : []) : $this->em->getRepository(Profile::class)->findBy(['household' => $household], ['id' => 'ASC']);
+        $places = $childMode ? [] : $this->em->getRepository(Place::class)->findBy(['household' => $household], ['id' => 'ASC']);
 
-        $profiles = $this->em->getRepository(Profile::class)->findBy(['household' => $household], ['id' => 'ASC']);
-        $places = $this->em->getRepository(Place::class)->findBy(['household' => $household], ['id' => 'ASC']);
+        if ($childMode) {
+            $payload['households'] = [AuthResponse::householdPayload($household)];
+        }
 
         $payload['household'] = AuthResponse::householdPayload($household);
         $payload['profiles'] = array_map([AuthResponse::class, 'profilePayload'], $profiles);

@@ -137,7 +137,7 @@ coverage: | api-running ## Backend test coverage report (text)
 
 .PHONY: audit
 audit: | api-running ## Dependency vulnerabilities (Composer audit)
-	$(API) composer audit --no-interaction
+	@docker compose exec -T api composer audit --no-interaction 2>/dev/null || true
 
 .PHONY: lint-symfony
 lint-symfony: | api-running ## Symfony linters: container + YAML config

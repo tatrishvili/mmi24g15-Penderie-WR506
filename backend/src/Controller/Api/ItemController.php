@@ -45,7 +45,7 @@ final class ItemController extends AbstractController
         $result = $this->repository->searchInHousehold($household, $query, $status, $page, $perPage, $this->actor, $request->query->has('roomId') ? $request->query->getInt('roomId') : null);
 
         return new JsonResponse([
-            'items' => array_map([ItemService::class, 'itemPayload'], $result['items']),
+            'items' => array_map(fn (Item $item): array => ItemService::payloadFor($this->actor, $item), $result['items']),
             'total' => $result['total'],
             'page' => $page,
             'perPage' => $perPage,
@@ -71,7 +71,7 @@ final class ItemController extends AbstractController
             throw new NotFoundHttpException('Item not found.');
         }
 
-        return new JsonResponse(['item' => ItemService::itemPayload($item)]);
+        return new JsonResponse(['item' => ItemService::payloadFor($this->actor, $item)]);
     }
 
     #[Route('/{id}', name: 'api_items_show', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -79,19 +79,21 @@ final class ItemController extends AbstractController
     {
         $item = $this->items->findHouseholdItem($this->actor, $id);
 
-        return new JsonResponse(['item' => ItemService::itemPayload($item)]);
+        return new JsonResponse(['item' => ItemService::payloadFor($this->actor, $item)]);
     }
 
     #[Route('/{id}', name: 'api_items_update', methods: ['PATCH'], requirements: ['id' => '\d+'])]
     public function update(int $id, Request $request): JsonResponse
     {
-        $item = $this->items->findHouseholdItem($this->actor, $id);
+        $item = $this->items->findManagedHouseholdItem($this->actor, $id);
         $body = $this->jsonBody($request);
         if (false === $this->actor->profile()?->isAdult() && isset($body['status']) && 'archive' !== $body['status']) {
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Cette action est réservée aux adultes.');
         }
 
-        return new JsonResponse($this->items->update($item, UpdateItemDto::fromArray($body)));
+        $this->items->update($item, UpdateItemDto::fromArray($body), $this->actor);
+
+        return new JsonResponse(['item' => ItemService::payloadFor($this->actor, $item)]);
     }
 
     #[Route('/{id}', name: 'api_items_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
@@ -100,7 +102,7 @@ final class ItemController extends AbstractController
         if (false === $this->actor->profile()?->isAdult()) {
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('La suppression définitive est réservée aux adultes.');
         }
-        $item = $this->items->findHouseholdItem($this->actor, $id);
+        $item = $this->items->findManagedHouseholdItem($this->actor, $id);
         $this->items->delete($item);
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -109,7 +111,7 @@ final class ItemController extends AbstractController
     #[Route('/{id}/photos', name: 'api_items_photos_add', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function addPhotos(int $id, Request $request): JsonResponse
     {
-        $item = $this->items->findHouseholdItem($this->actor, $id);
+        $item = $this->items->findManagedHouseholdItem($this->actor, $id);
         $body = $this->jsonBody($request);
 
         if (!\is_array($body['photos'] ?? null)) {
@@ -122,7 +124,7 @@ final class ItemController extends AbstractController
     #[Route('/{id}/photos/{photoId}', name: 'api_items_photos_delete', methods: ['DELETE'], requirements: ['id' => '\d+', 'photoId' => '\d+'])]
     public function deletePhoto(int $id, int $photoId): JsonResponse
     {
-        $item = $this->items->findHouseholdItem($this->actor, $id);
+        $item = $this->items->findManagedHouseholdItem($this->actor, $id);
         $this->items->removePhoto($item, $photoId);
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -160,7 +162,7 @@ final class ItemController extends AbstractController
         return new Response($content, Response::HTTP_OK, [
             'Content-Type' => $mime,
             'Content-Length' => (string) \strlen($content),
-            'Cache-Control' => 'private, max-age=86400',
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller\Api;
 
 use App\Entity\PendingRegistration;
+use App\Entity\Profile;
 use App\Tests\ApiTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -408,13 +409,13 @@ final class AuthControllerTest extends ApiTestCase
         $me = self::decoded(self::api($parent, 'GET', '/api/auth/me'));
         $this->assertSame($childProfile['id'], $me['activeProfileId']);
         $this->assertSame('Léo', $me['activeProfile']['name']);
-        $this->assertSame('camille@example.com', $me['user']['email']);
+        $this->assertArrayNotHasKey('user', $me);
 
         $wrongPin = self::api($parent, 'POST', '/api/auth/profile-pin', [
             'profileId' => $childProfile['id'],
             'pin' => '9999',
         ]);
-        $this->assertSame(Response::HTTP_UNAUTHORIZED, $wrongPin->getStatusCode());
+        $this->assertSame(Response::HTTP_FORBIDDEN, $wrongPin->getStatusCode());
     }
 
     public function testParentCanSwitchProfilesWithoutAnOptionalPin(): void
@@ -435,6 +436,63 @@ final class AuthControllerTest extends ApiTestCase
 
         $me = self::api($parent, 'GET', '/api/auth/me');
         $this->assertSame($childId, self::decoded($me)['activeProfileId']);
+    }
+
+    public function testSelectedChildCannotRecoverAdultAuthorityOrReadFamilyAccountData(): void
+    {
+        $client = static::createClient();
+        $home = self::registerHousehold($client);
+        $child = self::decoded(self::api($client, 'POST', '/api/auth/profiles', [
+            'role' => 'child', 'name' => 'Léo',
+        ]))['profile']['id'];
+        self::assertSame(200, self::api($client, 'POST', '/api/auth/profiles/'.$child.'/switch')->getStatusCode());
+
+        $me = self::decoded(self::api($client, 'GET', '/api/auth/me'));
+        self::assertArrayNotHasKey('user', $me);
+        self::assertSame([$child], array_column($me['profiles'], 'id'));
+        self::assertSame([], $me['places']);
+
+        foreach ([
+            ['POST', '/api/auth/households', ['householdName' => 'Escape', 'firstName' => 'Adult']],
+            ['POST', '/api/auth/households/'.$home['household']['id'].'/select', []],
+            ['POST', '/api/auth/profiles', ['role' => 'child', 'name' => 'Sibling']],
+            ['POST', '/api/auth/profile-pin', ['profileId' => $home['profile']['id'], 'pin' => '1234']],
+            ['GET', '/api/friends', []],
+            ['PUT', '/api/auth/username', ['username' => 'escape']],
+        ] as [$method, $uri, $body]) {
+            self::assertSame(403, self::api($client, $method, $uri, $body)->getStatusCode(), $uri);
+        }
+
+        self::assertSame(200, self::api($client, 'POST', '/api/auth/login', [
+            'email' => 'camille@example.com', 'password' => 'secret123',
+        ])->getStatusCode());
+        self::assertSame($home['profile']['id'], self::decoded(self::api($client, 'GET', '/api/auth/me'))['activeProfileId']);
+    }
+
+    public function testRemovedSelectedChildDoesNotRestoreAdultDataOrInventoryAccess(): void
+    {
+        $client = static::createClient();
+        self::registerHousehold($client);
+        $childId = self::decoded(self::api($client, 'POST', '/api/auth/profiles', [
+            'role' => 'child', 'name' => 'Léo',
+        ]))['profile']['id'];
+        self::assertSame(200, self::api($client, 'POST', '/api/auth/profiles/'.$childId.'/switch')->getStatusCode());
+
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $child = $em->getRepository(Profile::class)->find($childId);
+        self::assertNotNull($child);
+        $em->remove($child);
+        $em->flush();
+
+        $me = self::decoded(self::api($client, 'GET', '/api/auth/me'));
+        self::assertArrayNotHasKey('user', $me);
+        self::assertSame([], $me['households']);
+        self::assertSame([], $me['profiles']);
+        self::assertSame([], $me['places']);
+        self::assertSame(401, self::api($client, 'GET', '/api/items')->getStatusCode());
+        self::assertSame(403, self::api($client, 'POST', '/api/auth/households', [
+            'householdName' => 'Escape', 'firstName' => 'Adult',
+        ])->getStatusCode());
     }
 
     public function testSwitchToForeignProfileReturns404(): void

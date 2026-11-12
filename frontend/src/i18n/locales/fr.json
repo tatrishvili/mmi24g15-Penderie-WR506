@@ -1,0 +1,313 @@
+{
+  "language": {
+    "label": "Langue"
+  },
+  "common": {
+    "notifications": "Notifications"
+  },
+  "nav": {
+    "main": "Navigation principale",
+    "feed": "Fil",
+    "wardrobe": "Dressing",
+    "scan": "Scanner",
+    "home": "Foyer",
+    "profile": "Profil",
+    "rooms": "Pièces",
+    "notifications": "Notifications",
+    "mySpace": "Mon espace"
+  },
+  "roles": {
+    "parent": "Parent",
+    "partner": "Conjoint",
+    "child": "Enfant"
+  },
+  "home": {
+    "titleLines": [
+      "Bienvenue",
+      "chez Penderie"
+    ],
+    "tagline": "Ajoutez tous vos vêtements, accessoires et objets. Scannez, organisez, et retrouvez tout en un coup d’œil.",
+    "next": "Suivant",
+    "signIn": "Se connecter",
+    "stepLabel": "Étape 1 sur 4"
+  },
+  "login": {
+    "title": "Se connecter",
+    "subtitle": "Ravi de vous revoir !",
+    "adultSignIn": "Connexion adulte",
+    "childSignIn": "Connexion enfant",
+    "childUsernameLabel": "Nom d’utilisateur enfant",
+    "childUsernamePlaceholder": "Nom donné par votre parent",
+    "emailLabel": "E-mail",
+    "passwordLabel": "Mot de passe",
+    "emailPlaceholder": "E-mail",
+    "passwordPlaceholder": "Mot de passe",
+    "rememberMe": "Se souvenir de moi",
+    "forgotPassword": "Mot de passe oublié ?",
+    "submit": "Se connecter",
+    "submitting": "Connexion…",
+    "switchPrompt": "Vous n’avez pas de compte ?",
+    "switchLink": "S’inscrire",
+    "childSignInNotice": "Les enfants ne peuvent pas encore se connecter depuis un autre appareil. Un parent peut ouvrir leur profil sur un appareil déjà connecté."
+  },
+  "register": {
+    "titleLines": [
+      "Créez votre",
+      "compte"
+    ],
+    "intro": "Créez votre espace Penderie et ajoutez les membres de votre famille en quelques clics",
+    "usernameLabel": "Nom d’utilisateur",
+    "emailLabel": "E-mail",
+    "birthDateLabel": "Date de naissance",
+    "passwordLabel": "Mot de passe (8 caractères minimum)",
+    "usernamePlaceholder": "Nom d’utilisateur",
+    "emailPlaceholder": "Mail",
+    "birthDatePlaceholder": "Date de naissance",
+    "passwordPlaceholder": "Mot de passe",
+    "birthDateHint": "Cette date est déclarative, pas une vérification officielle. L’inscription adulte est réservée aux personnes de 18 ans ou plus ; les mineurs doivent utiliser un profil créé par un parent.",
+    "termsLead": "En créant le compte vous acceptez les",
+    "termsLink": "conditions utilisateurs",
+    "submit": "S'inscrire",
+    "submitting": "Inscription en cours…",
+    "switchPrompt": "Vous avez déjà un compte ?",
+    "switchLink": "Se connecter",
+    "unexpectedError": "Une erreur inattendue est survenue."
+  },
+  "verify": {
+    "titleLines": [
+      "Vérifiez votre",
+      "e-mail"
+    ],
+    "sentLead": "Un e-mail de confirmation a été envoyé à :",
+    "sentInstruction": "Cliquez sur le lien reçu pour activer votre compte.",
+    "tokenNotice": "Confirmez cette adresse pour créer votre compte. Votre mot de passe n’est jamais envoyé par e-mail.",
+    "noTokenLead": "Le lien ne contient pas de jeton de confirmation. Saisissez votre adresse pour demander un nouveau lien.",
+    "expiredError": "Ce lien est invalide ou a expiré. Vous pouvez demander un nouveau lien ci-dessous.",
+    "genericError": "Impossible de confirmer votre adresse pour le moment. Réessayez.",
+    "emailLabel": "E-mail",
+    "confirmButton": "Confirmer et créer mon compte",
+    "confirmingButton": "Confirmation en cours…",
+    "resendButton": "Renvoyer le lien",
+    "resendingButton": "Envoi en cours…",
+    "resendSuccess": "Si une inscription en attente existe pour cette adresse, un nouveau lien sera envoyé. Attendez au moins une minute entre deux demandes.",
+    "resendFailure": "Impossible de traiter la demande pour le moment. Réessayez plus tard.",
+    "switchPrompt": "Vous avez déjà un compte ?",
+    "switchLink": "Se connecter",
+    "backToLogin": "Retour à la connexion"
+  },
+  "account": {
+    "title": "Mon compte",
+    "ready": "Votre compte est prêt.",
+    "householdLabel": "Foyer",
+    "codeLabel": "code",
+    "userSection": "Mon compte utilisateur",
+    "usernameTitle": "Nom d’utilisateur",
+    "usernameDescription": "Votre ancien compte n’a pas encore de nom d’utilisateur. Choisissez-en un pour que vos amis puissent vous trouver. Vous ne pourrez plus le modifier.",
+    "usernameLabel": "Nom d’utilisateur",
+    "usernamePlaceholder": "Ex. penderie_test",
+    "usernameSave": "Enregistrer",
+    "usernameSaving": "Enregistrement…",
+    "usernameSaved": "Nom d’utilisateur enregistré.",
+    "usernameTaken": "Ce nom d’utilisateur est déjà utilisé. Choisissez-en un autre.",
+    "usernameError": "Impossible d’enregistrer le nom d’utilisateur. Réessayez.",
+    "emailSection": "Mon e-mail",
+    "connectionTitle": "Connexion",
+    "emailLabel": "E-mail",
+    "activeProfileSection": "Mon profil actif",
+    "activeProfileTitle": "Profil actif",
+    "noActiveProfile": "Aucun profil actif pour le moment.",
+    "householdSection": "Mon foyer",
+    "householdTitle": "Foyer",
+    "noHousehold": "Pas encore de foyer.",
+    "createHousehold": "Créez votre foyer",
+    "householdStart": "pour commencer.",
+    "householdMainPlace": "lieu principal : {{place}}",
+    "profilesCount_one": "{{count}} profil",
+    "profilesCount_other": "{{count}} profils",
+    "placesCount_one": "{{count}} lieu",
+    "placesCount_other": "{{count}} lieux",
+    "membersSection": "Membres du foyer",
+    "membersTitle": "Membres",
+    "pinSuffix": " · code PIN",
+    "scanAction": "Scanner un article",
+    "wardrobeAction": "Mon dressing",
+    "profilesAction": "Gérer les profils",
+    "logoutAction": "Se déconnecter",
+    "languageTitle": "Langue",
+    "languageDescription": "Choisissez la langue de l’application. Votre choix est enregistré sur cet appareil."
+  },
+  "itemTypes": {
+    "pull": "Pull",
+    "tshirt": "T-shirt",
+    "chemise": "Chemise",
+    "blouse": "Blouse",
+    "polo": "Polo shirt",
+    "debardeur": "Débardeur",
+    "sweat": "Sweat",
+    "gilet": "Gilet",
+    "veste": "Veste",
+    "manteau": "Manteau",
+    "pantalon": "Pantalon",
+    "jean": "Jean",
+    "short": "Short",
+    "jupe": "Jupe",
+    "robe": "Robe",
+    "combinaison": "Combinaison",
+    "costume": "Costume",
+    "sous_vetement": "Sous-vêtement",
+    "chaussettes": "Chaussettes",
+    "pyjama": "Pyjama",
+    "maillot": "Maillot de bain",
+    "sport": "Tenue de sport",
+    "chaussure": "Chaussures",
+    "sac": "Sac",
+    "ceinture": "Ceinture",
+    "chapeau": "Chapeau / bonnet",
+    "écharpe": "Écharpe",
+    "gants": "Gants",
+    "bijou": "Bijou / montre",
+    "livre": "Livre",
+    "vinyle": "Vinyle",
+    "cd": "CD",
+    "decoration": "Décoration",
+    "electronique": "Électronique",
+    "meuble": "Meuble",
+    "jouet": "Jouet",
+    "autre": "Autre objet"
+  },
+  "friends": {
+    "title": "Amis",
+    "tagline": "Votre cercle de confiance",
+    "followers": "Abonnés",
+    "following": "Abonnements",
+    "addTitle": "Ajouter un ami",
+    "addDescription": "Saisissez son nom d’utilisateur (visible dans « Mon compte », pas son e-mail). Vous pouvez le suivre directement ou lui envoyer une demande d’amitié : il sera suivi tout de suite, et vous deviendrez amis s’il accepte. Son adresse e-mail doit être confirmée.",
+    "usernameLabel": "Nom d’utilisateur",
+    "seeTheFeed": "Voir le fil d’actualité",
+    "usernamePlaceholder": "Ex. camille_92",
+    "send": "Envoyer la demande",
+    "follow": "Suivre",
+    "followed": "Vous suivez maintenant ce compte.",
+    "noFollowers": "Aucun abonné pour le moment.",
+    "noFollowing": "Vous ne suivez personne pour le moment.",
+    "unfollow": "Ne plus suivre",
+    "sending": "Envoi…",
+    "sent": "Demande envoyée.",
+    "incoming": "Demandes reçues",
+    "noIncoming": "Aucune demande reçue pour le moment.",
+    "outgoing": "Demandes envoyées",
+    "noOutgoing": "Aucune demande en attente.",
+    "mine": "Mes amis",
+    "noFriends": "Vos amis apparaîtront ici après acceptation.",
+    "accept": "Accepter la demande",
+    "decline": "Refuser la demande",
+    "cancel": "Annuler la demande",
+    "remove": "Retirer cet ami",
+    "adultOnly": "Les demandes d’amitié sont réservées aux comptes adultes.",
+    "loading": "Chargement…",
+    "connections": "Mes relations",
+    "myProfile": "Mon profil",
+    "manage": "Gérer",
+    "requests": "Demandes",
+    "friendsLabel": "Amis"
+  },
+  "unexpectedError": "Une erreur inattendue est survenue.",
+  "profiles": {
+    "pinLabel": "Code PIN pour cet appareil (optionnel)",
+    "pinNote": "Ce code protège le changement de profil sur cet appareil. Il ne permet pas une connexion sur un autre appareil."
+  },
+  "errors": {
+    "notFound": "Aucun compte vérifié trouvé avec ce nom d’utilisateur. Vérifiez son orthographe et demandez à votre ami de confirmer son adresse e-mail.",
+    "conflict": "Cette demande ou relation existe déjà, ou n’est plus disponible.",
+    "forbidden": "Cette action est réservée aux comptes adultes vérifiés.",
+    "invalid": "Vérifiez le nom d’utilisateur saisi.",
+    "rateLimited": "Trop d’actions en peu de temps. Attendez un moment avant de réessayer."
+  },
+  "rooms": {
+    "addRoom": "Ajouter une pièce",
+    "chooseRoom": "Choisir une pièce",
+    "customOption": "Autre (nom personnalisé)",
+    "customNameLabel": "Nom personnalisé de la pièce",
+    "customNamePlaceholder": "Ex. Atelier couture",
+    "presets": [
+      "Dressing",
+      "Salon",
+      "Chambre",
+      "Cuisine",
+      "Salle de bain",
+      "Entrée",
+      "Bureau",
+      "Garage",
+      "Cave",
+      "Grenier",
+      "Buanderie"
+    ]
+  },
+  "onboard": {
+    "next": "Suivant",
+    "signIn": "Se connecter",
+    "organise": {
+      "titleLine": "Tout à sa place",
+      "introLines": [
+        "Retrouvez facilement chaque vêtement",
+        "et chaque objet grâce à un rangement organisé",
+        "par pièce, personne et emplacement."
+      ],
+      "tabs": [
+        "Pièces",
+        "Personnes",
+        "Emplacement"
+      ],
+      "rooms": [
+        "Dressing",
+        "Chambre",
+        "Bureau",
+        "Salon",
+        "Garage",
+        "Cuisine"
+      ],
+      "stepLabel": "Étape 2 sur 4"
+    },
+    "lend": {
+      "titleLines": [
+        "Prêtez vos affaires",
+        "sans jamais oublier"
+      ],
+      "itemName": "veste beige",
+      "status": "Prêtée",
+      "since": "Depuis le 12 septembre",
+      "borrower": "Sophie",
+      "chips": [
+        "Taille S",
+        "état parfait"
+      ],
+      "bodyLines": [
+        "Je sais toujours qui possède mes affaires.",
+        "Recevez les demandes de vos proches et gardez",
+        "toujours une trace de vos prêts."
+      ],
+      "timeline": [
+        "Demande reçue",
+        "Accepté",
+        "En prêt"
+      ],
+      "stepLabel": "Étape 3 sur 4"
+    },
+    "look": {
+      "titleLines": [
+        "Des looks",
+        "chaque jour"
+      ],
+      "bodyLines": [
+        "Penderie vous aide à créer des tenues adaptées",
+        "à votre style, à la météo et à vos envies."
+      ],
+      "temperature": "18°",
+      "today": "Aujourd’hui",
+      "like": "J’aime",
+      "skip": "Pas pour moi",
+      "caption": "Choisissez le style qui vous correspond le mieux",
+      "stepLabel": "Étape 4 sur 4"
+    }
+  }
+}

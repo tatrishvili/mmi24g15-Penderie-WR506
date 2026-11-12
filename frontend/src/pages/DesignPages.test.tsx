@@ -115,8 +115,8 @@ describe('Current Figma page families', () => {
   it.each([
     ['create', 'Créer mon foyer'],
     ['members', 'Qui habite ici ?'],
-    ['child', 'Ajouter un enfant'],
-    ['rooms', 'Ajouter les pièces'],
+    ['child', 'Comptes enfants'],
+    ['rooms', 'Pièces du foyer'],
     ['storage', 'Mes pièces et rangements'],
     ['overview', 'Maison Martin'],
     ['add-storage', 'Ajouter un rangement'],

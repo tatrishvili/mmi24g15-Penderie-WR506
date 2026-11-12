@@ -1,0 +1,313 @@
+{
+  "language": {
+    "label": "Language"
+  },
+  "common": {
+    "notifications": "Notifications"
+  },
+  "nav": {
+    "main": "Main navigation",
+    "feed": "Feed",
+    "wardrobe": "Wardrobe",
+    "scan": "Scan",
+    "home": "Home",
+    "profile": "Profile",
+    "rooms": "Rooms",
+    "notifications": "Notifications",
+    "mySpace": "My space"
+  },
+  "roles": {
+    "parent": "Parent",
+    "partner": "Partner",
+    "child": "Child"
+  },
+  "home": {
+    "titleLines": [
+      "Welcome to",
+      "Penderie"
+    ],
+    "tagline": "Add all your clothes, accessories and objects. Scan, organize, and find everything at a glance.",
+    "next": "Next",
+    "signIn": "Sign in",
+    "stepLabel": "Step 1 of 4"
+  },
+  "login": {
+    "title": "Sign in",
+    "subtitle": "Welcome back!",
+    "adultSignIn": "Adult sign-in",
+    "childSignIn": "Child sign-in",
+    "childUsernameLabel": "Child username",
+    "childUsernamePlaceholder": "Username given by your parent",
+    "emailLabel": "E-mail",
+    "passwordLabel": "Password",
+    "emailPlaceholder": "E-mail",
+    "passwordPlaceholder": "Password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "switchPrompt": "No account yet?",
+    "switchLink": "Sign up",
+    "childSignInNotice": "Children cannot sign in from another device yet. A parent can open their profile on an already signed-in device."
+  },
+  "register": {
+    "titleLines": [
+      "Create your",
+      "account"
+    ],
+    "intro": "Create your Penderie space and add your family members in a few clicks",
+    "usernameLabel": "Username",
+    "emailLabel": "E-mail",
+    "birthDateLabel": "Date of birth",
+    "passwordLabel": "Password (8 characters minimum)",
+    "usernamePlaceholder": "Username",
+    "emailPlaceholder": "Mail",
+    "birthDatePlaceholder": "Date of birth",
+    "passwordPlaceholder": "Password",
+    "birthDateHint": "This date is self-declared, not an official verification. Adult registration is for people aged 18 or over; minors must use a profile created by a parent.",
+    "termsLead": "By creating the account you accept the",
+    "termsLink": "terms of use",
+    "submit": "Sign up",
+    "submitting": "Signing up…",
+    "switchPrompt": "Already have an account?",
+    "switchLink": "Sign in",
+    "unexpectedError": "Something unexpected happened."
+  },
+  "verify": {
+    "titleLines": [
+      "Check your",
+      "e-mail"
+    ],
+    "sentLead": "A confirmation e-mail has been sent to:",
+    "sentInstruction": "Click the link we sent you to activate your account.",
+    "tokenNotice": "Confirm this address to create your account. Your password is never sent by e-mail.",
+    "noTokenLead": "This link contains no confirmation token. Enter your address to request a new link.",
+    "expiredError": "This link is invalid or has expired. You can request a new one below.",
+    "genericError": "We could not confirm your address right now. Try again.",
+    "emailLabel": "E-mail",
+    "confirmButton": "Confirm and create my account",
+    "confirmingButton": "Confirming…",
+    "resendButton": "Resend the link",
+    "resendingButton": "Sending…",
+    "resendSuccess": "If a pending registration exists for this address, a new link will be sent. Wait at least one minute between requests.",
+    "resendFailure": "We could not process your request right now. Try again later.",
+    "switchPrompt": "Already have an account?",
+    "switchLink": "Sign in",
+    "backToLogin": "Back to sign in"
+  },
+  "account": {
+    "title": "My account",
+    "ready": "Your account is ready.",
+    "householdLabel": "Household",
+    "codeLabel": "code",
+    "userSection": "My user account",
+    "usernameTitle": "Username",
+    "usernameDescription": "Your existing account does not have a username yet. Choose one so friends can find you. You will not be able to change it later.",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "e.g. penderie_test",
+    "usernameSave": "Save",
+    "usernameSaving": "Saving…",
+    "usernameSaved": "Username saved.",
+    "usernameTaken": "That username is already in use. Choose another one.",
+    "usernameError": "Could not save the username. Please try again.",
+    "emailSection": "My e-mail",
+    "connectionTitle": "Sign-in",
+    "emailLabel": "E-mail",
+    "activeProfileSection": "My active profile",
+    "activeProfileTitle": "Active profile",
+    "noActiveProfile": "No active profile right now.",
+    "householdSection": "My household",
+    "householdTitle": "Household",
+    "noHousehold": "No household yet.",
+    "createHousehold": "Create your household",
+    "householdStart": "to get started.",
+    "householdMainPlace": "main place: {{place}}",
+    "profilesCount_one": "{{count}} profile",
+    "profilesCount_other": "{{count}} profiles",
+    "placesCount_one": "{{count}} place",
+    "placesCount_other": "{{count}} places",
+    "membersSection": "Household members",
+    "membersTitle": "Members",
+    "pinSuffix": " · PIN code",
+    "scanAction": "Scan an item",
+    "wardrobeAction": "My wardrobe",
+    "profilesAction": "Manage profiles",
+    "logoutAction": "Sign out",
+    "languageTitle": "Language",
+    "languageDescription": "Choose the language of the app. Your choice is saved on this device."
+  },
+  "itemTypes": {
+    "pull": "Pull",
+    "tshirt": "T-shirt",
+    "chemise": "Shirt",
+    "blouse": "Blouse",
+    "polo": "Polo shirt",
+    "debardeur": "Tank top",
+    "sweat": "Sweatshirt",
+    "gilet": "Cardigan",
+    "veste": "Jacket",
+    "manteau": "Coat",
+    "pantalon": "Trousers",
+    "jean": "Jeans",
+    "short": "Shorts",
+    "jupe": "Skirt",
+    "robe": "Dress",
+    "combinaison": "Jumpsuit",
+    "costume": "Suit",
+    "sous_vetement": "Underwear",
+    "chaussettes": "Socks",
+    "pyjama": "Pyjamas",
+    "maillot": "Swimwear",
+    "sport": "Sportswear",
+    "chaussure": "Shoes",
+    "sac": "Bag",
+    "ceinture": "Belt",
+    "chapeau": "Hat",
+    "écharpe": "Scarf",
+    "gants": "Gloves",
+    "bijou": "Jewellery / watch",
+    "livre": "Book",
+    "vinyle": "Vinyl record",
+    "cd": "CD",
+    "decoration": "Decoration",
+    "electronique": "Electronics",
+    "meuble": "Furniture",
+    "jouet": "Toy",
+    "autre": "Other object"
+  },
+  "friends": {
+    "title": "Friends",
+    "tagline": "Your circle of trust",
+    "followers": "Followers",
+    "following": "Following",
+    "addTitle": "Add a friend",
+    "addDescription": "Enter their username (shown in My account, not their email). Follow them directly or send a friend request: the request follows them immediately, and you become friends if they accept. Their email must be verified.",
+    "usernameLabel": "Username",
+    "seeTheFeed": "See the feed",
+    "usernamePlaceholder": "e.g. camille_92",
+    "send": "Send request",
+    "follow": "Follow",
+    "followed": "You are now following this account.",
+    "noFollowers": "No followers yet.",
+    "noFollowing": "You are not following anyone yet.",
+    "unfollow": "Unfollow",
+    "sending": "Sending…",
+    "sent": "Request sent.",
+    "incoming": "Received requests",
+    "noIncoming": "No requests received yet.",
+    "outgoing": "Sent requests",
+    "noOutgoing": "No pending requests.",
+    "mine": "My friends",
+    "noFriends": "Friends will appear here after they accept.",
+    "accept": "Accept request",
+    "decline": "Decline request",
+    "cancel": "Cancel request",
+    "remove": "Remove friend",
+    "adultOnly": "Friend requests are for adult accounts only.",
+    "loading": "Loading…",
+    "connections": "My connections",
+    "myProfile": "My profile",
+    "manage": "Manage",
+    "requests": "Requests",
+    "friendsLabel": "Friends"
+  },
+  "unexpectedError": "Something unexpected happened.",
+  "profiles": {
+    "pinLabel": "PIN for this device (optional)",
+    "pinNote": "This PIN protects profile switching on this device. It cannot be used to sign in on another device."
+  },
+  "errors": {
+    "notFound": "No verified account was found with that username. Check the spelling and ask your friend to verify their email address.",
+    "conflict": "This request or relationship already exists, or is no longer available.",
+    "forbidden": "This action is for verified adult accounts only.",
+    "invalid": "Check the username you entered.",
+    "rateLimited": "Too many actions in a short time. Wait a little before trying again."
+  },
+  "rooms": {
+    "addRoom": "Add a room",
+    "chooseRoom": "Choose a room",
+    "customOption": "Other (custom name)",
+    "customNameLabel": "Custom room name",
+    "customNamePlaceholder": "e.g. Sewing room",
+    "presets": [
+      "Dressing room",
+      "Living room",
+      "Bedroom",
+      "Kitchen",
+      "Bathroom",
+      "Entryway",
+      "Office",
+      "Garage",
+      "Cellar",
+      "Attic",
+      "Laundry room"
+    ]
+  },
+  "onboard": {
+    "next": "Next",
+    "signIn": "Sign in",
+    "organise": {
+      "titleLine": "Everything in its place",
+      "introLines": [
+        "Find every garment and every object easily",
+        "thanks to storage organized by room,",
+        "person and place"
+      ],
+      "tabs": [
+        "Rooms",
+        "People",
+        "Places"
+      ],
+      "rooms": [
+        "Closet",
+        "Bedroom",
+        "Office",
+        "Living room",
+        "Garage",
+        "Kitchen"
+      ],
+      "stepLabel": "Step 2 of 4"
+    },
+    "lend": {
+      "titleLines": [
+        "Lend your things",
+        "without ever forgetting"
+      ],
+      "itemName": "beige jacket",
+      "status": "Lent",
+      "since": "Since 12 September",
+      "borrower": "Sophie",
+      "chips": [
+        "Size S",
+        "perfect condition"
+      ],
+      "bodyLines": [
+        "I always know who owns my things.",
+        "Receive requests from your loved ones and",
+        "always keep a record of your loans."
+      ],
+      "timeline": [
+        "Request received",
+        "Accepted",
+        "On loan"
+      ],
+      "stepLabel": "Step 3 of 4"
+    },
+    "look": {
+      "titleLines": [
+        "New looks",
+        "every day"
+      ],
+      "bodyLines": [
+        "Penderie helps you create outfits that match",
+        "your style, the weather and your mood."
+      ],
+      "temperature": "18°",
+      "today": "Today",
+      "like": "I like it",
+      "skip": "Not for me",
+      "caption": "Pick the style that suits you best",
+      "stepLabel": "Step 4 of 4"
+    }
+  }
+}

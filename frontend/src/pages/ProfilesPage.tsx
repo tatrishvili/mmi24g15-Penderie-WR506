@@ -3,11 +3,10 @@ import type { FormEvent } from 'react'
 import { Check, LogOut, Plus } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { getCopy } from '../i18n/copy.ts'
+import { t } from '../i18n/copy.ts'
 import { roleLabel } from '../types/auth.ts'
 
 export default function ProfilesPage() {
-  const copy = getCopy()
   const {
     households,
     household,
@@ -420,7 +419,7 @@ export default function ProfilesPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="child-pin">{copy.profiles.pinLabel}</label>
+                  <label htmlFor="child-pin">{t('profiles.pinLabel')}</label>
                   <input
                     id="child-pin"
                     className="input input--pin"
@@ -433,9 +432,9 @@ export default function ProfilesPage() {
                     onChange={(event) => setChildPin(event.target.value.replace(/[^0-9]/g, ''))}
                   />
                 </div>
-                <p className="auth-sub">
-                  {copy.profiles.pinNote}
-                </p>
+<p className="auth-sub">
+              {t('profiles.pinNote')}
+            </p>
                 <button type="submit" className="btn btn-secondary" disabled={creating}>
                   {creating ? 'Création…' : 'Ajouter l’enfant'}
                 </button>

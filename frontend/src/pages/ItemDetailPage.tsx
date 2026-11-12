@@ -1,3 +1,5 @@
+import FamilyVisibilityPanel from '../components/FamilyVisibilityPanel.tsx'
+import { useAuth } from '../auth/useAuth.ts'
 import { itemText } from '../lib/itemCatalog.ts'
 import FigmaGlyph from '../components/FigmaGlyph.tsx'
 import { errorText } from '../lib/errors.ts'
@@ -20,11 +22,12 @@ export default function ItemDetailPage({
   view: 'detail' | 'actions' | 'visibility' | 'share' | 'archive'
 }) {
   const { id } = useParams()
+  const { activeProfile } = useAuth()
+  const child = activeProfile?.role === 'child'
   const navigate = useNavigate()
   const [item, setItem] = useState<ItemSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [visibility, setVisibilityValue] = useState('private')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [approved, setApproved] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
@@ -37,7 +40,6 @@ export default function ItemDetailPage({
       .then((d) => {
         if (live) {
           setItem(d.item)
-          setVisibilityValue(d.item.visibility ?? 'private')
         }
       })
       .catch((e) => {
@@ -76,22 +78,54 @@ export default function ItemDetailPage({
       {!item && <p role="status">{error ? 'Article indisponible.' : 'Chargement…'}</p>}
     </>
   )
+  if (item?.canEdit === false && view !== 'detail')
+    return (
+      <DesignPage frame={frame} title={itemText('Objet partagé', 'Shared belonging')}>
+        <DesignNotice>
+          {itemText(
+            'Cet objet est visible en consultation uniquement.',
+            'You may view this belonging, but cannot edit it.',
+          )}
+        </DesignNotice>
+        <Link to={base}>{itemText('Revenir à l’objet', 'Back to the item')}</Link>
+      </DesignPage>
+    )
+  if (view === 'visibility' || (view === 'share' && (child || item?.ownerProfile.role === 'child')))
+    return (
+      <DesignPage
+        frame={frame}
+        title={itemText('Visibilité d’un article', 'Item visibility')}
+        subtitle={itemText('Choisir précisément qui peut voir', 'Choose exactly who can view')}
+      >
+        {feedback}
+        {item && <FamilyVisibilityPanel item={item} onSave={setItem} />}
+        <Link className="design-link" to={base}>
+          {itemText('Revenir à l’article', 'Back to the item')}
+        </Link>
+      </DesignPage>
+    )
   if (view === 'detail')
     return (
       <DesignPage
         frame={frame}
         className="social-item"
         title="Fiche article"
-        subtitle={`${item?.name ?? 'Article'} · Inventaire privé`}
+        subtitle={`${item?.name ?? 'Article'} · ${item?.canEdit === false ? itemText('Consultation uniquement', 'View only') : itemText('Mon inventaire', 'My inventory')}`}
         footer={
-          <>
-            <Link className="btn btn-primary" to={`${base}/partager`}>
-              Modifier et partager
+          item?.canEdit === false ? (
+            <Link className="btn btn-secondary" to="/dressing">
+              {itemText('Revenir au dressing', 'Back to wardrobe')}
             </Link>
-            <Link className="btn btn-secondary" to={`${base}/actions`}>
-              Autres actions
-            </Link>
-          </>
+          ) : (
+            <>
+              <Link className="btn btn-primary" to={`${base}/visibilite`}>
+                {itemText('Visibilité et partage', 'Visibility and sharing')}
+              </Link>
+              <Link className="btn btn-secondary" to={`${base}/actions`}>
+                Autres actions
+              </Link>
+            </>
+          )
         }
       >
         {feedback}
@@ -126,7 +160,7 @@ export default function ItemDetailPage({
               icon={icon('imgIconUser')}
               title="Propriétaire"
               detail={item.ownerProfile.name}
-              to="/profils"
+              to={item.canEdit === false ? undefined : '/profils'}
             />
             <DesignRow
               icon={icon('imgIconHouse')}
@@ -136,13 +170,21 @@ export default function ItemDetailPage({
                   .filter(Boolean)
                   .join(' · ') || 'Pas encore rangé'
               }
-              to={`${base}/emplacement`}
+              to={item.canEdit === false ? undefined : `${base}/emplacement`}
             />
             <DesignRow
               icon={icon('imgIconLock')}
               title="Visibilité"
-              detail={item.visibility === 'personal' ? 'Moi uniquement' : 'Mon foyer'}
-              to={`${base}/visibilite`}
+              detail={
+                item.familyAudience === 'owner' || item.visibility === 'personal'
+                  ? itemText('Moi uniquement', 'Only me')
+                  : item.familyAudience === 'selected'
+                    ? itemText('Personnes choisies', 'Selected people')
+                    : item.familyAudience === 'shared'
+                      ? itemText('Partagé avec moi', 'Shared with me')
+                      : itemText('Mon foyer', 'My household')
+              }
+              to={item.canEdit === false ? undefined : `${base}/visibilite`}
             />
           </>
         )}
@@ -172,15 +214,22 @@ export default function ItemDetailPage({
               detail="Changer de rangement"
               to={`${base}/emplacement`}
             />
-            <DesignRow
-              icon={icon('imgIconDisc')}
-              title="Ajouter à une collection"
-              detail="Sans supprimer l’article"
-              disabled={busy}
-              onClick={() =>
-                void run(async () => setCollections((await social.getWorkspace()).collections))
-              }
-            />
+            {!child && (
+              <DesignRow
+                icon={icon('imgIconDisc')}
+                title="Ajouter à une collection"
+                detail="Sans supprimer l’article"
+                disabled={busy}
+                onClick={() =>
+                  void run(async () => setCollections((await social.getWorkspace()).collections))
+                }
+              />
+            )}
+            {child && (
+              <Link className="design-link" to="/enfant">
+                {itemText('Gérer mes collections', 'Manage my collections')}
+              </Link>
+            )}
             {collections && (
               <div className="design-stack">
                 {collections.map((c) => (
@@ -203,15 +252,24 @@ export default function ItemDetailPage({
                 )}
               </div>
             )}
-            <DesignRow
-              icon={icon('imgIconPin')}
-              title="Épingler au profil"
-              detail="Choisir une collection dans la vitrine"
-              to="/vitrine"
-            />
+            {!child && (
+              <DesignRow
+                icon={icon('imgIconPin')}
+                title="Épingler au profil"
+                detail="Choisir une collection dans la vitrine"
+                to="/vitrine"
+              />
+            )}
             <DesignRow
               icon={icon('imgIconArchive')}
-              title={item.status === 'archive' ? 'Restaurer' : 'Archiver'}
+              title={
+                item.status === 'archive'
+                  ? child
+                    ? itemText('Demander à un parent de restaurer', 'Ask a parent to restore')
+                    : 'Restaurer'
+                  : 'Archiver'
+              }
+              disabled={child && item.status === 'archive'}
               detail="Récupérable plus tard"
               onClick={
                 item.status === 'archive'
@@ -224,79 +282,18 @@ export default function ItemDetailPage({
                   : () => navigate(`${base}/archiver`)
               }
             />
-            <DesignRow
-              icon={icon('imgIconTrash')}
-              title="Supprimer"
-              detail="Confirmation requise"
-              to={`${base}/archiver`}
-            />
+            {!child && (
+              <DesignRow
+                icon={icon('imgIconTrash')}
+                title="Supprimer"
+                detail="Confirmation requise"
+                to={`${base}/archiver`}
+              />
+            )}
             <Link className="design-link" to={base}>
               Revenir à l’article
             </Link>
           </>
-        )}
-      </DesignPage>
-    )
-
-  if (view === 'visibility')
-    return (
-      <DesignPage
-        frame={frame}
-        className="social-visibility"
-        title="Visibilité d’un article"
-        subtitle="Choisir précisément qui peut voir"
-        footer={
-          <button
-            className="btn btn-primary"
-            disabled={!item || busy}
-            onClick={() =>
-              void run(async () => {
-                if (item) {
-                  await social.setVisibility(item.id, visibility)
-                  navigate(base)
-                }
-              })
-            }
-          >
-            Enregistrer la visibilité
-          </button>
-        }
-      >
-        {feedback}
-        {(
-          [
-            ['personal', 'Moi uniquement', 'Masqué aux autres', 'imgIconLock'],
-            ['private', 'Mon foyer', 'Adultes autorisés', 'imgIconHouse'],
-            ['friends', 'Mes amis', 'Amis acceptés', 'imgIconHeart'],
-            ['followers', 'Mes abonnés', 'Si activés', 'imgIconUsers'],
-            ['public', 'Tout le monde', 'Présentation limitée', 'imgIconGlobe'],
-            ['custom', 'Personnes choisies', 'Accès sur invitation', 'imgIconShield'],
-          ] as const
-        ).map(([value, label, detail, asset]) => (
-          <DesignRow
-            key={value}
-            icon={icon(asset)}
-            title={label}
-            detail={detail}
-            selected={visibility === value}
-            disabled={busy}
-            onClick={() => {
-              if (['personal', 'private'].includes(value)) {
-                setVisibilityValue(value)
-                setNotice(null)
-              } else {
-                setNotice(
-                  'Cette audience nécessite encore une publication sécurisée. Utilisez Partager un article pour créer un lien révocable.',
-                )
-              }
-            }}
-          />
-        ))}
-        {visibility === 'personal' && (
-          <small>
-            Les liens existants seront révoqués. Un parent conserve la gestion des articles de son
-            enfant.
-          </small>
         )}
       </DesignPage>
     )
@@ -433,13 +430,15 @@ export default function ItemDetailPage({
         disabled={!item || busy}
         onClick={() => setConfirm('archive')}
       />
-      <DesignRow
-        icon={icon('imgIconTrash')}
-        title="Supprimer"
-        detail="Confirmation requise · définitif"
-        disabled={!item || busy}
-        onClick={() => setConfirm('delete')}
-      />
+      {!child && (
+        <DesignRow
+          icon={icon('imgIconTrash')}
+          title="Supprimer"
+          detail="Confirmation requise · définitif"
+          disabled={!item || busy}
+          onClick={() => setConfirm('delete')}
+        />
+      )}
       <DesignNotice>
         <h2>{icon('imgIconShield')}Attention</h2>
         <p>

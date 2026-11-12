@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { getCopy } from '../i18n/copy.ts'
+import { t, tArray } from '../i18n/copy.ts'
 import calendarIcon from '../images/icons/calendar_icon.svg'
 import mailIcon from '../images/icons/mail_icon.svg'
 import passwordIcon from '../images/icons/password_icon.svg'
@@ -18,7 +18,6 @@ function fieldMessage(violations: Record<string, string>, keys: string[]): strin
 
 export default function RegisterPage() {
   const { status, register } = useAuth()
-  const copy = getCopy().register
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -56,7 +55,7 @@ export default function RegisterPage() {
           setGlobalError(error.message)
         }
       } else {
-        setGlobalError('Une erreur inattendue est survenue.')
+        setGlobalError(t('unexpectedError'))
       }
     } finally {
       setSubmitting(false)
@@ -66,14 +65,14 @@ export default function RegisterPage() {
   return (
     <div className="register">
       <h1 className="register__title">
-        {copy.titleLines.map((line, index) => (
+        {tArray<string>('register.titleLines').map((line, index) => (
           <Fragment key={line}>
             {index > 0 && ' '}
             <span>{line}</span>
           </Fragment>
         ))}
       </h1>
-      <p className="register__intro">{copy.intro}</p>
+      <p className="register__intro">{t('register.intro')}</p>
 
       <form className="register__form" onSubmit={onSubmit} noValidate>
         {globalError !== null && (
@@ -86,14 +85,14 @@ export default function RegisterPage() {
           <div className="pill-field">
             <img src={profilIcon} alt="" className="pill-field__icon" />
             <label className="sr-only" htmlFor="register-username">
-              {copy.usernameLabel}
+              {t('register.usernameLabel')}
             </label>
             <input
               id="register-username"
               className="pill-field__input"
               type="text"
               autoComplete="username"
-              placeholder={copy.usernamePlaceholder}
+              placeholder={t('register.usernamePlaceholder')}
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               minLength={3}
@@ -110,14 +109,14 @@ export default function RegisterPage() {
           <div className="pill-field">
             <img src={mailIcon} alt="" className="pill-field__icon" />
             <label className="sr-only" htmlFor="register-email">
-              {copy.emailLabel}
+              {t('register.emailLabel')}
             </label>
             <input
               id="register-email"
               className="pill-field__input"
               type="email"
               autoComplete="email"
-              placeholder={copy.emailPlaceholder}
+              placeholder={t('register.emailPlaceholder')}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
@@ -132,14 +131,14 @@ export default function RegisterPage() {
           <div className="pill-field">
             <img src={calendarIcon} alt="" className="pill-field__icon" />
             <label className="sr-only" htmlFor="register-birth-date">
-              {copy.birthDateLabel}
+              {t('register.birthDateLabel')}
             </label>
             <input
               id="register-birth-date"
               className="pill-field__input"
               type="date"
               autoComplete="bday"
-              placeholder={copy.birthDatePlaceholder}
+              placeholder={t('register.birthDatePlaceholder')}
               value={birthDate}
               onFocus={() => setBirthDateFocused(true)}
               onBlur={() => setBirthDateFocused(false)}
@@ -148,11 +147,11 @@ export default function RegisterPage() {
             />
             {birthDate === '' && !birthDateFocused && (
               <span className="pill-field__placeholder" aria-hidden="true">
-                {copy.birthDatePlaceholder}
+                {t('register.birthDatePlaceholder')}
               </span>
             )}
           </div>
-          <span className="sr-only">{copy.birthDateHint}</span>
+          <span className="sr-only">{t('register.birthDateHint')}</span>
           {fieldMessage(violations, ['birthDate']) !== null && (
             <span className="field-error">{fieldMessage(violations, ['birthDate'])}</span>
           )}
@@ -162,14 +161,14 @@ export default function RegisterPage() {
           <div className="pill-field">
             <img src={passwordIcon} alt="" className="pill-field__icon" />
             <label className="sr-only" htmlFor="register-password">
-              {copy.passwordLabel}
+              {t('register.passwordLabel')}
             </label>
             <input
               id="register-password"
               className="pill-field__input"
               type="password"
               autoComplete="new-password"
-              placeholder={copy.passwordPlaceholder}
+              placeholder={t('register.passwordPlaceholder')}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
@@ -182,7 +181,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="register__terms">
-          {copy.termsLead} <span className="register__terms-link">{copy.termsLink}</span>
+          {t('register.termsLead')} <span className="register__terms-link">{t('register.termsLink')}</span>
         </p>
 
         <button
@@ -190,12 +189,12 @@ export default function RegisterPage() {
           className="btn btn-primary register__submit"
           disabled={submitting || status === 'loading'}
         >
-          {submitting ? 'Inscription en cours…' : copy.submit}
+          {submitting ? 'Inscription en cours…' : t('register.submit')}
         </button>
       </form>
 
       <p className="register__switch">
-        {copy.switchPrompt} <Link to="/connexion">{copy.switchLink}</Link>
+        {t('register.switchPrompt')} <Link to="/connexion">{t('register.switchLink')}</Link>
       </p>
     </div>
   )

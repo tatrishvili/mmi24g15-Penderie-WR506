@@ -36,34 +36,15 @@ final class PlaceController extends AbstractController
         );
         $profile = $this->actor->profile();
         if (null !== $profile && !$profile->isAdult()) {
-            $allowedRooms = [];
-            $allowedStorage = [];
-            foreach ($this->em->getRepository(\App\Entity\Item::class)->findBy(['ownerProfile' => $profile]) as $item) {
-                $allowedRooms[] = $item->getRoom()?->getId();
-                $storage = $item->getStorageLocation();
-                while (null !== $storage) {
-                    $allowedStorage[] = $storage->getId();
-                    $storage = $storage->getParent();
-                }
-            }
-            $filterStorage = function (array $nodes) use (&$filterStorage, $allowedStorage): array {
-                $nodes = array_filter($nodes, static fn (array $node) => \in_array($node['id'], $allowedStorage, true));
-
-                return array_values(array_map(static function (array $node) use ($filterStorage): array {
-                    $node['children'] = $filterStorage($node['children'] ?? []);
-
-                    return $node;
-                }, $nodes));
-            };
             foreach ($places as &$place) {
-                $place['rooms'] = array_values(array_filter($place['rooms'], static fn (array $room) => \in_array($room['id'], $allowedRooms, true)));
+                $place['rooms'] = array_values(array_filter($place['rooms'], static fn (array $room): bool => $room['common'] || \in_array($profile->getId(), $room['assignedProfileIds'], true)));
                 foreach ($place['rooms'] as &$room) {
-                    $room['storageLocations'] = $filterStorage($room['storageLocations']);
+                    unset($room['assignedProfileIds']);
                 }
                 unset($room);
             }
             unset($place);
-            $places = array_values(array_filter($places, static fn (array $place) => [] !== $place['rooms']));
+            $places = array_values(array_filter($places, static fn (array $place): bool => [] !== $place['rooms']));
         }
 
         return new JsonResponse(['places' => $places]);
@@ -98,6 +79,7 @@ final class PlaceController extends AbstractController
         }
 
         $room = new Room($household, $place, $this->nameFromRequest($request));
+        $this->applyRoomAccess($room, $this->jsonBody($request));
         $this->em->persist($room);
         $this->em->flush();
 
@@ -145,6 +127,54 @@ final class PlaceController extends AbstractController
         return new JsonResponse(['storageLocation' => $this->storagePayload($storage)], 201);
     }
 
+    #[Route('/rooms/{roomId}', name: 'api_rooms_update', methods: ['PATCH'], requirements: ['roomId' => '\\d+'])]
+    public function updateRoom(int $roomId, Request $request): JsonResponse
+    {
+        $this->actor->requireAdultProfile();
+        $room = $this->em->getRepository(Room::class)->findOneBy(['id' => $roomId, 'household' => $this->actor->requireHousehold()]);
+        if (!$room instanceof Room) {
+            throw new NotFoundHttpException('Room not found.');
+        }
+        $data = $this->jsonBody($request);
+        if (array_key_exists('name', $data)) {
+            $room->setName($this->validatedName($data['name']));
+        }
+        $this->applyRoomAccess($room, $data);
+        $this->em->flush();
+
+        return new JsonResponse(['room' => $this->roomPayload($room)]);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function applyRoomAccess(Room $room, array $data): void
+    {
+        if (array_key_exists('common', $data)) {
+            if (!\is_bool($data['common'])) {
+                throw new UnprocessableEntityHttpException('common must be a boolean.');
+            }
+            $room->common = $data['common'];
+        }
+        if (array_key_exists('kind', $data)) {
+            if (!\is_string($data['kind']) || !\in_array($data['kind'], ['bedroom', 'bathroom', 'garage', 'living', 'kitchen', 'office', 'storage', 'other'], true)) {
+                throw new UnprocessableEntityHttpException('Choose a valid room type.');
+            }
+            $room->kind = $data['kind'];
+        }
+        if (array_key_exists('assignedProfileIds', $data)) {
+            if (!\is_array($data['assignedProfileIds']) || !array_is_list($data['assignedProfileIds'])) {
+                throw new UnprocessableEntityHttpException('Choose valid household profiles.');
+            }
+            $ids = [];
+            foreach ($data['assignedProfileIds'] as $id) {
+                if (!\is_int($id) || null === $this->em->getRepository(\App\Entity\Profile::class)->findOneBy(['id' => $id, 'household' => $room->getHousehold()])) {
+                    throw new UnprocessableEntityHttpException('Choose valid household profiles.');
+                }
+                $ids[] = $id;
+            }
+            $room->assignedProfileIds = array_values(array_unique($ids));
+        }
+    }
+
     /** @return array<string, mixed> */
     private function placePayload(Place $place): array
     {
@@ -169,6 +199,9 @@ final class PlaceController extends AbstractController
         return [
             'id' => $room->getId(),
             'name' => $room->getName(),
+            'kind' => $room->kind,
+            'common' => $room->common,
+            'assignedProfileIds' => $room->assignedProfileIds,
             'storageLocations' => array_map(fn (StorageLocation $storage): array => $this->storagePayload($storage, true), $roots),
         ];
     }

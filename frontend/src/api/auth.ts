@@ -24,7 +24,10 @@ export function verifyEmail(token: string): Promise<LoginResult> {
 }
 
 export function resendVerification(email: string): Promise<{ message: string }> {
-  return api<{ message: string }>('/api/auth/resend-verification', { method: 'POST', body: { email } })
+  return api<{ message: string }>('/api/auth/resend-verification', {
+    method: 'POST',
+    body: { email },
+  })
 }
 
 export function login(email: string, password: string): Promise<LoginResult> {
@@ -49,7 +52,11 @@ export function createHousehold(payload: CreateHouseholdPayload): Promise<Create
 
 export function selectHousehold(
   householdId: number,
-): Promise<{ household: HouseholdSummary; activeHouseholdId: number; activeProfileId: number | null }> {
+): Promise<{
+  household: HouseholdSummary
+  activeHouseholdId: number
+  activeProfileId: number | null
+}> {
   return api(`/api/auth/households/${householdId}/select`, { method: 'POST' })
 }
 
@@ -71,3 +78,6 @@ export function switchProfile(
 ): Promise<{ profile: ProfileSummary; activeProfileId: number }> {
   return api(`/api/auth/profiles/${profileId}/switch`, { method: 'POST' })
 }
+
+export const childLogin = (username: string, password: string) =>
+  api<MeResult>('/api/auth/child-login', { method: 'POST', body: { username, password } })

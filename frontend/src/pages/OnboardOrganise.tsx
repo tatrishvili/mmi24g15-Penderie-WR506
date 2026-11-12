@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import OnboardingFoot from '../components/OnboardingFoot.tsx'
-import { getCopy } from '../i18n/copy.ts'
+import { t, tArray } from '../i18n/copy.ts'
 import bureau from '../images/icons/bureau_icon.svg'
 import chambre from '../images/icons/chambre_icon.svg'
 import cuisine from '../images/icons/Cusine_icon.svg'
@@ -11,8 +11,11 @@ import salon from '../images/icons/Salon_icon.svg'
 const ROOM_ICONS = [dressing, chambre, bureau, salon, garage, cuisine]
 
 export default function OnboardOrganise() {
-  const copy = getCopy().onboard
-  const { titleLine, introLines, tabs, rooms, stepLabel } = copy.organise
+  const titleLine = t('onboard.organise.titleLine')
+  const introLines = tArray<string>('onboard.organise.introLines')
+  const tabs = tArray<string>('onboard.organise.tabs')
+  const rooms = tArray<string>('onboard.organise.rooms')
+  const stepLabel = t('onboard.organise.stepLabel')
 
   return (
     <section className="welcome welcome--step">
@@ -48,9 +51,9 @@ export default function OnboardOrganise() {
         <OnboardingFoot
           step={2}
           stepLabel={stepLabel}
-          nextLabel={copy.next}
+          nextLabel={t('onboard.next')}
           nextTo="/onboarding/3"
-          signInLabel={copy.signIn}
+          signInLabel={t('onboard.signIn')}
         />
       </div>
     </section>

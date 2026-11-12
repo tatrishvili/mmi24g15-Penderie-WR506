@@ -1,9 +1,13 @@
+import { useContext } from 'react'
+import { AuthContext } from '../auth/AuthContext.tsx'
 import { Link, useLocation } from 'react-router-dom'
 import { House, MapPin, ScanLine, Shirt, UserRound } from 'lucide-react'
 import { itemText as t } from '../lib/itemCatalog.ts'
 
 export default function AppNav() {
   const { pathname } = useLocation()
+  const auth = useContext(AuthContext)
+  const child = auth?.activeProfile?.role === 'child'
   const tabs = [
     {
       to: '/actualites',
@@ -47,7 +51,31 @@ export default function AppNav() {
   ]
   return (
     <nav className="app-nav" aria-label={t('Navigation principale', 'Main navigation')}>
-      {tabs.map(({ to, label, Icon, active }) => (
+      {(child
+        ? [
+            tabs[1],
+            tabs[2],
+            {
+              to: '/lieux',
+              label: t('Pièces', 'Rooms'),
+              Icon: MapPin,
+              active: pathname === '/lieux',
+            },
+            {
+              to: '/notifications',
+              label: t('Notifications', 'Notifications'),
+              Icon: House,
+              active: pathname === '/notifications',
+            },
+            {
+              to: '/enfant',
+              label: t('Mon espace', 'My space'),
+              Icon: UserRound,
+              active: pathname.startsWith('/enfant'),
+            },
+          ]
+        : tabs
+      ).map(({ to, label, Icon, active }) => (
         <Link
           key={to}
           to={to}

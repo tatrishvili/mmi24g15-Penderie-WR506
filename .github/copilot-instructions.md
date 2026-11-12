@@ -2,7 +2,7 @@
 
 ## Latest session handover
 
-- Before resuming work, read [session02/11/26.md](../session02/11/26.md). It records the 2 November child-account decisions and outstanding implementation; do not ask the user to re-explain them.
+- Before resuming work, read [session03/11/26.md](../session03/11/26.md). It records the implemented child accounts, parent decisions, item audiences, repeated rooms, approvals and Docker recovery; do not ask the user to re-explain settled decisions.
 
 ## Product source of truth
 

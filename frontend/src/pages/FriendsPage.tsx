@@ -1,30 +1,29 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { itemText as t } from '../lib/itemCatalog.ts'
 import { Check, Heart, UserMinus, UserPlus, X } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import * as friendsApi from '../api/friends.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { getCopy } from '../i18n/copy.ts'
+import { t } from '../i18n/copy.ts'
 import type { FriendEntry, FriendsResult } from '../types/friends.ts'
 
-function errorMessage(error: unknown, copy: ReturnType<typeof getCopy>): string {
-  if (!(error instanceof ApiError)) return copy.unexpectedError
+function errorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return t('unexpectedError')
 
   switch (error.code) {
     case 'not_found':
-      return copy.errors.notFound
+      return t('errors.notFound')
     case 'conflict':
-      return copy.errors.conflict
+      return t('errors.conflict')
     case 'forbidden':
-      return copy.errors.forbidden
+      return t('errors.forbidden')
     case 'validation_failed':
-      return copy.errors.invalid
+      return t('errors.invalid')
     case 'too_many_attempts':
-      return copy.errors.rateLimited
+      return t('errors.rateLimited')
     default:
-      return copy.unexpectedError
+      return t('unexpectedError')
   }
 }
 
@@ -75,7 +74,6 @@ export default function FriendsPage() {
   const [search] = useSearchParams()
   const list = search.get('liste')
   const filter = ['amis', 'abonnes', 'abonnements', 'demandes'].includes(list ?? '') ? list : null
-  const copy = getCopy()
   const [data, setData] = useState<FriendsResult>(emptyResult)
   const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(true)
@@ -89,11 +87,11 @@ export default function FriendsPage() {
       setData(await friendsApi.listFriends())
       setError(null)
     } catch (cause) {
-      setError(errorMessage(cause, copy))
+      setError(errorMessage(cause as unknown as Error))
     } finally {
       setLoading(false)
     }
-  }, [copy])
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -105,7 +103,7 @@ export default function FriendsPage() {
         }
       })
       .catch((cause: unknown) => {
-        if (!cancelled) setError(errorMessage(cause, copy))
+        if (!cancelled) setError(errorMessage(cause))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -114,7 +112,7 @@ export default function FriendsPage() {
     return () => {
       cancelled = true
     }
-  }, [copy])
+  }, [])
 
   async function onSend(event: FormEvent) {
     event.preventDefault()
@@ -124,10 +122,10 @@ export default function FriendsPage() {
     try {
       await friendsApi.sendFriendRequest(username.trim())
       setUsername('')
-      setSuccess(copy.friends.sent)
+      setSuccess(t('friends.sent'))
       await load()
     } catch (cause) {
-      setError(errorMessage(cause, copy))
+      setError(errorMessage(cause as unknown as Error))
     } finally {
       setSending(false)
     }
@@ -140,10 +138,10 @@ export default function FriendsPage() {
     try {
       await friendsApi.follow(username.trim())
       setUsername('')
-      setSuccess(copy.friends.followed)
+      setSuccess(t('friends.followed'))
       await load()
     } catch (cause) {
-      setError(errorMessage(cause, copy))
+      setError(errorMessage(cause as unknown as Error))
     } finally {
       setSending(false)
     }
@@ -156,7 +154,7 @@ export default function FriendsPage() {
       await friendsApi.acceptFriendRequest(entry.id)
       await load()
     } catch (cause) {
-      setError(errorMessage(cause, copy))
+      setError(errorMessage(cause as unknown as Error))
     } finally {
       setBusyId(null)
     }
@@ -169,7 +167,7 @@ export default function FriendsPage() {
       await friendsApi.removeFriendRequest(entry.id)
       await load()
     } catch (cause) {
-      setError(errorMessage(cause, copy))
+      setError(errorMessage(cause as unknown as Error))
     } finally {
       setBusyId(null)
     }
@@ -182,7 +180,7 @@ export default function FriendsPage() {
       await friendsApi.removeFriend(entry.id)
       await load()
     } catch (cause) {
-      setError(errorMessage(cause, copy))
+      setError(errorMessage(cause as unknown as Error))
     } finally {
       setBusyId(null)
     }
@@ -195,7 +193,7 @@ export default function FriendsPage() {
       await friendsApi.unfollow(entry.id)
       await load()
     } catch (cause) {
-      setError(errorMessage(cause, copy))
+      setError(errorMessage(cause as unknown as Error))
     } finally {
       setBusyId(null)
     }
@@ -218,8 +216,8 @@ export default function FriendsPage() {
     return (
       <div className="auth-page">
         <div className="auth-card">
-          <h1>{filter === 'abonnes' ? copy.friends.followers : filter === 'abonnements' ? copy.friends.following : filter === 'demandes' ? t('Demandes', 'Requests') : copy.friends.title}</h1>
-          <p className="auth-sub">{copy.friends.adultOnly}</p>
+          <h1>{t(filter === 'abonnes' ? 'friends.followers' : filter === 'abonnements' ? 'friends.following' : filter === 'demandes' ? 'friends.title' : 'friends.title')}</h1>
+          <p className="auth-sub">{t('friends.adultOnly')}</p>
         </div>
       </div>
     )
@@ -230,28 +228,28 @@ export default function FriendsPage() {
       <div className="friends-heading">
         <span className="friends-mark" aria-hidden="true"><Heart size={22} /></span>
         <div>
-          <p className="auth-tagline">{copy.friends.tagline}</p>
-          <h1>{filter === 'abonnes' ? copy.friends.followers : filter === 'abonnements' ? copy.friends.following : filter === 'demandes' ? t('Demandes', 'Requests') : copy.friends.title}</h1>
+          <p className="auth-tagline">{t('friends.tagline')}</p>
+          <h1>{filter === 'abonnes' ? t('friends.followers') : filter === 'abonnements' ? t('friends.following') : filter === 'demandes' ? t('friends.title') : t('friends.title')}</h1>
         </div>
       </div>
 
       <Link className="btn btn-secondary" to="/actualites">
-        {t('Voir le fil d’actualité', 'See the feed')}
+        {t('friends.seeTheFeed')}
       </Link>
-      <nav className="friend-filters" aria-label={t('Mes relations', 'My connections')}>
-        <Link to="/profil">{t('Mon profil', 'My profile')}</Link>
-        {[[null, t('Gérer', 'Manage')], ['amis', t('Amis', 'Friends')], ['abonnes', t('Abonnés', 'Followers')], ['abonnements', t('Abonnements', 'Following')], ['demandes', t('Demandes', 'Requests')]].map(([value, label]) => <Link key={value ?? 'all'} aria-current={filter === value ? 'page' : undefined} to={value ? `/amis?liste=${value}` : '/amis'}>{label}</Link>)}
+      <nav className="friend-filters" aria-label={t('friends.connections')}>
+        <Link to="/profil">{t('friends.myProfile')}</Link>
+        {[[null, t('friends.manage')], ['amis', t('friends.friendsLabel')], ['abonnes', t('friends.followers')], ['abonnements', t('friends.following')], ['demandes', t('friends.requests')]].map(([value, label]) => <Link key={value ?? 'all'} aria-current={filter === value ? 'page' : undefined} to={value ? `/amis?liste=${value}` : '/amis'}>{label}</Link>)}
       </nav>
       <section hidden={filter !== null} className="auth-card friends-card">
-        <h2>{copy.friends.addTitle}</h2>
-        <p className="auth-sub">{copy.friends.addDescription}</p>
+        <h2>{t('friends.addTitle')}</h2>
+        <p className="auth-sub">{t('friends.addDescription')}</p>
         <form className="friend-form" onSubmit={(event) => void onSend(event)}>
-          <label className="sr-only" htmlFor="friend-username">{copy.friends.usernameLabel}</label>
+          <label className="sr-only" htmlFor="friend-username">{t('friends.usernameLabel')}</label>
           <input
             id="friend-username"
             className="input"
             autoComplete="off"
-            placeholder={copy.friends.usernamePlaceholder}
+            placeholder={t('friends.usernamePlaceholder')}
             value={username}
             onChange={(event) => setUsername(event.target.value)}
             minLength={3}
@@ -260,10 +258,10 @@ export default function FriendsPage() {
           />
           <button type="submit" className="btn btn-primary" disabled={sending}>
             <UserPlus size={18} aria-hidden="true" />
-            {sending ? copy.friends.sending : copy.friends.send}
+            {sending ? t('friends.sending') : t('friends.send')}
           </button>
           <button type="button" className="btn btn-secondary" disabled={sending} onClick={() => void onFollow()}>
-            {sending ? copy.friends.sending : copy.friends.follow}
+            {sending ? t('friends.sending') : t('friends.follow')}
           </button>
         </form>
       </section>
@@ -272,58 +270,60 @@ export default function FriendsPage() {
       {success !== null && <p role="status" className="friend-success">{success}</p>}
 
       {loading ? (
-        <p className="auth-sub">{copy.friends.loading}</p>
+        <p className="auth-sub">{t('friends.loading')}</p>
       ) : (
         <div className="friend-sections">
           <section hidden={filter !== null && filter !== 'demandes'} className="auth-card friends-card">
-            <h2>{copy.friends.incoming}</h2>
+            <h2>{t('friends.incoming')}</h2>
             <ul className="friend-list">
               {data.incoming.length > 0
                 ? entries(data.incoming, (entry) => [
-                    { label: copy.friends.accept, Icon: Check, onClick: () => void onAccept(entry) },
-                    { label: copy.friends.decline, Icon: X, onClick: () => void onRemoveRequest(entry) },
+                    { label: t('friends.accept'), Icon: Check, onClick: () => void onAccept(entry) },
+                    { label: t('friends.decline'), Icon: X, onClick: () => void onRemoveRequest(entry) },
                   ])
-                : <li className="friend-empty">{copy.friends.noIncoming}</li>}
+                : <li className="friend-empty">{t('friends.noIncoming')}</li>}
             </ul>
           </section>
 
           <section hidden={filter !== null && filter !== 'demandes'} className="auth-card friends-card">
-            <h2>{copy.friends.outgoing}</h2>
+            <h2>{t('friends.outgoing')}</h2>
             <ul className="friend-list">
               {data.outgoing.length > 0
                 ? entries(data.outgoing, (entry) => [
-                    { label: copy.friends.cancel, Icon: X, onClick: () => void onRemoveRequest(entry) },
+                    { label: t('friends.cancel'), Icon: X, onClick: () => void onRemoveRequest(entry) },
                   ])
-                : <li className="friend-empty">{copy.friends.noOutgoing}</li>}
+                : <li className="friend-empty">{t('friends.noOutgoing')}</li>}
             </ul>
           </section>
 
           <section hidden={filter !== null && filter !== 'amis'} className="auth-card friends-card">
-            <h2>{copy.friends.mine} <span className="friend-count">{data.friends.length}</span></h2>
+            <h2>{t('friends.mine')} <span className="friend-count">{data.friends.length}</span></h2>
             <ul className="friend-list">
               {data.friends.length > 0
                 ? entries(data.friends, (entry) => [
-                    { label: copy.friends.remove, Icon: X, onClick: () => void onRemoveFriend(entry) },
+                    { label: t('friends.remove'), Icon: X, onClick: () => void onRemoveFriend(entry) },
                   ])
-                : <li className="friend-empty">{copy.friends.noFriends}</li>}
+                : <li className="friend-empty">{t('friends.noFriends')}</li>}
             </ul>
           </section>
+
           <section hidden={filter !== null && filter !== 'abonnements'} className="auth-card friends-card">
-            <h2>{copy.friends.following} <span className="friend-count">{data.following.length}</span></h2>
+            <h2>{t('friends.following')} <span className="friend-count">{data.following.length}</span></h2>
             <ul className="friend-list">
               {data.following.length > 0
                 ? entries(data.following, (entry) => [
-                    { label: copy.friends.unfollow, Icon: UserMinus, onClick: () => void onUnfollow(entry) },
+                    { label: t('friends.unfollow'), Icon: UserMinus, onClick: () => void onUnfollow(entry) },
                   ])
-                : <li className="friend-empty">{copy.friends.noFollowing}</li>}
+                : <li className="friend-empty">{t('friends.noFollowing')}</li>}
             </ul>
           </section>
+
           <section hidden={filter !== null && filter !== 'abonnes'} className="auth-card friends-card">
-            <h2>{copy.friends.followers} <span className="friend-count">{data.followers.length}</span></h2>
+            <h2>{t('friends.followers')} <span className="friend-count">{data.followers.length}</span></h2>
             <ul className="friend-list">
               {data.followers.length > 0
                 ? entries(data.followers, () => [])
-                : <li className="friend-empty">{copy.friends.noFollowers}</li>}
+                : <li className="friend-empty">{t('friends.noFollowers')}</li>}
             </ul>
           </section>
         </div>

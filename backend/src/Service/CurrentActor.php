@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\ChildAccount;
 use App\Entity\Household;
 use App\Entity\HouseholdMember;
+use App\Entity\Item;
 use App\Entity\Profile;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -52,12 +54,20 @@ final class CurrentActor
             throw new AccessDeniedHttpException('Only an account holder can perform this action.');
         }
 
+        if ($this->isRestrictedProfile()) {
+            throw new AccessDeniedHttpException('Sign in again as an adult to perform this action.');
+        }
+
         return $user;
     }
 
     public function household(): ?Household
     {
         $user = $this->tokenUser();
+
+        if ($user instanceof ChildAccount) {
+            return (new FamilyAccess($this->em))->childEnabled($user) ? $user->profile->getHousehold() : null;
+        }
 
         if (!$user instanceof User) {
             return null;
@@ -73,6 +83,24 @@ final class CurrentActor
 
         if (!$household instanceof Household || !$this->isMember($user, $household)) {
             return null;
+        }
+
+        $profileId = $this->requests->getSession()->get('penderie.active_profile_id');
+        if (null !== $profileId) {
+            $profile = \is_int($profileId) ? $this->em->getRepository(Profile::class)->find($profileId) : null;
+            if (!$profile instanceof Profile || $profile->getHousehold()->getId() !== $household->getId()) {
+                return null;
+            }
+            if ($profile->isAdult() && $profile->getUser()?->getId() !== $user->getId()) {
+                return null;
+            }
+            if (!$profile->isAdult()) {
+                $account = $this->em->getRepository(ChildAccount::class)->findOneBy(['profile' => $profile]);
+                if ($account instanceof ChildAccount && (!(new FamilyAccess($this->em))->childEnabled($account)
+                    || $this->requests->getSession()->get('penderie.child_session_version') !== $account->sessionVersion)) {
+                    return null;
+                }
+            }
         }
 
         return $household;
@@ -128,6 +156,10 @@ final class CurrentActor
     {
         $user = $this->tokenUser();
 
+        if ($user instanceof ChildAccount) {
+            return null !== $this->household() ? $user->profile : null;
+        }
+
         if (!$user instanceof User) {
             return null;
         }
@@ -153,10 +185,34 @@ final class CurrentActor
         return $profile;
     }
 
+    public function isRestrictedProfile(): bool
+    {
+        if ($this->tokenUser() instanceof ChildAccount) {
+            return true;
+        }
+        $profile = $this->profile();
+
+        // A removed/invalid selected profile must not restore the adult identity
+        // still carried by a trusted-device session.
+        return null !== $profile
+            ? !$profile->isAdult()
+            : null !== $this->requests->getSession()->get('penderie.active_profile_id');
+    }
+
+    public function canViewItem(Item $item): bool
+    {
+        return (new FamilyAccess($this->em))->canView($this, $item);
+    }
+
+    public function canManageItem(Item $item): bool
+    {
+        return (new FamilyAccess($this->em))->canManage($this, $item);
+    }
+
     /**
      * Returns an adult profile allowed to manage the ACTIVE household: the active
-     * profile when it is an adult, otherwise the logged-in user's own
-     * parent/partner profile in that household.
+     * profile when it is an adult, otherwise the logged-in user's own profile
+     * only when no profile is selected. A selected child never inherits it.
      *
      * @throws AccessDeniedHttpException when the actor is a child
      */
@@ -166,6 +222,10 @@ final class CurrentActor
         $household = $this->household();
 
         $active = $this->profile();
+
+        if ($this->isRestrictedProfile()) {
+            throw new AccessDeniedHttpException('Only an adult profile can perform this action. Sign in again as an adult.');
+        }
 
         if ($active instanceof Profile && $active->isAdult()) {
             return $active;

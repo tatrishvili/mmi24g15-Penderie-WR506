@@ -13,12 +13,28 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * THE core of Penderie: one owned object. Scoped to a Household (so every
  * request stays inside the active foyer) and owned by a Profile (Matrix v3:
- * a child only ever sees their own objects).
+ * a child manages their own objects and may read explicitly approved shares).
  */
 #[ORM\Entity(repositoryClass: \App\Repository\ItemRepository::class)]
 #[ORM\Table(name: 'item')]
 class Item
 {
+    #[ORM\Column(options: ['default' => 1])]
+    public int $sharingVersion = 1;
+    #[ORM\Column(length: 15, options: ['default' => 'owner'])]
+    public string $familyAudience = 'owner';
+
+    /** @var list<int> */
+    #[ORM\Column(type: 'json')]
+    public array $familyViewerIds = [];
+
+    #[ORM\Column(length: 64, nullable: true)]
+    public ?string $familyDigest = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    public ?User $familyApprovedBy = null;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -119,6 +135,9 @@ class Item
 
     public function setVisibility(string $visibility): void
     {
+        if ($visibility !== $this->visibility) {
+            $this->touch();
+        }
         $this->visibility = $visibility;
     }
 
@@ -274,6 +293,9 @@ class Item
 
     public function setStatus(ItemStatus $status): void
     {
+        if ($status !== $this->status) {
+            $this->touch();
+        }
         $this->status = $status;
     }
 
@@ -314,6 +336,7 @@ class Item
 
     public function touch(): void
     {
+        ++$this->sharingVersion;
         $this->updatedAt = new \DateTimeImmutable();
     }
 

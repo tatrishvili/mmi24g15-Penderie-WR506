@@ -1,3 +1,5 @@
+import i18n from '../i18n/config.ts'
+
 const labels = {
   pull: ['Pull', 'Sweater'],
   tshirt: ['T-shirt', 'T-shirt'],
@@ -40,12 +42,25 @@ const labels = {
 export type ItemType = keyof typeof labels
 export const ITEM_TYPES = Object.keys(labels) as ItemType[]
 export const isItemType = (value: string): value is ItemType => value in labels
-export const itemText = (fr: string, en: string) =>
-  document.documentElement.lang.toLowerCase().startsWith('en') ? en : fr
-export const itemTypeLabel = (type: ItemType) => itemText(labels[type][0], labels[type][1])
 export const isBook = (type: string) => type === 'livre'
 export const isMusic = (type: string) => type === 'vinyle' || type === 'cd'
 export const isClothing = (type: string) =>
   !['livre', 'vinyle', 'cd', 'decoration', 'electronique', 'meuble', 'jouet', 'autre'].includes(
     type,
   )
+
+/**
+ * Bilingual fallback used by components that have not been migrated to
+ * translation keys yet. Picks French unless the document language is English.
+ */
+export const itemText = (fr: string, en: string): string =>
+  typeof document !== 'undefined' && document.documentElement.lang.toLowerCase().startsWith('en')
+    ? en
+    : fr
+
+export const itemTypeLabel = (type: ItemType): string => {
+  const key = `itemTypes.${type}`
+  const translated = i18n.t(key)
+  if (typeof translated === 'string' && translated !== '' && translated !== key) return translated
+  return itemText(labels[type][0], labels[type][1])
+}

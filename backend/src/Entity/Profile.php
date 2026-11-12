@@ -11,13 +11,18 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * A household member. Adults (parent/partner) own a User for credentials;
- * children authenticate standalone with household slug + profile + PIN (Mode C).
- * Profiles — not Users — will own items (Matrix v3).
+ * children use a separate ChildAccount for independent sign-in, or a restricted
+ * profile on an authenticated parent device.
+ * A PIN is only a trusted-device unlock, never a remote sign-in credential.
+ * Profiles own items independently of physical location.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'profile')]
 class Profile implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    public ?User $createdBy = null;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -37,7 +42,7 @@ class Profile implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', enumType: ProfileRole::class)]
     private ProfileRole $role;
 
-    /** Hashed PIN. Required for children, optional quick-switch for adults. */
+    /** Optional hashed PIN for trusted-device profile unlock. */
     #[ORM\Column(nullable: true)]
     private ?string $pinHash = null;
 

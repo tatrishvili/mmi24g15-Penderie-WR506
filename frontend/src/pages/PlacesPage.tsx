@@ -3,12 +3,12 @@ import type { FormEvent } from 'react'
 import { Home, Layers3, Plus, Warehouse } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import { createPlace, createRoom, createStorageLocation, listPlaces } from '../api/places.ts'
-import { getCopy } from '../i18n/copy.ts'
+import { t, tArray } from '../i18n/copy.ts'
 import type { Place, Room, StorageLocation } from '../types/location.ts'
 import { flattenStorageLocations } from '../types/location.ts'
 
 function errorMessage(error: unknown): string {
-  return error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.'
+  return error instanceof ApiError ? error.message : t('unexpectedError')
 }
 
 function StorageTree({ entries, depth = 0 }: { entries: StorageLocation[]; depth?: number }) {
@@ -91,7 +91,6 @@ function RoomCard({ room, onCreated }: { room: Room; onCreated: () => Promise<vo
 }
 
 function PlaceCard({ place, onCreated }: { place: Place; onCreated: () => Promise<void> }) {
-  const copy = getCopy()
   const [roomPreset, setRoomPreset] = useState('')
   const [customRoomName, setCustomRoomName] = useState('')
   const [busy, setBusy] = useState(false)
@@ -121,7 +120,7 @@ function PlaceCard({ place, onCreated }: { place: Place; onCreated: () => Promis
         <RoomCard key={room.id} room={room} onCreated={onCreated} />
       ))}
       <form className="location-add-form" onSubmit={(event) => void submit(event)}>
-        <label htmlFor={`room-name-${place.id}`}>{copy.rooms.addRoom}</label>
+        <label htmlFor={`room-name-${place.id}`}>{t('rooms.addRoom')}</label>
         <select
           id={`room-name-${place.id}`}
           className="input"
@@ -129,17 +128,19 @@ function PlaceCard({ place, onCreated }: { place: Place; onCreated: () => Promis
           onChange={(event) => setRoomPreset(event.target.value)}
           required
         >
-          <option value="" disabled>{copy.rooms.chooseRoom}</option>
-          {copy.rooms.presets.map((preset) => <option key={preset} value={preset}>{preset}</option>)}
-          <option value="custom">{copy.rooms.customOption}</option>
+          <option value="" disabled>{t('rooms.chooseRoom')}</option>
+          {tArray<string>('rooms.presets').map((preset) => (
+            <option key={preset} value={preset}>{preset}</option>
+          ))}
+          <option value="custom">{t('rooms.customOption')}</option>
         </select>
         {roomPreset === 'custom' && (
           <input
             className="input"
-            aria-label={copy.rooms.customNameLabel}
+            aria-label={t('rooms.customNameLabel')}
             value={customRoomName}
             onChange={(event) => setCustomRoomName(event.target.value)}
-            placeholder={copy.rooms.customNamePlaceholder}
+            placeholder={t('rooms.customNamePlaceholder')}
             maxLength={120}
             required
           />

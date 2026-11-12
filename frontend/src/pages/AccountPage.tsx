@@ -5,7 +5,7 @@ import { LogOut, ScanLine, Shirt, UsersRound } from 'lucide-react'
 import * as authApi from '../api/auth.ts'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { getCopy } from '../i18n/copy.ts'
+import { t } from '../i18n/copy.ts'
 import { roleLabel } from '../types/auth.ts'
 
 /**
@@ -15,7 +15,6 @@ import { roleLabel } from '../types/auth.ts'
  */
 export default function AccountPage() {
   const { user, household, profiles, places, activeProfile, logout, refresh } = useAuth()
-  const copy = getCopy()
   const [username, setUsername] = useState('')
   const [savingUsername, setSavingUsername] = useState(false)
   const [usernameError, setUsernameError] = useState<string | null>(null)
@@ -31,14 +30,14 @@ export default function AccountPage() {
     try {
       await authApi.setUsername(username)
       await refresh()
-      setUsernameSuccess(copy.account.usernameSaved)
+      setUsernameSuccess(t('account.usernameSaved'))
     } catch (error) {
       if (error instanceof ApiError && error.code === 'conflict') {
-        setUsernameError(copy.account.usernameTaken)
+        setUsernameError(t('account.usernameTaken'))
       } else if (error instanceof ApiError && error.code === 'validation_failed') {
-        setUsernameError(copy.errors.invalid)
+        setUsernameError(t('errors.invalid'))
       } else {
-        setUsernameError(copy.account.usernameError)
+        setUsernameError(t('account.usernameError'))
       }
     } finally {
       setSavingUsername(false)
@@ -61,11 +60,11 @@ export default function AccountPage() {
         <h1>Mon compte</h1>
 
         <section aria-label="Mon compte utilisateur">
-          <h2 className="section-title">{copy.account.usernameTitle}</h2>
+          <h2 className="section-title">{t('account.usernameTitle')}</h2>
           {user?.username === undefined || user.username === null ? (
             <form className="auth-form" onSubmit={(event) => void onSetUsername(event)}>
-              <p className="auth-sub">{copy.account.usernameDescription}</p>
-              <label htmlFor="account-username">{copy.account.usernameLabel}</label>
+              <p className="auth-sub">{t('account.usernameDescription')}</p>
+              <label htmlFor="account-username">{t('account.usernameLabel')}</label>
               <input
                 id="account-username"
                 className="input"
@@ -73,13 +72,13 @@ export default function AccountPage() {
                 minLength={3}
                 maxLength={30}
                 pattern="[A-Za-z0-9_]{3,30}"
-                placeholder={copy.account.usernamePlaceholder}
+                placeholder={t('account.usernamePlaceholder')}
                 required
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
               />
               <button type="submit" className="btn btn-primary" disabled={savingUsername}>
-                {savingUsername ? copy.account.usernameSaving : copy.account.usernameSave}
+                {savingUsername ? t('account.usernameSaving') : t('account.usernameSave')}
               </button>
               {usernameError !== null && <p role="alert" className="form-error">{usernameError}</p>}
             </form>

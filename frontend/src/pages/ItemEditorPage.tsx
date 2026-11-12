@@ -1,3 +1,4 @@
+import { itemText as t } from '../lib/itemCatalog.ts'
 import { errorText } from '../lib/errors.ts'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -21,6 +22,13 @@ export default function ItemEditorPage({ locationOnly = false }: { locationOnly?
     getItem(Number(id))
       .then(({ item }) => {
         if (live) {
+          if (item.canEdit === false)
+            throw new Error(
+              t(
+                'Cet objet est partagé en consultation uniquement.',
+                'This belonging is shared for viewing only.',
+              ),
+            )
           setOriginalPhotos(item.photos)
           setValues({
             name: item.name,

@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import OnboardingFoot from '../components/OnboardingFoot.tsx'
-import { getCopy } from '../i18n/copy.ts'
+import { t, tArray } from '../i18n/copy.ts'
 import calendar from '../images/icons/calendar_borrow_icon.svg'
 import demande from '../images/icons/demande_icon.svg'
 import accept from '../images/icons/accept_icon.svg'
@@ -11,9 +11,15 @@ import veste from '../images/Veste_beige.png'
 const TIMELINE_ICONS = [demande, accept, pret]
 
 export default function OnboardLend() {
-  const copy = getCopy().onboard
-  const { titleLines, itemName, status, since, borrower, chips, bodyLines, timeline, stepLabel } =
-    copy.lend
+  const titleLines = tArray<string>('onboard.lend.titleLines')
+  const chips = tArray<string>('onboard.lend.chips')
+  const bodyLines = tArray<string>('onboard.lend.bodyLines')
+  const timeline = tArray<string>('onboard.lend.timeline')
+  const itemName = t('onboard.lend.itemName')
+  const status = t('onboard.lend.status')
+  const since = t('onboard.lend.since')
+  const borrower = t('onboard.lend.borrower')
+  const stepLabel = t('onboard.lend.stepLabel')
 
   return (
     <section className="welcome welcome--step">
@@ -81,9 +87,9 @@ export default function OnboardLend() {
         <OnboardingFoot
           step={3}
           stepLabel={stepLabel}
-          nextLabel={copy.next}
+          nextLabel={t('onboard.next')}
           nextTo="/onboarding/4"
-          signInLabel={copy.signIn}
+          signInLabel={t('onboard.signIn')}
         />
       </div>
     </section>

@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import OnboardingFoot from '../components/OnboardingFoot.tsx'
-import { getCopy } from '../i18n/copy.ts'
 import buddie from '../images/icons/home_page_buddie.svg'
+import { t, tArray } from '../i18n/copy.ts'
 
 const BG_VIEWBOX = '0 0 402 874'
 
@@ -12,8 +12,6 @@ const BOTTOM_PATH =
   'M0,581 C7.5,585.3 12.3,589.3 15,592 C17.7,594.7 20,597.3 22,600 C24,602.7 25.7,605.3 27,608 C28.3,610.7 29,613.3 30,616 C31,618.7 31.8,620.7 33,624 C34.2,627.3 35.8,632 37,636 C38.2,640 39.2,644.7 40,648 C40.8,651.3 41.5,653.3 42,656 C42.5,658.7 42.7,661.3 43,664 C43.3,666.7 43.7,669.3 44,672 C44.3,674.7 44.7,677.3 45,680 C45.3,682.7 45,685.3 46,688 C47,690.7 49.2,693.3 51,696 C52.8,698.7 54.5,700.3 57,704 C59.5,707.7 61.8,713 66,718 C70.2,723 74.3,728.7 82,734 C89.7,739.3 100.3,745.8 112,750 C123.7,754.2 137.3,756.8 152,759 C166.7,761.2 183.7,762.7 200,763 C216.3,763.3 234.7,762.7 250,761 C265.3,759.3 280.3,755.3 292,753 C303.7,750.7 312.5,748.2 320,747 C327.5,745.8 333,745.8 337,746 C341,746.2 342.5,750.7 344,748 C345.5,745.3 345,735.3 346,730 C347,724.7 348.5,720 350,716 C351.5,712 353.2,709 355,706 C356.8,703 358.5,700.7 361,698 C363.5,695.3 366.5,692.7 370,690 C373.5,687.3 378.7,683.8 382,682 C385.3,680.2 386.7,680 390,679 C393.3,678 400,676.5 402,676 L402,874 L0,874 Z'
 
 export default function Home() {
-  const copy = getCopy().home
-
   return (
     <section className="welcome">
       <svg
@@ -41,7 +39,7 @@ export default function Home() {
         <div className="welcome__head">
           <img src={buddie} alt="" className="welcome__buddie" />
           <h1 className="welcome__title">
-            {copy.titleLines.map((line, index) => (
+            {tArray<string>('home.titleLines').map((line, index) => (
               <Fragment key={line}>
                 {index > 0 && ' '}
                 <span>{line}</span>
@@ -49,14 +47,14 @@ export default function Home() {
             ))}
           </h1>
         </div>
-        <p className="welcome__tagline">{copy.tagline}</p>
+        <p className="welcome__tagline">{t('home.tagline')}</p>
 
         <OnboardingFoot
           step={1}
-          stepLabel={copy.stepLabel}
-          nextLabel={copy.next}
+          stepLabel={t('home.stepLabel')}
+          nextLabel={t('home.next')}
           nextTo="/onboarding/2"
-          signInLabel={copy.signIn}
+          signInLabel={t('home.signIn')}
         />
       </div>
     </section>

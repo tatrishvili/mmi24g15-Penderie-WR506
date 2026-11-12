@@ -1914,7 +1914,7 @@ p {
   font-size: 16px;
   color: var(--gris-texte);
 }
-.design-page input:not([type='checkbox']):not([type='file']),
+.design-page input:not([type='checkbox']):not([type='file']):not([type='radio']),
 .design-page select,
 .design-page textarea {
   width: 100%;
@@ -3401,4 +3401,118 @@ button.design-row {
   color: var(--bordeaux);
   font-size: 12px;
   font-weight: 600;
+}
+
+/* Family controls share the existing cream, rose and burgundy palette. */
+.family-section {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--rose-sable);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.family-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 0;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.family-choice input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--bordeaux);
+}
+.family-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.family-actions > * {
+  max-width: 100%;
+}
+.family-room-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rose-blush);
+}
+.family-room-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.family-previews,
+.family-object-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: 14px;
+}
+.family-preview {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  background: var(--creme);
+  border-radius: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.family-preview-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.family-preview img {
+  width: min(150px, 100%);
+  height: 150px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: var(--white);
+}
+.family-item-link {
+  display: grid;
+  gap: 10px;
+  color: var(--bordeaux);
+  padding: 14px;
+  border: 1px solid var(--rose-sable);
+  border-radius: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.family-item-link img {
+  width: 100%;
+  height: 130px;
+  object-fit: contain;
+}
+.family-badge {
+  justify-self: start;
+  border-radius: 20px;
+  padding: 3px 12px;
+  background: var(--rose-poudre);
+  color: var(--bordeaux);
+}
+.app-notifications-link {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  z-index: 2;
+  color: var(--bordeaux);
+  font-size: 14px;
+  padding: 8px;
+}
+@media (max-width: 480px) {
+  .app-notifications-link {
+    top: 8px;
+    right: 8px;
+  }
 }
