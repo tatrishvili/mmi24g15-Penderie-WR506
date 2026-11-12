@@ -117,23 +117,5 @@ services:
     ports:
       - "8025:8025"
 
-  # ---- End-to-end tests (course section: Cypress) --------------------------
-  # Headless runner: `make test-e2e` (or `npm run test:e2e`).
-  # The image entrypoint is `cypress run`; the profile keeps it out of
-  # `docker compose up -d` (it would run the suite once and exit).
-  cypress:
-    image: cypress/included:16.2.0
-    profiles: ["e2e"]
-    working_dir: /e2e
-    environment:
-      CYPRESS_baseUrl: http://frontend:5173
-    volumes:
-      - ./cypress.config.js:/e2e/cypress.config.js:ro
-      - ./cypress:/e2e/cypress
-    depends_on:
-      - frontend
-      - api
-      - mailpit
-
 volumes:
   db_data:
