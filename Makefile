@@ -186,15 +186,6 @@ lighthouse: fe-build ## Lighthouse audit: performance, accessibility, best pract
 	@echo "HTML report: frontend/lighthouse-report/"
 
 # ----------------------------------------------------------------------------
-#  End-to-end (Cypress)
-# ----------------------------------------------------------------------------
-
-.PHONY: test-e2e
-test-e2e: | api-running fe-running ## End-to-end tests (Cypress, headless, in Docker)
-	$(API) php bin/console cache:pool:clear cache.rate_limiter -q ## resets the e-mail-registration limiter (5/hour/IP)
-	$(COMPOSE) --profile e2e run --rm cypress
-
-# ----------------------------------------------------------------------------
 #  Aggregates
 # ----------------------------------------------------------------------------
 
