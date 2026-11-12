@@ -1,12 +1,20 @@
 import { Fragment } from 'react'
 import OnboardingFoot from '../components/OnboardingFoot.tsx'
+import { t, tArray } from '../i18n/copy.ts'
 import dislike from '../images/icons/dislike.svg'
 import like from '../images/icons/like.svg'
 import sun from '../images/icons/sun.svg'
 import outfit from '../images/outfit_of_the_day_example.png'
 
 export default function OnboardLooks() {
-  const { titleLines, bodyLines, temperature, today, like: likeLabel, skip, caption, stepLabel } = t('onboard.look')
+  const titleLines = tArray<string>('onboard.look.titleLines')
+  const bodyLines = tArray<string>('onboard.look.bodyLines')
+  const temperature = t('onboard.look.temperature')
+  const today = t('onboard.look.today')
+  const likeLabel = t('onboard.look.like')
+  const skip = t('onboard.look.skip')
+  const caption = t('onboard.look.caption')
+  const stepLabel = t('onboard.look.stepLabel')
 
   return (
     <section className="welcome welcome--step">

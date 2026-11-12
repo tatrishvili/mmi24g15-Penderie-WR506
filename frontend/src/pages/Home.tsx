@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import OnboardingFoot from '../components/OnboardingFoot.tsx'
 import buddie from '../images/icons/home_page_buddie.svg'
-import { t } from 'i18next'
+import { t, tArray } from '../i18n/copy.ts'
 
 const BG_VIEWBOX = '0 0 402 874'
 
@@ -39,7 +39,7 @@ export default function Home() {
         <div className="welcome__head">
           <img src={buddie} alt="" className="welcome__buddie" />
           <h1 className="welcome__title">
-            {t('home.titleLines').map((line, index) => (
+            {tArray<string>('home.titleLines').map((line, index) => (
               <Fragment key={line}>
                 {index > 0 && ' '}
                 <span>{line}</span>

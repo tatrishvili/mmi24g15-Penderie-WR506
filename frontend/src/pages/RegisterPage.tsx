@@ -65,7 +65,7 @@ export default function RegisterPage() {
   return (
     <div className="register">
       <h1 className="register__title">
-        {tArray('register.titleLines').map((line, index) => (
+        {tArray<string>('register.titleLines').map((line, index) => (
           <Fragment key={line}>
             {index > 0 && ' '}
             <span>{line}</span>

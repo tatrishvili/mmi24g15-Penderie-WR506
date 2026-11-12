@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { itemText as itemText } from '../lib/itemCatalog.ts'
 import { Check, Heart, UserMinus, UserPlus, X } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import * as friendsApi from '../api/friends.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { t } from 'i18next'
+import { t } from '../i18n/copy.ts'
 import type { FriendEntry, FriendsResult } from '../types/friends.ts'
 
 function errorMessage(error: unknown): string {
@@ -235,11 +234,11 @@ export default function FriendsPage() {
       </div>
 
       <Link className="btn btn-secondary" to="/actualites">
-        {t('seeTheFeed')}
+        {t('friends.seeTheFeed')}
       </Link>
-      <nav className="friend-filters" aria-label={t('Mes relations', 'My connections')}>
-        <Link to="/profil">{t('Mon profil', 'My profile')}</Link>
-        {[[null, t('Gérer', 'Manage')], ['amis', t('Amis', 'Friends')], ['abonnes', t('Abonnes', 'Followers')], ['abonnements', t('Abonnements', 'Following')], ['demandes', t('Demandes', 'Requests')]].map(([value, label]) => <Link key={value ?? 'all'} aria-current={filter === value ? 'page' : undefined} to={value ? `/amis?liste=${value}` : '/amis'}>{label}</Link>)}
+      <nav className="friend-filters" aria-label={t('friends.connections')}>
+        <Link to="/profil">{t('friends.myProfile')}</Link>
+        {[[null, t('friends.manage')], ['amis', t('friends.friendsLabel')], ['abonnes', t('friends.followers')], ['abonnements', t('friends.following')], ['demandes', t('friends.requests')]].map(([value, label]) => <Link key={value ?? 'all'} aria-current={filter === value ? 'page' : undefined} to={value ? `/amis?liste=${value}` : '/amis'}>{label}</Link>)}
       </nav>
       <section hidden={filter !== null} className="auth-card friends-card">
         <h2>{t('friends.addTitle')}</h2>

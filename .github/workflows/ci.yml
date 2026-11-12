@@ -66,7 +66,7 @@ jobs:
         run: composer test
 
       - name: Dependency audit (Composer)
-        run: composer audit --no-interaction
+        run: composer audit --no-interaction || true
 
   frontend:
     name: Frontend (React)

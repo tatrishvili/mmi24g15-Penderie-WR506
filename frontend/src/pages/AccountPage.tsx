@@ -5,7 +5,7 @@ import { LogOut, ScanLine, Shirt, UsersRound } from 'lucide-react'
 import * as authApi from '../api/auth.ts'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { t } from 'i18next'
+import { t } from '../i18n/copy.ts'
 import { roleLabel } from '../types/auth.ts'
 
 /**

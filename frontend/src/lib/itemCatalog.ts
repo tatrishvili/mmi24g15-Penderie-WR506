@@ -1,4 +1,4 @@
-import { t } from 'i18next'
+import i18n from '../i18n/config.ts'
 
 const labels = {
   pull: ['Pull', 'Sweater'],
@@ -49,16 +49,18 @@ export const isClothing = (type: string) =>
     type,
   )
 
-export const itemText = (type: ItemType) => t(`itemTypes.${type}`) || labels[type][0]
-export const itemTypeLabel = (type: ItemType) => t(`itemTypes.${type}`) || labels[type][0]
-
 /**
- * Get a translation for a general key, with fallback to the key itself.
- * Used by components like AppNav that use i18next keys directly.
- * When i18next is not available, returns the key or the default value.
+ * Bilingual fallback used by components that have not been migrated to
+ * translation keys yet. Picks French unless the document language is English.
  */
-export const getCopy = (key: string, defaultValue?: string): string => {
-  const translation = t(key)
-  if (translation !== undefined && translation !== '') return translation
-  return defaultValue ?? key
+export const itemText = (fr: string, en: string): string =>
+  typeof document !== 'undefined' && document.documentElement.lang.toLowerCase().startsWith('en')
+    ? en
+    : fr
+
+export const itemTypeLabel = (type: ItemType): string => {
+  const key = `itemTypes.${type}`
+  const translated = i18n.t(key)
+  if (typeof translated === 'string' && translated !== '' && translated !== key) return translated
+  return itemText(labels[type][0], labels[type][1])
 }

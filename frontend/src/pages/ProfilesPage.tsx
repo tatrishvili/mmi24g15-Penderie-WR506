@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Check, LogOut, Plus } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { t } from 'i18next'
+import { t } from '../i18n/copy.ts'
 import { roleLabel } from '../types/auth.ts'
 
 export default function ProfilesPage() {

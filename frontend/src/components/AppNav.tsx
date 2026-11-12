@@ -2,7 +2,7 @@ import { useContext } from 'react'
 import { AuthContext } from '../auth/AuthContext.tsx'
 import { Link, useLocation } from 'react-router-dom'
 import { House, MapPin, ScanLine, Shirt, UserRound } from 'lucide-react'
-import { getCopy as t } from '../lib/itemCatalog.ts'
+import { itemText as t } from '../lib/itemCatalog.ts'
 
 export default function AppNav() {
   const { pathname } = useLocation()

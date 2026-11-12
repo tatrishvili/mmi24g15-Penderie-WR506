@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.ts'
-import { t } from 'i18next'
+import { t } from '../i18n/copy.ts'
 import cuteIcon from '../images/icons/cute_icon.svg'
 import passwordIcon from '../images/icons/password_icon.svg'
 import profilIcon from '../images/icons/profil_icon.svg'
@@ -57,7 +57,7 @@ export default function LoginPage() {
             setLoginError(null)
           }}
         >
-          {t('Connexion adulte', 'Adult sign-in')}
+          {t('login.adultSignIn')}
         </button>
         <button
           className="design-link"
@@ -68,7 +68,7 @@ export default function LoginPage() {
             setLoginError(null)
           }}
         >
-          {t('Connexion enfant', 'Child sign-in')}
+          {t('login.childSignIn')}
         </button>
       </div>
       <form className="login__form" onSubmit={onPasswordSubmit} noValidate>
@@ -82,7 +82,7 @@ export default function LoginPage() {
           <div className="pill-field">
             <img src={profilIcon} alt="" className="pill-field__icon" />
             <label className="sr-only" htmlFor="login-email">
-              {child ? t('childUsernameLabel') : t('login.emailLabel')}
+              {child ? t('login.childUsernameLabel') : t('login.emailLabel')}
             </label>
             <input
               id="login-email"
@@ -91,7 +91,7 @@ export default function LoginPage() {
               autoComplete={child ? 'username' : 'email'}
               placeholder={
                 child
-                  ? t('usernameGivenByYourParent')
+                  ? t('login.childUsernamePlaceholder')
                   : t('login.emailPlaceholder')
               }
               value={email}

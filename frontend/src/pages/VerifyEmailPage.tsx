@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
-import { t } from 'i18next'
+import { t, tArray } from '../i18n/copy.ts'
 import cuteIcon from '../images/icons/cute_icon_email_verif.svg'
 import mailIcon from '../images/icons/mail_icon.svg'
 
@@ -58,7 +58,7 @@ export default function VerifyEmailPage() {
   return (
     <div className="verify">
       <h1 className="verify__title">
-        {t('verify.titleLines').map((line, index) => (
+        {tArray<string>('verify.titleLines').map((line, index) => (
           <Fragment key={line}>
             {index > 0 && ' '}
             <span>{line}</span>

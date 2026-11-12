@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Home, Layers3, Plus, Warehouse } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import { createPlace, createRoom, createStorageLocation, listPlaces } from '../api/places.ts'
-import { t } from 'i18next'
+import { t, tArray } from '../i18n/copy.ts'
 import type { Place, Room, StorageLocation } from '../types/location.ts'
 import { flattenStorageLocations } from '../types/location.ts'
 
@@ -30,6 +30,7 @@ function RoomCard({ room, onCreated }: { room: Room; onCreated: () => Promise<vo
   const [name, setName] = useState('')
   const [parentId, setParentId] = useState('')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const storageOptions = flattenStorageLocations(room.storageLocations)
 
   async function submit(event: FormEvent) {
@@ -128,8 +129,8 @@ function PlaceCard({ place, onCreated }: { place: Place; onCreated: () => Promis
           required
         >
           <option value="" disabled>{t('rooms.chooseRoom')}</option>
-          {storageOptions.map((option) => (
-            <option key={option.id} value={option.id}>{option.label}</option>
+          {tArray<string>('rooms.presets').map((preset) => (
+            <option key={preset} value={preset}>{preset}</option>
           ))}
           <option value="custom">{t('rooms.customOption')}</option>
         </select>

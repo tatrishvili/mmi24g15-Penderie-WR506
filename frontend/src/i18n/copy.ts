@@ -1,3 +1,5 @@
+import i18n from './config.ts'
+
 export interface AppCopy {
   childSignInNotice: string
   unexpectedError: string
@@ -159,101 +161,40 @@ export interface AppCopy {
 export const SUPPORTED_LOCALES = ['fr', 'en', 'ka'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
 
-export const fallbackLng = 'fr'
+export const fallbackLng: Locale = 'fr'
 
 /**
- * Get the i18next instance from the global window object.
- * The app mounts it via <I18nextProvider i18n={i18n}> in main.tsx.
+ * Translate a key with an optional fallback.
+ * Returns the translated string when the key exists, otherwise the fallback
+ * (when given) or the key itself.
  */
-function getI18n() {
-  if (typeof window !== 'undefined') {
-    const possible = (window as any).i18next || (window as any).i18n
-    if (possible && typeof possible.t === 'function') return possible
-  }
-  return null
-}
-
-/**
- * Detect the current locale from storage, document, or i18n instance.
- */
-function detectLocale(): Locale {
-  const i18n = getI18n()
-  if (i18n) {
-    try {
-      const detected = i18n.languages?.[0] ?? i18n.language
-      if (detected && SUPPORTED_LOCALES.includes(detected as Locale)) {
-        return detected as Locale
-      }
-    } catch {
-      // fall through
-    }
-  }
-  if (typeof document !== 'undefined') {
-    const docLang = (document.documentElement.lang || '').toLowerCase().split('-')[0]
-    if (SUPPORTED_LOCALES.includes(docLang as Locale)) {
-      return docLang as Locale
-    }
-  }
-  return fallbackLng
-}
-
-function readStoredLocale(): Locale {
-  if (typeof window === 'undefined') return fallbackLng
-  try {
-    return window.localStorage.getItem('penderie.locale')
-      ?.toLowerCase()
-      .split('-')[0] ?? fallbackLng
-  } catch {
-    return fallbackLng
-  }
-}
-
-/**
- * Read a translation from i18next, returning undefined if i18next isn't available.
- * When i18next is available, returns the translated string or undefined if the key isn't found.
- */
-function tRaw(key: string, locale: Locale): string | undefined {
-  const i18n = getI18n()
-  if (!i18n) return undefined
-  try {
-    const result = i18n.t(key, { interpolation: { escapeValue: false }, lng: locale })
-    return typeof result === 'string' ? result : undefined
-  } catch {
-    return undefined
-  }
-}
-
-/**
- * Main translation function. Returns the translated string, or undefined if i18next isn't available.
- * Components should handle the undefined case with fallback logic.
- */
-export function t(key: string, locale?: Locale): string | undefined {
-  const loc = locale ?? detectLocale()
-  return tRaw(key, loc)
-}
-
-/**
- * Get an array of translations from i18next.
- * Returns an empty array if i18next isn't available.
- */
-export function tArray<T>(key: string, locale?: Locale): T[] {
-  const loc = locale ?? detectLocale()
-  const i18n = getI18n()
-  if (!i18n) return [] as T[]
-  try {
-    const result = i18n.t(key, { interpolation: { escapeValue: false }, lng: loc })
-    return Array.isArray(result) ? result.map((item: any) => item as T) : [] as T[]
-  } catch {
-    return [] as T[]
-  }
-}
-
-/**
- * Safely get a translation with a fallback.
- * Returns the translation if available, otherwise the defaultValue, or the key itself.
- */
-export const getCopy = (key: string, defaultValue?: string): string => {
-  const translation = t(key)
-  if (translation !== undefined && translation !== '') return translation
+export function t(key: string, defaultValue?: string): string {
+  const result = i18n.t(key)
+  if (typeof result === 'string' && result !== '' && result !== key) return result
   return defaultValue ?? key
 }
+
+/**
+ * Translate a key whose value is an array (for example title lines or presets).
+ * Returns an empty array when the key is missing.
+ */
+export function tArray<T = string>(key: string): T[] {
+  const result: unknown = i18n.t(key, { returnObjects: true })
+  return Array.isArray(result) ? (result as T[]) : []
+}
+
+/**
+ * Translate a key whose value is an object (for example a grouped block).
+ * Returns an empty object when the key is missing.
+ */
+export function tObject<T extends object>(key: string): Partial<T> {
+  const result: unknown = i18n.t(key, { returnObjects: true })
+  return result !== null && typeof result === 'object' && !Array.isArray(result)
+    ? (result as Partial<T>)
+    : {}
+}
+
+/**
+ * Backwards-compatible alias for `t`.
+ */
+export const getCopy = t

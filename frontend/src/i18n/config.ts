@@ -36,7 +36,7 @@ void i18n.use(initReactI18next).init({
   lng: initialLocale,
   fallbackLng: DEFAULT_LOCALE,
   supportedLngs: [...SUPPORTED_LOCALES],
-  initImmediate: false,
+  initAsync: false,
   interpolation: { escapeValue: false },
   returnNull: false,
 })
