@@ -32,6 +32,7 @@ use Symfony\Component\Mime\Email;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AuthService
 {
@@ -41,6 +42,7 @@ final class AuthService
         private UserPasswordHasherInterface $hasher,
         private Security $security,
         private MailerInterface $mailer,
+        private TranslatorInterface $translator,
         private string $frontendBaseUrl,
         private string $mailerFromAddress,
     ) {
@@ -544,12 +546,13 @@ final class AuthService
         $message = (new Email())
             ->from(new Address($this->mailerFromAddress, 'Penderie'))
             ->to($email)
-            ->subject('Confirmez votre adresse e-mail')
+            ->subject($this->translator->trans('email.verification.subject'))
             ->text(
-                "Bonjour,\n\n"
-                ."Pour confirmer votre adresse et créer votre compte Penderie, ouvrez ce lien :\n"
+                $this->translator->trans('email.verification.greeting')."\n\n"
+                .$this->translator->trans('email.verification.intro')."\n"
                 .$verificationUrl
-                ."\n\nCe lien expire dans une heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.",
+                ."\n\n"
+                .$this->translator->trans('email.verification.expiry'),
             );
 
         $this->mailer->send($message);

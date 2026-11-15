@@ -1,3 +1,5 @@
+import i18n from '../i18n/config.ts'
+
 export interface ApiErrorBody {
   error: {
     code: string
@@ -35,7 +37,11 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   try {
     response = await fetch(path, {
       method: options.method ?? 'GET',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Accept-Language': i18n.language,
+      },
       credentials: 'same-origin',
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     })
@@ -43,7 +49,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     throw new ApiError(0, {
       error: {
         code: 'network',
-        message: 'Impossible de joindre le serveur. Vérifiez votre connexion.',
+        message: i18n.t('api.networkError'),
       },
     })
   }

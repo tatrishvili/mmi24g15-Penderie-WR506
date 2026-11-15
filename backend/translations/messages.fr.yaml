@@ -1,0 +1,6 @@
+email:
+    verification:
+        subject: "Confirmez votre adresse e-mail"
+        greeting: "Bonjour,"
+        intro: "Pour confirmer votre adresse et créer votre compte Penderie, ouvrez ce lien :"
+        expiry: "Ce lien expire dans une heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail."

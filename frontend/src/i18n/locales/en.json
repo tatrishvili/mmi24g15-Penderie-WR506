@@ -309,5 +309,34 @@
       "caption": "Pick the style that suits you best",
       "stepLabel": "Step 4 of 4"
     }
+  },
+  "items": {
+    "condition": {
+      "neuf": "New",
+      "comme_neuf": "Like new",
+      "tres_bon": "Very good condition",
+      "bon": "Good condition",
+      "a_reparer": "Needs repair",
+      "abime": "Damaged"
+    },
+    "status": {
+      "disponible": "Available",
+      "loue": "On loan",
+      "vendu": "Sold",
+      "donne": "Given away",
+      "archive": "Archived"
+    }
+  },
+  "loans": {
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted · To hand over",
+      "active": "On loan",
+      "returned": "Returned",
+      "declined": "Declined"
+    }
+  },
+  "api": {
+    "networkError": "Unable to reach the server. Check your connection."
   }
 }

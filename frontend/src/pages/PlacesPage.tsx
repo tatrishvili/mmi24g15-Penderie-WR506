@@ -4,6 +4,7 @@ import { Home, Layers3, Plus, Warehouse } from 'lucide-react'
 import { ApiError } from '../api/client.ts'
 import { createPlace, createRoom, createStorageLocation, listPlaces } from '../api/places.ts'
 import { t, tArray } from '../i18n/copy.ts'
+import { itemText as tr } from '../lib/itemCatalog.ts'
 import type { Place, Room, StorageLocation } from '../types/location.ts'
 import { flattenStorageLocations } from '../types/location.ts'
 
@@ -54,27 +55,27 @@ function RoomCard({ room, onCreated }: { room: Room; onCreated: () => Promise<vo
       <h3>{room.name}</h3>
       {room.storageLocations.length > 0
         ? <StorageTree entries={room.storageLocations} />
-        : <p className="auth-sub">Aucun rangement pour le moment.</p>}
+        : <p className="auth-sub">{tr('Aucun rangement pour le moment.', 'No storage yet.')}</p>}
       <form className="location-add-form" onSubmit={(event) => void submit(event)}>
-        <label className="sr-only" htmlFor={`storage-name-${room.id}`}>Nom du rangement ou de la boîte</label>
+        <label className="sr-only" htmlFor={`storage-name-${room.id}`}>{tr('Nom du rangement ou de la boîte', 'Storage or box name')}</label>
         <input
           id={`storage-name-${room.id}`}
           className="input"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Rangement ou boîte"
+          placeholder={tr('Rangement ou boîte', 'Storage or box')}
           required
         />
         {storageOptions.length > 0 && (
           <div className="field">
-            <label htmlFor={`storage-parent-${room.id}`}>Dans un rangement existant (optionnel)</label>
+            <label htmlFor={`storage-parent-${room.id}`}>{tr('Dans un rangement existant (optionnel)', 'Inside existing storage (optional)')}</label>
             <select
               id={`storage-parent-${room.id}`}
               className="input"
               value={parentId}
               onChange={(event) => setParentId(event.target.value)}
             >
-              <option value="">À la racine de la pièce</option>
+              <option value="">{tr('À la racine de la pièce', 'At room level')}</option>
               {storageOptions.map((option) => (
                 <option key={option.id} value={option.id}>{option.label}</option>
               ))}
@@ -83,7 +84,7 @@ function RoomCard({ room, onCreated }: { room: Room; onCreated: () => Promise<vo
         )}
         {error !== null && <p role="alert" className="form-error">{error}</p>}
         <button type="submit" className="btn btn-secondary" disabled={busy}>
-          <Plus size={16} aria-hidden="true" /> Ajouter un rangement / une boîte
+          <Plus size={16} aria-hidden="true" /> {tr('Ajouter un rangement / une boîte', 'Add storage / a box')}
         </button>
       </form>
     </section>
@@ -147,7 +148,7 @@ function PlaceCard({ place, onCreated }: { place: Place; onCreated: () => Promis
         )}
         {error !== null && <p role="alert" className="form-error">{error}</p>}
         <button type="submit" className="btn btn-secondary" disabled={busy}>
-          <Plus size={16} aria-hidden="true" /> Ajouter une pièce
+          <Plus size={16} aria-hidden="true" /> {tr('Ajouter une pièce', 'Add a room')}
         </button>
       </form>
     </article>
@@ -211,36 +212,36 @@ export default function PlacesPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <p className="auth-tagline">Organisez vos affaires par lieu de rangement.</p>
-        <h1>Maisons et rangements</h1>
+        <p className="auth-tagline">{tr('Organisez vos affaires par lieu de rangement.', 'Organize your belongings by storage place.')}</p>
+        <h1>{tr('Maisons et rangements', 'Houses and storage')}</h1>
         <p className="auth-sub">
-          Maison → pièce → rangement → étagère ou boîte. Choisissez ensuite l’emplacement exact de chaque article.
+          {tr('Maison → pièce → rangement → étagère ou boîte. Choisissez ensuite l’emplacement exact de chaque article.', 'House → room → storage → shelf or box. Then choose the exact location of each item.')}
         </p>
         {error !== null && <p role="alert" className="form-error">{error}</p>}
         <form className="location-add-form" onSubmit={(event) => void submit(event)}>
-          <label htmlFor="place-name">Ajouter une maison ou un lieu</label>
+          <label htmlFor="place-name">{tr('Ajouter une maison ou un lieu', 'Add a house or place')}</label>
           <input
             id="place-name"
             className="input"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Ex. Maison, appartement de vacances"
+            placeholder={tr('Ex. Maison, appartement de vacances', 'E.g. House, holiday flat')}
             required
           />
           <button type="submit" className="btn btn-primary" disabled={busy}>
-            <Plus size={17} aria-hidden="true" /> Ajouter un lieu
+            <Plus size={17} aria-hidden="true" /> {tr('Ajouter un lieu', 'Add a place')}
           </button>
         </form>
         {loading ? (
-          <p className="auth-sub">Chargement…</p>
+          <p className="auth-sub">{tr('Chargement…', 'Loading…')}</p>
         ) : places.length === 0 ? (
-          <p className="auth-sub">Aucun lieu enregistré.</p>
+          <p className="auth-sub">{tr('Aucun lieu enregistré.', 'No place saved.')}</p>
         ) : (
           <div className="places-list">
             {places.map((place) => <PlaceCard key={place.id} place={place} onCreated={load} />)}
           </div>
         )}
-        <p className="location-path"><Layers3 size={15} aria-hidden="true" /> Maison → pièce → rangement → boîte → article</p>
+        <p className="location-path"><Layers3 size={15} aria-hidden="true" /> {tr('Maison → pièce → rangement → boîte → article', 'House → room → storage → box → item')}</p>
       </div>
     </div>
   )

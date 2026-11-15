@@ -309,5 +309,34 @@
       "caption": "Choisissez le style qui vous correspond le mieux",
       "stepLabel": "Étape 4 sur 4"
     }
+  },
+  "items": {
+    "condition": {
+      "neuf": "Neuf",
+      "comme_neuf": "Comme neuf",
+      "tres_bon": "Très bon état",
+      "bon": "Bon état",
+      "a_reparer": "À réparer",
+      "abime": "Abîmé"
+    },
+    "status": {
+      "disponible": "Disponible",
+      "loue": "Prêté",
+      "vendu": "Vendu",
+      "donne": "Donné",
+      "archive": "Archivé"
+    }
+  },
+  "loans": {
+    "status": {
+      "pending": "En attente",
+      "accepted": "Accepté · À remettre",
+      "active": "Prêt en cours",
+      "returned": "Retourné",
+      "declined": "Refusé"
+    }
+  },
+  "api": {
+    "networkError": "Impossible de joindre le serveur. Vérifiez votre connexion."
   }
 }

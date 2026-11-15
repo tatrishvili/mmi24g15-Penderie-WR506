@@ -1,4 +1,5 @@
 import type { ProfileSummary } from './auth.ts'
+import { t } from '../i18n/copy.ts'
 
 export type ItemCondition = 'neuf' | 'comme_neuf' | 'tres_bon' | 'bon' | 'a_reparer' | 'abime'
 
@@ -68,27 +69,10 @@ export interface CreateItemPayload {
 
 export type UpdateItemPayload = Partial<CreateItemPayload>
 
-const CONDITION_LABELS: Record<ItemCondition, string> = {
-  neuf: 'Neuf',
-  comme_neuf: 'Comme neuf',
-  tres_bon: 'Très bon état',
-  bon: 'Bon état',
-  a_reparer: 'À réparer',
-  abime: 'Abîmé',
-}
-
-const STATUS_LABELS: Record<ItemStatus, string> = {
-  disponible: 'Disponible',
-  loue: 'Prêté',
-  vendu: 'Vendu',
-  donne: 'Donné',
-  archive: 'Archivé',
-}
-
 export function conditionLabel(condition: ItemCondition): string {
-  return CONDITION_LABELS[condition]
+  return t(`items.condition.${condition}`)
 }
 
 export function statusLabel(status: ItemStatus): string {
-  return STATUS_LABELS[status]
+  return t(`items.status.${status}`)
 }

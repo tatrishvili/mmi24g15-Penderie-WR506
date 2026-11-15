@@ -26,6 +26,7 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * The guards of AuthService that HTTP-level tests cannot reach honestly:
@@ -77,12 +78,16 @@ final class AuthServiceValidationTest extends TestCase
         $validator = $this->createStub(ValidatorInterface::class);
         $validator->method('validate')->willReturn(new ConstraintViolationList());
 
+        $translator = $this->createStub(TranslatorInterface::class);
+        $translator->method('trans')->willReturnArgument(0);
+
         return new AuthService(
             $em ?? $this->repositoryMockingEm(),
             $validator,
             $this->createStub(UserPasswordHasherInterface::class),
             $this->createStub(Security::class),
             $this->createStub(MailerInterface::class),
+            $translator,
             'https://penderie.test',
             'no-reply@penderie.test',
         );

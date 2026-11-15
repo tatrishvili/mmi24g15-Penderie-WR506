@@ -158,23 +158,23 @@ export default function ItemDetailPage({
             )}
             <DesignRow
               icon={icon('imgIconUser')}
-              title="Propriétaire"
+              title={itemText('Propriétaire', 'Owner')}
               detail={item.ownerProfile.name}
               to={item.canEdit === false ? undefined : '/profils'}
             />
             <DesignRow
               icon={icon('imgIconHouse')}
-              title="Rangement"
+              title={itemText('Rangement', 'Storage')}
               detail={
                 [item.room?.name, ...(item.storageLocation?.path ?? [])]
                   .filter(Boolean)
-                  .join(' · ') || 'Pas encore rangé'
+                  .join(' · ') || itemText('Pas encore rangé', 'Not stored yet')
               }
               to={item.canEdit === false ? undefined : `${base}/emplacement`}
             />
             <DesignRow
               icon={icon('imgIconLock')}
-              title="Visibilité"
+              title={itemText('Visibilité', 'Visibility')}
               detail={
                 item.familyAudience === 'owner' || item.visibility === 'personal'
                   ? itemText('Moi uniquement', 'Only me')
@@ -196,29 +196,29 @@ export default function ItemDetailPage({
       <DesignPage
         frame={frame}
         className="social-item-actions"
-        title="Actions sur un article"
-        subtitle="Modifier, archiver ou supprimer"
+        title={itemText('Actions sur un article', 'Item actions')}
+        subtitle={itemText('Modifier, archiver ou supprimer', 'Edit, archive or delete')}
       >
         {feedback}
         {item && (
           <>
             <DesignRow
               icon={icon('imgIconEdit')}
-              title="Modifier les détails"
-              detail="Nom, photo, catégorie"
+              title={itemText('Modifier les détails', 'Edit details')}
+              detail={itemText('Nom, photo, catégorie', 'Name, photo, category')}
               to={`${base}/modifier`}
             />
             <DesignRow
               icon={icon('imgIconBox')}
-              title="Déplacer"
-              detail="Changer de rangement"
+              title={itemText('Déplacer', 'Move')}
+              detail={itemText('Changer de rangement', 'Change storage')}
               to={`${base}/emplacement`}
             />
             {!child && (
               <DesignRow
                 icon={icon('imgIconDisc')}
-                title="Ajouter à une collection"
-                detail="Sans supprimer l’article"
+                title={itemText('Ajouter à une collection', 'Add to a collection')}
+                detail={itemText('Sans supprimer l’article', 'Without deleting the item')}
                 disabled={busy}
                 onClick={() =>
                   void run(async () => setCollections((await social.getWorkspace()).collections))
@@ -236,27 +236,27 @@ export default function ItemDetailPage({
                   <DesignRow
                     key={c.id}
                     title={c.name}
-                    detail={c.itemIds.includes(item.id) ? 'Déjà dans cette collection' : 'Ajouter'}
+                    detail={c.itemIds.includes(item.id) ? itemText('Déjà dans cette collection', 'Already in this collection') : itemText('Ajouter', 'Add')}
                     disabled={busy}
                     onClick={() =>
                       void run(async () => {
                         await social.collectionItem(c.id, item.id)
-                        setNotice(`Article ajouté à ${c.name}.`)
+                        setNotice(`${itemText('Article ajouté à', 'Item added to')} ${c.name}.`)
                         setCollections(null)
                       })
                     }
                   />
                 ))}
                 {collections.length === 0 && (
-                  <Link to="/collections/nouvelle">Créer une collection</Link>
+                  <Link to="/collections/nouvelle">{itemText('Créer une collection', 'Create a collection')}</Link>
                 )}
               </div>
             )}
             {!child && (
               <DesignRow
                 icon={icon('imgIconPin')}
-                title="Épingler au profil"
-                detail="Choisir une collection dans la vitrine"
+                title={itemText('Épingler au profil', 'Pin to profile')}
+                detail={itemText('Choisir une collection dans la vitrine', 'Choose a collection in the showcase')}
                 to="/vitrine"
               />
             )}
@@ -266,18 +266,18 @@ export default function ItemDetailPage({
                 item.status === 'archive'
                   ? child
                     ? itemText('Demander à un parent de restaurer', 'Ask a parent to restore')
-                    : 'Restaurer'
-                  : 'Archiver'
+                    : itemText('Restaurer', 'Restore')
+                  : itemText('Archiver', 'Archive')
               }
               disabled={child && item.status === 'archive'}
-              detail="Récupérable plus tard"
+              detail={itemText('Récupérable plus tard', 'Recoverable later')}
               onClick={
                 item.status === 'archive'
                   ? () =>
                       void run(async () => {
                         const result = await updateItem(item.id, { status: 'disponible' })
                         setItem(result.item)
-                        setNotice('Article restauré.')
+                        setNotice(itemText('Article restauré.', 'Item restored.'))
                       })
                   : () => navigate(`${base}/archiver`)
               }
@@ -285,13 +285,13 @@ export default function ItemDetailPage({
             {!child && (
               <DesignRow
                 icon={icon('imgIconTrash')}
-                title="Supprimer"
-                detail="Confirmation requise"
+                title={itemText('Supprimer', 'Delete')}
+                detail={itemText('Confirmation requise', 'Confirmation required')}
                 to={`${base}/archiver`}
               />
             )}
             <Link className="design-link" to={base}>
-              Revenir à l’article
+              {itemText('Revenir à l’article', 'Back to the item')}
             </Link>
           </>
         )}
@@ -303,8 +303,8 @@ export default function ItemDetailPage({
       <DesignPage
         frame={frame}
         className="social-share"
-        title="Partager un article"
-        subtitle="Partager sans révéler les détails privés"
+        title={itemText('Partager un article', 'Share an item')}
+        subtitle={itemText('Partager sans révéler les détails privés', 'Share without revealing private details')}
         footer={
           <button
             className="btn btn-primary"
@@ -317,31 +317,31 @@ export default function ItemDetailPage({
               })
             }
           >
-            {busy ? 'Création…' : 'Partager'}
+            {busy ? itemText('Création…', 'Creating…') : itemText('Partager', 'Share')}
           </button>
         }
       >
         {feedback}
         <DesignRow
           icon={icon('imgIconShirt')}
-          title={item?.name ?? 'Article'}
-          detail="Photo et détails sélectionnés"
+          title={item?.name ?? itemText('Article', 'Item')}
+          detail={itemText('Photo et détails sélectionnés', 'Selected photo and details')}
           to={base}
         />
         <DesignRow
           icon={icon('imgIconUsers')}
-          title="Choisir mes amis"
-          detail="Envoyer aux destinataires choisis"
+          title={itemText('Choisir mes amis', 'Choose my friends')}
+          detail={itemText('Envoyer aux destinataires choisis', 'Send to selected recipients')}
           onClick={() =>
             setNotice(
-              'L’envoi à des amis précis nécessite encore des autorisations par destinataire. Aucun accès n’a été accordé.',
+              itemText('L’envoi à des amis précis nécessite encore des autorisations par destinataire. Aucun accès n’a été accordé.', 'Sending to specific friends still requires per-recipient permissions. No access was granted.'),
             )
           }
         />
         <DesignRow
           icon={icon('imgIconLink')}
-          title="Créer un lien"
-          detail="Lien privé · Lecture seule · 7 jours"
+          title={itemText('Créer un lien', 'Create a link')}
+          detail={itemText('Lien privé · Lecture seule · 7 jours', 'Private link · Read only · 7 days')}
           selected={verifiedOnly}
           onClick={() => setVerifiedOnly(!verifiedOnly)}
         />
@@ -351,22 +351,22 @@ export default function ItemDetailPage({
             checked={verifiedOnly}
             onChange={(e) => setVerifiedOnly(e.target.checked)}
           />
-          Compte vérifié requis pour ouvrir le lien
+          {itemText('Compte vérifié requis pour ouvrir le lien', 'Verified account required to open the link')}
         </label>
         <DesignNotice>
-          <h2>Aperçu des informations visibles</h2>
+          <h2>{itemText('Aperçu des informations visibles', 'Preview of visible information')}</h2>
           <ul>
             <li>
-              <FigmaGlyph name="shareCheck" /> Photo, nom, type et couleur sélectionnés
+              <FigmaGlyph name="shareCheck" /> {itemText('Photo, nom, type et couleur sélectionnés', 'Selected photo, name, type and colour')}
             </li>
             <li>
-              <FigmaGlyph name="shareCheck" /> Pas de prix d’achat
+              <FigmaGlyph name="shareCheck" /> {itemText('Pas de prix d’achat', 'No purchase price')}
             </li>
             <li>
-              <FigmaGlyph name="shareCheck" /> Pas de lieu exact ni adresse
+              <FigmaGlyph name="shareCheck" /> {itemText('Pas de lieu exact ni adresse', 'No exact location or address')}
             </li>
             <li>
-              <FigmaGlyph name="shareCheck" /> Pas de notes personnelles
+              <FigmaGlyph name="shareCheck" /> {itemText('Pas de notes personnelles', 'No personal notes')}
             </li>
           </ul>
           <p>
@@ -379,12 +379,12 @@ export default function ItemDetailPage({
             checked={approved}
             onChange={(e) => setApproved(e.target.checked)}
           />
-          J’approuve ces informations. Le lien peut être transféré et des copies conservées.
+          {itemText('J’approuve ces informations. Le lien peut être transféré et des copies conservées.', 'I approve this information. The link can be forwarded and copies kept.')}
         </label>
         {shareUrl && (
           <DesignNotice>
             <label>
-              Lien créé
+              {itemText('Lien créé', 'Link created')}
               <input
                 className="input"
                 readOnly
@@ -398,13 +398,13 @@ export default function ItemDetailPage({
               onClick={() =>
                 void run(async () => {
                   await navigator.clipboard.writeText(shareUrl)
-                  setNotice('Lien copié.')
+                  setNotice(itemText('Lien copié.', 'Link copied.'))
                 })
               }
             >
-              Copier le lien
+              {itemText('Copier le lien', 'Copy link')}
             </button>
-            <Link to="/acces">Gérer et révoquer les accès</Link>
+            <Link to="/acces">{itemText('Gérer et révoquer les accès', 'Manage and revoke access')}</Link>
           </DesignNotice>
         )}
       </DesignPage>
@@ -414,35 +414,35 @@ export default function ItemDetailPage({
     <DesignPage
       frame={frame}
       className="social-archive"
-      title="Archiver ou supprimer"
-      subtitle="Choisir une action réversible ou définitive"
+      title={itemText('Archiver ou supprimer', 'Archive or delete')}
+      subtitle={itemText('Choisir une action réversible ou définitive', 'Choose a reversible or permanent action')}
       footer={
         <Link className="btn btn-secondary" to={base}>
-          Annuler
+          {itemText('Annuler', 'Cancel')}
         </Link>
       }
     >
       {feedback}
       <DesignRow
         icon={icon('imgIconArchive')}
-        title="Archiver"
-        detail="Masquer sans supprimer"
+        title={itemText('Archiver', 'Archive')}
+        detail={itemText('Masquer sans supprimer', 'Hide without deleting')}
         disabled={!item || busy}
         onClick={() => setConfirm('archive')}
       />
       {!child && (
         <DesignRow
           icon={icon('imgIconTrash')}
-          title="Supprimer"
-          detail="Confirmation requise · définitif"
+          title={itemText('Supprimer', 'Delete')}
+          detail={itemText('Confirmation requise · définitif', 'Confirmation required · permanent')}
           disabled={!item || busy}
           onClick={() => setConfirm('delete')}
         />
       )}
       <DesignNotice>
-        <h2>{icon('imgIconShield')}Attention</h2>
+        <h2>{icon('imgIconShield')}{itemText('Attention', 'Warning')}</h2>
         <p>
-          Un prêt actif et les droits d’autres personnes doivent être traités avant la suppression.
+          {itemText('Un prêt actif et les droits d’autres personnes doivent être traités avant la suppression.', 'An active loan and other people’s rights must be handled before deletion.')}
         </p>
       </DesignNotice>
       {confirm && (
@@ -454,13 +454,13 @@ export default function ItemDetailPage({
         >
           <h2 id="item-confirm-title">
             {confirm === 'archive'
-              ? 'Archiver cet article ?'
-              : 'Supprimer définitivement cet article ?'}
+              ? itemText('Archiver cet article ?', 'Archive this item?')
+              : itemText('Supprimer définitivement cet article ?', 'Permanently delete this item?')}
           </h2>
           <p>
             {confirm === 'archive'
-              ? 'Vous pourrez le restaurer. Ses partages deviendront inaccessibles.'
-              : 'Les photos et les liens seront supprimés. Cette action ne peut pas être annulée.'}
+              ? itemText('Vous pourrez le restaurer. Ses partages deviendront inaccessibles.', 'You can restore it. Its shares will become inaccessible.')
+              : itemText('Les photos et les liens seront supprimés. Cette action ne peut pas être annulée.', 'Photos and links will be deleted. This action cannot be undone.')}
           </p>
           <button
             className="btn btn-primary"
@@ -474,10 +474,10 @@ export default function ItemDetailPage({
               })
             }
           >
-            Confirmer
+            {itemText('Confirmer', 'Confirm')}
           </button>
           <button className="btn btn-secondary" onClick={() => setConfirm(null)} disabled={busy}>
-            Annuler
+            {itemText('Annuler', 'Cancel')}
           </button>
         </div>
       )}
@@ -512,17 +512,17 @@ export function AccessPage() {
     <DesignPage
       frame="165:271"
       className="social-access"
-      title="Gérer les accès"
-      subtitle="Consulter et retirer les autorisations"
+      title={itemText('Gérer les accès', 'Manage access')}
+      subtitle={itemText('Consulter et retirer les autorisations', 'View and revoke permissions')}
       footer={
         <Link className="btn btn-primary" to="/dressing">
-          Créer un partage
+          {itemText('Créer un partage', 'Create a share')}
         </Link>
       }
     >
       <ErrorMessage error={error} />
-      {loading && <p role="status">Chargement…</p>}
-      {!loading && !shares.length && <p>Aucun partage créé.</p>}
+      {loading && <p role="status">{itemText('Chargement…', 'Loading…')}</p>}
+      {!loading && !shares.length && <p>{itemText('Aucun partage créé.', 'No share created.')}</p>}
       {shares.map((s) => {
         const inactive = s.revoked || new Date(s.expiresAt).getTime() < now
         return (
@@ -532,8 +532,8 @@ export function AccessPage() {
             title={s.itemName}
             detail={
               inactive
-                ? 'Révoqué ou expiré'
-                : `Lien privé · ${s.verifiedOnly ? 'Compte vérifié' : 'Lecture seule'} · Révoquer`
+                ? itemText('Révoqué ou expiré', 'Revoked or expired')
+                : `${itemText('Lien privé', 'Private link')} · ${s.verifiedOnly ? itemText('Compte vérifié', 'Verified account') : itemText('Lecture seule', 'Read only')} · ${itemText('Révoquer', 'Revoke')}`
             }
             disabled={inactive || busy !== null}
             onClick={() => {
@@ -553,9 +553,9 @@ export function AccessPage() {
       <DesignNotice>
         <h2>
           <FrameIcon frame="165:271" name="imgIconShield" />
-          Révoquer un accès
+          {itemText('Révoquer un accès', 'Revoke access')}
         </h2>
-        <p>Cela empêche les accès futurs, mais ne récupère pas les copies enregistrées.</p>
+        <p>{itemText('Cela empêche les accès futurs, mais ne récupère pas les copies enregistrées.', 'This prevents future access but does not recover saved copies.')}</p>
       </DesignNotice>
     </DesignPage>
   )

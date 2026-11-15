@@ -1,4 +1,5 @@
 import { api } from './client.ts'
+import { t } from '../i18n/copy.ts'
 
 export interface Collection {
   id: string
@@ -90,13 +91,7 @@ export const requestLoan = (token: string, dueAt: string, message: string) =>
   })
 export const transitionLoan = (id: number, action: string) =>
   api<{ loan: Loan }>(`/api/social/loans/${id}/${action}`, { method: 'POST' })
-export const loanLabel: Record<Loan['status'], string> = {
-  pending: 'En attente',
-  accepted: 'Accepté · À remettre',
-  active: 'Prêt en cours',
-  returned: 'Retourné',
-  declined: 'Refusé',
-}
+export const loanLabel = (status: Loan['status']): string => t(`loans.status.${status}`)
 
 export type CollectionAudience = 'personal' | 'friends' | 'followers' | 'app'
 export interface CollectionPresentation {

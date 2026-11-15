@@ -7,6 +7,7 @@ import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
 import { t } from '../i18n/copy.ts'
 import { roleLabel } from '../types/auth.ts'
+import { itemText as tr } from '../lib/itemCatalog.ts'
 
 /**
  * "Mon compte" — every info about me in one place: account, foyer,
@@ -48,18 +49,18 @@ export default function AccountPage() {
     <div className="auth-page">
       <p className="auth-tagline">
         {household === null ? (
-          'Votre compte est prêt.'
+          tr('Votre compte est prêt.', 'Your account is ready.')
         ) : (
           <>
-            Foyer « {household.name} » — code : <strong>{household.slug}</strong>
+            {tr('Foyer', 'Household')} « {household.name} » — {tr('code', 'code')} : <strong>{household.slug}</strong>
           </>
         )}
       </p>
 
       <div className="auth-card">
-        <h1>Mon compte</h1>
+        <h1>{tr('Mon compte', 'My account')}</h1>
 
-        <section aria-label="Mon compte utilisateur">
+        <section aria-label={tr('Mon compte utilisateur', 'My user account')}>
           <h2 className="section-title">{t('account.usernameTitle')}</h2>
           {user?.username === undefined || user.username === null ? (
             <form className="auth-form" onSubmit={(event) => void onSetUsername(event)}>
@@ -88,15 +89,15 @@ export default function AccountPage() {
           {usernameSuccess !== null && <p role="status" className="friend-success">{usernameSuccess}</p>}
         </section>
 
-        <section aria-label="Mon e-mail">
-          <h2 className="section-title">Connexion</h2>
+        <section aria-label={tr('Mon e-mail', 'My e-mail')}>
+          <h2 className="section-title">{tr('Connexion', 'Sign-in')}</h2>
           <p className="auth-sub">{user?.email ?? '—'}</p>
         </section>
 
-        <section aria-label="Mon profil actif">
-          <h2 className="section-title">Profil actif</h2>
+        <section aria-label={tr('Mon profil actif', 'My active profile')}>
+          <h2 className="section-title">{tr('Profil actif', 'Active profile')}</h2>
           {activeProfile === null ? (
-            <p className="auth-sub">Aucun profil actif pour le moment.</p>
+            <p className="auth-sub">{tr('Aucun profil actif pour le moment.', 'No active profile yet.')}</p>
           ) : (
             <p className="auth-sub">
               <strong>{activeProfile.name}</strong> — {roleLabel(activeProfile.role)}
@@ -104,29 +105,28 @@ export default function AccountPage() {
           )}
         </section>
 
-        <section aria-label="Mon foyer">
-          <h2 className="section-title">Foyer</h2>
+        <section aria-label={tr('Mon foyer', 'My household')}>
+          <h2 className="section-title">{tr('Foyer', 'Household')}</h2>
           {household === null ? (
             <p className="auth-sub">
-              Pas encore de foyer. <Link to="/profils">Créez votre foyer</Link> pour commencer.
+              {tr('Pas encore de foyer.', 'No household yet.')} <Link to="/profils">{tr('Créez votre foyer', 'Create your household')}</Link> {tr('pour commencer.', 'to get started.')}
             </p>
           ) : (
             <>
               <p className="auth-sub">
-                <strong>{household.name}</strong> — lieu principal :{' '}
+                <strong>{household.name}</strong> — {tr('lieu principal', 'main place')} :{' '}
                 {defaultPlace?.name ?? '—'}
               </p>
               <p className="auth-sub">
-                {profiles.length} profil{profiles.length > 1 ? 's' : ''} · {places.length} lieu
-                {places.length > 1 ? 'x' : ''}
+                {profiles.length} {tr('profils', 'profiles')} · {places.length} {tr('lieux', 'places')}
               </p>
             </>
           )}
         </section>
 
         {profiles.length > 0 && (
-          <section aria-label="Membres du foyer">
-            <h2 className="section-title">Membres</h2>
+          <section aria-label={tr('Membres du foyer', 'Household members')}>
+            <h2 className="section-title">{tr('Membres', 'Members')}</h2>
             <ul className="profile-list">
               {profiles.map((profile) => (
                 <li key={profile.id} className="profile-row">
@@ -138,7 +138,7 @@ export default function AccountPage() {
                     <br />
                     <span className="profile-role">
                       {roleLabel(profile.role)}
-                      {profile.hasPin ? ' · code PIN' : ''}
+                      {profile.hasPin ? ` · ${tr('code PIN', 'PIN')}` : ''}
                     </span>
                   </span>
                 </li>
@@ -149,16 +149,16 @@ export default function AccountPage() {
 
         <div className="account-actions">
           <Link className="btn btn-primary" to="/scanner">
-            <ScanLine size={18} aria-hidden="true" /> Scanner un article
+            <ScanLine size={18} aria-hidden="true" /> {tr('Scanner un article', 'Scan an item')}
           </Link>
           <Link className="btn btn-secondary" to="/dressing">
-            <Shirt size={18} aria-hidden="true" /> Mon dressing
+            <Shirt size={18} aria-hidden="true" /> {tr('Mon dressing', 'My wardrobe')}
           </Link>
           <Link className="btn btn-secondary" to="/profils">
-            <UsersRound size={18} aria-hidden="true" /> Gérer les profils
+            <UsersRound size={18} aria-hidden="true" /> {tr('Gérer les profils', 'Manage profiles')}
           </Link>
           <button type="button" className="btn btn-secondary" onClick={() => void logout()}>
-            <LogOut size={18} aria-hidden="true" /> Se déconnecter
+            <LogOut size={18} aria-hidden="true" /> {tr('Se déconnecter', 'Sign out')}
           </button>
         </div>
       </div>
