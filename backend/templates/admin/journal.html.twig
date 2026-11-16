@@ -1,0 +1,79 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_body %}
+    <h1>{{ 'admin.journal.title'|trans }}</h1>
+    <p class="admin-subtitle">
+        {{ 'admin.journal.subtitle'|trans }}
+        {% if activityStartedAt %}
+            {{ 'admin.journal.availableSince'|trans }}
+            <time data-admin-date="{{ activityStartedAt }}">{{ activityStartedAt|date('Y-m-d H:i') }}</time>
+        {% endif %}
+    </p>
+
+    <section class="admin-panel">
+        <form class="admin-period" method="get" style="padding: 16px 16px 0">
+            <label>
+                {{ 'admin.journal.filterAction'|trans }}
+                <select name="action">
+                    <option value="">{{ 'admin.journal.allActions'|trans }}</option>
+                    {% for action in actions %}
+                        <option value="{{ action }}" {% if filters.action == action %}selected{% endif %}>{{ ('admin.action.' ~ action)|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                {{ 'admin.journal.filterActor'|trans }}
+                <select name="actor">
+                    <option value="">{{ 'admin.journal.allActors'|trans }}</option>
+                    {% for actor in actors %}
+                        <option value="{{ actor.id }}" {% if filters.actor == actor.id %}selected{% endif %}>{{ actor.email }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                {{ 'admin.journal.from'|trans }}
+                <input type="date" name="from" value="{{ filters.from }}">
+            </label>
+            <label>
+                {{ 'admin.journal.to'|trans }}
+                <input type="date" name="to" value="{{ filters.to }}">
+            </label>
+            <button type="submit">{{ 'admin.journal.apply'|trans }}</button>
+        </form>
+
+        <p class="empty"><span data-admin-number="{{ total }}">{{ total }}</span> {{ 'admin.journal.events'|trans }}</p>
+        {% if entries is empty %}
+            <p class="empty">{{ 'admin.empty.activity'|trans }}</p>
+        {% else %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>{{ 'admin.table.date'|trans }}</th>
+                        <th>{{ 'admin.table.actor'|trans }}</th>
+                        <th>{{ 'admin.table.action'|trans }}</th>
+                        <th>{{ 'admin.table.subject'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                        <tr>
+                            <td data-label="{{ 'admin.table.date'|trans }}" class="mono"><time data-admin-date="{{ entry.createdAt|date('c') }}">{{ entry.createdAt|date('Y-m-d H:i') }}</time></td>
+                            <td data-label="{{ 'admin.table.actor'|trans }}">{{ entry.actorUser ? entry.actorUser.email : (entry.actorProfile ? entry.actorProfile.name : '—') }}</td>
+                            <td data-label="{{ 'admin.table.action'|trans }}">{{ ('admin.action.' ~ entry.action)|trans }}</td>
+                            <td data-label="{{ 'admin.table.subject'|trans }}">{{ entry.subjectType ?: '—' }}{% if entry.subjectId %} #{{ entry.subjectId }}{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <nav class="admin-period" aria-label="{{ 'admin.journal.pagination'|trans }}" style="padding: 12px 16px">
+                {% if page > 1 %}
+                    <a href="{{ path('admin_journal', app.request.query.all|merge({'page': page - 1})) }}">{{ 'admin.journal.previous'|trans }}</a>
+                {% endif %}
+                <span>{{ 'admin.journal.pageCount'|trans({'%page%': page, '%pages%': pages}) }}</span>
+                {% if page < pages %}
+                    <a href="{{ path('admin_journal', app.request.query.all|merge({'page': page + 1})) }}">{{ 'admin.journal.next'|trans }}</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

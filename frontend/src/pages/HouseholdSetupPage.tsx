@@ -72,10 +72,10 @@ export default function HouseholdSetupPage({
   const [search] = useSearchParams()
   const { places, error: placeError, loading } = usePlaces()
   const [name, setName] = useState('')
-  const [housingType, setHousingType] = useState('Maison')
+  const [housingType, setHousingType] = useState(() => t('Maison', 'House'))
   const [query, setQuery] = useState('')
   const [roomId, setRoomId] = useState(search.get('room') ?? '')
-  const [kind, setKind] = useState('Armoire')
+  const [kind, setKind] = useState(() => t('Armoire', 'Wardrobe'))
   const [parentId, setParentId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -100,7 +100,7 @@ export default function HouseholdSetupPage({
   const submit = (label: string, form: string) => (
     <>
       <button className="btn btn-primary" form={form} type="submit" disabled={busy || loading}>
-        {busy ? 'Enregistrement…' : label}
+        {busy ? t('Enregistrement…', 'Saving…') : label}
       </button>
       {feedback}
     </>
@@ -116,12 +116,12 @@ export default function HouseholdSetupPage({
 
   if (auth.activeProfile?.role === 'child')
     return (
-      <DesignPage frame="160:152" household title="Mon foyer" subtitle="Profil enfant">
+      <DesignPage frame="160:152" household title={t('Mon foyer', 'My household')} subtitle={t('Profil enfant', 'Child profile')}>
         <DesignNotice>
-          La gestion du foyer est réservée aux adultes. Retrouvez vos articles dans votre dressing.
+          {t('La gestion du foyer est réservée aux adultes. Retrouvez vos articles dans votre dressing.', 'Household management is for adults. Find your items in your wardrobe.')}
         </DesignNotice>
         <Link className="btn btn-primary" to="/dressing">
-          Mon dressing
+          {t('Mon dressing', 'My wardrobe')}
         </Link>
       </DesignPage>
     )
@@ -132,11 +132,11 @@ export default function HouseholdSetupPage({
         frame="160:8"
         household
         className="household-create"
-        title="Créer mon foyer"
-        subtitle="Commençons par organiser votre maison."
+        title={t('Créer mon foyer', 'Create my household')}
+        subtitle={t('Commençons par organiser votre maison.', 'Let’s start by organizing your home.')}
         footer={
           <>
-            {submit('Créer mon foyer', 'household-create')}
+            {submit(t('Créer mon foyer', 'Create my household'), 'household-create')}
             <Link className="design-link" to="/dressing">
               {translate('verify.setupLater')}
             </Link>
@@ -160,19 +160,19 @@ export default function HouseholdSetupPage({
             })
           }}
         >
-          <DesignField label="Nom de votre foyer">
+          <DesignField label={t('Nom de votre foyer', 'Your household name')}>
             <input
               required
               maxLength={100}
-              placeholder="Ex. Maison Martin"
+              placeholder={t('Ex. Maison Martin', 'E.g. The Martin house')}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </DesignField>
           <fieldset className="design-options">
-            <legend>Type de logement (facultatif)</legend>
+            <legend>{t('Type de logement (facultatif)', 'Housing type (optional)')}</legend>
             <div className="design-chips">
-              {['Maison', 'Appartement'].map((t) => (
+              {[t('Maison', 'House'), t('Appartement', 'Flat')].map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -184,7 +184,7 @@ export default function HouseholdSetupPage({
               ))}
             </div>
           </fieldset>
-          <p className="design-hint">Vous pourrez ajouter d’autres foyers plus tard.</p>
+          <p className="design-hint">{t('Vous pourrez ajouter d’autres foyers plus tard.', 'You can add more households later.')}</p>
         </DesignForm>
       </DesignPage>
     )
@@ -195,15 +195,15 @@ export default function HouseholdSetupPage({
         frame="160:27"
         household
         className="household-members"
-        title="Qui habite ici ?"
-        subtitle="Invitez vos proches ou créez leurs profils."
+        title={t('Qui habite ici ?', 'Who lives here?')}
+        subtitle={t('Invitez vos proches ou créez leurs profils.', 'Invite your loved ones or create their profiles.')}
         footer={
           <>
             <Link className="btn btn-primary" to="/foyer/pieces/ajouter">
-              Continuer
+              {t('Continuer', 'Continue')}
             </Link>
             <Link className="design-link" to="/foyer">
-              Je le ferai plus tard
+              {t('Je le ferai plus tard', 'I will do it later')}
             </Link>
           </>
         }
@@ -215,20 +215,21 @@ export default function HouseholdSetupPage({
               icon={<span aria-hidden="true">●</span>}
               title={p.name}
               detail={
-                p.role === 'child' ? 'Profil enfant géré par un adulte' : 'Administrateur du foyer'
+                p.role === 'child'
+                  ? t('Profil enfant géré par un adulte', 'Child profile managed by an adult')
+                  : t('Administrateur du foyer', 'Household administrator')
               }
             />
           ))}
           <DesignRow
             icon="+"
-            title="Ajouter un adulte"
-            detail="Invitation à rejoindre le foyer"
+            title={t('Ajouter un adulte', 'Add an adult')}
+            detail={t('Invitation à rejoindre le foyer', 'Invitation to join the household')}
             onClick={() => setInvite(!invite)}
           />
           {invite && (
             <DesignNotice>
-              Les invitations sécurisées par e-mail ne sont pas encore disponibles. Aucun compte ni
-              invitation n’a été créé.
+              {t('Les invitations sécurisées par e-mail ne sont pas encore disponibles. Aucun compte ni invitation n’a été créé.', 'Secure e-mail invitations are not available yet. No account or invitation was created.')}
             </DesignNotice>
           )}
           <Link className="btn btn-secondary" to="/foyer/enfants">
@@ -236,8 +237,8 @@ export default function HouseholdSetupPage({
           </Link>
           <DesignRow
             icon="+"
-            title="Ajouter un enfant"
-            detail="Profil géré ou compte avec accès"
+            title={t('Ajouter un enfant', 'Add a child')}
+            detail={t('Profil géré ou compte avec accès', 'Managed profile or account with access')}
             to="/foyer/enfant"
           />
         </div>
@@ -248,7 +249,7 @@ export default function HouseholdSetupPage({
           )}
         </p>
         <Link className="design-link" to="/profils">
-          Gérer les profils et accès existants
+          {t('Gérer les profils et accès existants', 'Manage existing profiles and access')}
         </Link>
       </DesignPage>
     )
@@ -263,11 +264,11 @@ export default function HouseholdSetupPage({
         frame="160:123"
         household
         className="household-storage"
-        title="Mes pièces et rangements"
-        subtitle="Ajoutez vos armoires, cartons ou tiroirs."
+        title={t('Mes pièces et rangements', 'My rooms and storage')}
+        subtitle={t('Ajoutez vos armoires, cartons ou tiroirs.', 'Add your wardrobes, boxes or drawers.')}
         footer={
           <Link className="btn btn-primary" to="/foyer">
-            Terminer
+            {t('Terminer', 'Finish')}
           </Link>
         }
       >
@@ -281,7 +282,7 @@ export default function HouseholdSetupPage({
               detail={
                 r.storageLocations.length
                   ? r.storageLocations.map((s) => s.name).join(' · ') + ' +'
-                  : 'Ajouter un rangement +'
+                  : t('Ajouter un rangement +', 'Add storage +')
               }
               to={`/foyer/rangement/ajouter?room=${r.id}`}
             />
@@ -289,11 +290,11 @@ export default function HouseholdSetupPage({
         </div>
         {!loading && allRooms.length === 0 && (
           <Link className="design-link" to="/foyer/pieces/ajouter">
-            Ajouter les pièces
+            {t('Ajouter les pièces', 'Add rooms')}
           </Link>
         )}
         <p className="design-hint">
-          Les rangements peuvent être créés plus tard, au moment de scanner un article.
+          {t('Les rangements peuvent être créés plus tard, au moment de scanner un article.', 'Storage can be created later, when scanning an item.')}
         </p>
       </DesignPage>
     )
@@ -304,9 +305,9 @@ export default function HouseholdSetupPage({
         frame="160:189"
         household
         className="household-add-storage"
-        title="Ajouter un rangement"
-        subtitle="Où rangez-vous vos objets ?"
-        footer={submit('Créer le rangement', 'storage-form')}
+        title={t('Ajouter un rangement', 'Add storage')}
+        subtitle={t('Où rangez-vous vos objets ?', 'Where do you store your belongings?')}
+        footer={submit(t('Créer le rangement', 'Create storage'), 'storage-form')}
       >
         <ErrorMessage error={placeError} />
         <DesignForm
@@ -314,13 +315,13 @@ export default function HouseholdSetupPage({
           onSubmit={(e) => {
             e.preventDefault()
             void run(async () => {
-              if (!room) throw new Error('Ajoutez une pièce avant de créer un rangement.')
+              if (!room) throw new Error(t('Ajoutez une pièce avant de créer un rangement.', 'Add a room before creating storage.'))
               await createStorageLocation(room.id, name, parentId ? Number(parentId) : null)
               navigate('/foyer/rangements')
             })
           }}
         >
-          <DesignField label="Pièce">
+          <DesignField label={t('Pièce', 'Room')}>
             <select
               required
               value={room?.id ?? ''}
@@ -330,7 +331,7 @@ export default function HouseholdSetupPage({
               }}
             >
               <option value="" disabled>
-                Choisir une pièce
+                {t('Choisir une pièce', 'Choose a room')}
               </option>
               {allRooms.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -339,26 +340,26 @@ export default function HouseholdSetupPage({
               ))}
             </select>
           </DesignField>
-          <DesignField label="Type de rangement">
+          <DesignField label={t('Type de rangement', 'Storage type')}>
             <select value={kind} onChange={(e) => setKind(e.target.value)}>
-              {['Armoire', 'Tiroir', 'Étagère', 'Carton', 'Valise', 'Boîte'].map((k) => (
+              {[t('Armoire', 'Wardrobe'), t('Tiroir', 'Drawer'), t('Étagère', 'Shelf'), t('Carton', 'Cardboard box'), t('Valise', 'Suitcase'), t('Boîte', 'Box')].map((k) => (
                 <option key={k}>{k}</option>
               ))}
             </select>
           </DesignField>
-          <DesignField label="Nom">
+          <DesignField label={t('Nom', 'Name')}>
             <input
               required
               maxLength={100}
-              placeholder={`Ex. ${kind} principale`}
+              placeholder={`${t('Ex.', 'E.g.')} ${kind} ${t('principale', 'main')}`}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </DesignField>
           {room && room.storageLocations.length > 0 && (
-            <DesignField label="Dans un rangement existant (facultatif)">
+            <DesignField label={t('Dans un rangement existant (facultatif)', 'Inside existing storage (optional)')}>
               <select value={parentId} onChange={(e) => setParentId(e.target.value)}>
-                <option value="">Directement dans la pièce</option>
+                <option value="">{t('Directement dans la pièce', 'Directly in the room')}</option>
                 {room.storageLocations.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -368,9 +369,9 @@ export default function HouseholdSetupPage({
             </DesignField>
           )}
           <fieldset className="design-options">
-            <legend>Rangements courants</legend>
+            <legend>{t('Rangements courants', 'Common storage')}</legend>
             <div className="design-chips design-chips--three">
-              {['Armoire', 'Tiroir', 'Étagère', 'Carton', 'Valise', 'Boîte'].map((k) => (
+              {[t('Armoire', 'Wardrobe'), t('Tiroir', 'Drawer'), t('Étagère', 'Shelf'), t('Carton', 'Cardboard box'), t('Valise', 'Suitcase'), t('Boîte', 'Box')].map((k) => (
                 <button type="button" key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>
                   {k}
                 </button>
@@ -388,7 +389,7 @@ export default function HouseholdSetupPage({
       className="household-overview"
       title={
         <label className="household-picker">
-          <span className="sr-only">Choisir un foyer</span>
+          <span className="sr-only">{t('Choisir un foyer', 'Choose a household')}</span>
           <select
             value={auth.activeHouseholdId ?? ''}
             onChange={(e) => void run(() => auth.selectHousehold(Number(e.target.value)))}
@@ -401,10 +402,10 @@ export default function HouseholdSetupPage({
           </select>
         </label>
       }
-      subtitle="Mon foyer"
+      subtitle={t('Mon foyer', 'My household')}
       footer={
         <Link className="btn btn-primary" to="/scanner">
-          <FigmaGlyph name="scanButton" /> Scanner un article
+          <FigmaGlyph name="scanButton" /> {t('Scanner un article', 'Scan an item')}
         </Link>
       }
     >
@@ -414,13 +415,13 @@ export default function HouseholdSetupPage({
         <input
           className="design-search"
           type="search"
-          aria-label="Rechercher une pièce"
-          placeholder="Rechercher un objet ou une pièce…"
+          aria-label={t('Rechercher une pièce', 'Search for a room')}
+          placeholder={t('Rechercher un objet ou une pièce…', 'Search for an item or room…')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      <h2>Pièces du foyer</h2>
+      <h2>{t('Pièces du foyer', 'Household rooms')}</h2>
       <div className="design-grid">
         {allRooms
           .filter((r) => r.name.toLowerCase().includes(query.toLowerCase()))
@@ -436,20 +437,20 @@ export default function HouseholdSetupPage({
       </div>
       {!loading && allRooms.length === 0 && (
         <Link className="design-link" to="/foyer/pieces/ajouter">
-          Ajouter les pièces
+          {t('Ajouter les pièces', 'Add rooms')}
         </Link>
       )}
-      <h2>Membres du foyer</h2>
+      <h2>{t('Membres du foyer', 'Household members')}</h2>
       <DesignRow
         icon="●"
         title={auth.profiles.map((p) => p.name).join(' · ')}
-        detail="Ajouter ou gérer un membre ›"
+        detail={t('Ajouter ou gérer un membre ›', 'Add or manage a member ›')}
         to="/foyer/membres"
       />
       <div className="design-inline-links">
-        <Link to="/foyer/pieces/ajouter">Ajouter une pièce</Link>
-        <Link to="/foyer/rangements">Mes rangements</Link>
-        <Link to="/foyer/creer">Créer un foyer</Link>
+        <Link to="/foyer/pieces/ajouter">{t('Ajouter une pièce', 'Add a room')}</Link>
+        <Link to="/foyer/rangements">{t('Mes rangements', 'My storage')}</Link>
+        <Link to="/foyer/creer">{t('Créer un foyer', 'Create a household')}</Link>
       </div>
     </DesignPage>
   )

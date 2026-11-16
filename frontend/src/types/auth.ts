@@ -4,6 +4,7 @@ export interface UserSummary {
   id: number
   email: string
   username?: string | null
+  isSuperAdmin: boolean
 }
 
 export interface HouseholdSummary {

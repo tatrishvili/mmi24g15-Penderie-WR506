@@ -46,8 +46,8 @@ final class AppUserProvider implements UserProviderInterface
                 ? $this->em->getRepository(User::class)->find($user->getId())
                 : null;
 
-            if (!$fresh instanceof User) {
-                throw new UserNotFoundException('User account is gone.');
+            if (!$fresh instanceof User || !$fresh->isEnabled()) {
+                throw new UserNotFoundException('User account is unavailable.');
             }
 
             return $fresh;
@@ -87,7 +87,7 @@ final class AppUserProvider implements UserProviderInterface
 
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => $identifier]);
 
-        if (!$user instanceof User) {
+        if (!$user instanceof User || !$user->isEnabled()) {
             throw new UserNotFoundException(\sprintf('User "%s" not found.', $identifier));
         }
 

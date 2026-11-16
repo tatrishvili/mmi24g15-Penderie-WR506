@@ -1,5 +1,5 @@
 import { errorText } from '../lib/errors.ts'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.ts'
@@ -12,8 +12,10 @@ export default function LoginPage() {
   const { status, login, activeProfile } = useAuth()
   const location = useLocation()
   const from = (location.state as { from?: unknown } | null)?.from
+  const next = new URLSearchParams(location.search).get('next')
+  const candidate = typeof from === 'string' ? from : next
   const destination =
-    typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/profils'
+    typeof candidate === 'string' && candidate.startsWith('/') && !candidate.startsWith('//') ? candidate : '/profils'
   const [child, setChild] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -22,7 +24,10 @@ export default function LoginPage() {
   const [loggingIn, setLoggingIn] = useState(false)
 
   if (status === 'authenticated') {
-    return <Navigate to={activeProfile?.role === 'child' ? '/enfant' : destination} replace />
+    const target = activeProfile?.role === 'child' ? '/enfant' : destination
+    if (target.startsWith('/admin')) return <FullPageRedirect to={target} />
+
+    return <Navigate to={target} replace />
   }
 
   async function onPasswordSubmit(event: FormEvent) {
@@ -148,4 +153,11 @@ export default function LoginPage() {
       </p>
     </div>
   )
+}
+function FullPageRedirect({ to }: { to: string }) {
+  useEffect(() => {
+    window.location.assign(to)
+  }, [to])
+
+  return null
 }

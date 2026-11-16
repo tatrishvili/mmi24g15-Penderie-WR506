@@ -5,6 +5,7 @@ import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
 import { t } from '../i18n/copy.ts'
 import { roleLabel } from '../types/auth.ts'
+import { itemText as tr } from '../lib/itemCatalog.ts'
 
 export default function ProfilesPage() {
   const {
@@ -58,7 +59,7 @@ export default function ProfilesPage() {
         await switchProfile(profileId)
       } catch (error) {
         setPinError(
-          error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+          error instanceof ApiError ? error.message : t('unexpectedError'),
         )
       } finally {
         setBusyId(null)
@@ -83,7 +84,7 @@ export default function ProfilesPage() {
       setPinFor(null)
       setPin('')
     } catch (error) {
-      setPinError(error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.')
+      setPinError(error instanceof ApiError ? error.message : t('unexpectedError'))
     } finally {
       setBusyId(null)
     }
@@ -101,7 +102,7 @@ export default function ProfilesPage() {
       setShowChildForm(false)
     } catch (error) {
       setCreateError(
-        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+        error instanceof ApiError ? error.message : t('unexpectedError'),
       )
     } finally {
       setCreating(false)
@@ -124,7 +125,7 @@ export default function ProfilesPage() {
       setPlaceName('')
     } catch (error) {
       setHouseholdError(
-        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+        error instanceof ApiError ? error.message : t('unexpectedError'),
       )
     } finally {
       setCreatingHousehold(false)
@@ -139,7 +140,7 @@ export default function ProfilesPage() {
       await selectHousehold(householdId)
     } catch (error) {
       setSelectError(
-        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+        error instanceof ApiError ? error.message : t('unexpectedError'),
       )
     } finally {
       setSelectingId(null)
@@ -164,7 +165,7 @@ export default function ProfilesPage() {
       setShowPartnerForm(false)
     } catch (error) {
       setCreateError(
-        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+        error instanceof ApiError ? error.message : t('unexpectedError'),
       )
     } finally {
       setCreating(false)
@@ -176,10 +177,10 @@ export default function ProfilesPage() {
       <span className="auth-brand">Penderie</span>
       <p className="auth-tagline">
         {household === null ? (
-          'Créez votre foyer pour commencer.'
+          tr('Créez votre foyer pour commencer.', 'Create your household to get started.')
         ) : (
           <>
-            Foyer « {household.name} » — code : <strong>{household.slug}</strong>
+            {tr('Foyer', 'Household')} « {household.name} » — {tr('code', 'code')} : <strong>{household.slug}</strong>
           </>
         )}
       </p>
@@ -188,9 +189,9 @@ export default function ProfilesPage() {
         {household === null ? (
           households.length > 0 && !showCreateForm ? (
             <>
-              <h1>Choisissez un foyer</h1>
+              <h1>{tr('Choisissez un foyer', 'Choose a household')}</h1>
               <p className="auth-sub">
-                Vous avez plusieurs foyers. Choisissez celui à ouvrir.
+                {tr('Vous avez plusieurs foyers. Choisissez celui à ouvrir.', 'You have several households. Choose the one to open.')}
               </p>
 
               {selectError !== null && (
@@ -214,7 +215,7 @@ export default function ProfilesPage() {
                       <span className="profile-meta">
                         <span className="profile-name">{candidate.name}</span>
                         <br />
-                        <span className="profile-role">code : {candidate.slug}</span>
+                        <span className="profile-role">{tr('code', 'code')} : {candidate.slug}</span>
                       </span>
                     </button>
                   </li>
@@ -226,15 +227,14 @@ export default function ProfilesPage() {
                 className="btn btn-secondary"
                 onClick={() => setShowCreateForm(true)}
               >
-                Créer un autre foyer
+                {tr('Créer un autre foyer', 'Create another household')}
               </button>
             </>
           ) : (
           <>
-            <h1>Créez votre foyer</h1>
+            <h1>{tr('Créez votre foyer', 'Create your household')}</h1>
             <p className="auth-sub">
-              Votre compte est créé. Ajoutez votre prénom et votre foyer pour devenir le profil
-              adulte, puis vous pourrez ajouter enfants et conjoint.
+              {tr('Votre compte est créé. Ajoutez votre prénom et votre foyer pour devenir le profil adulte, puis vous pourrez ajouter enfants et conjoint.', 'Your account is created. Add your first name and household to become the adult profile, then you can add children and a partner.')}
             </p>
 
             {households.length > 0 && (
@@ -244,7 +244,7 @@ export default function ProfilesPage() {
                 onClick={() => setShowCreateForm(false)}
                 style={{ marginBottom: 12 }}
               >
-                Retour aux foyers
+                {tr('Retour aux foyers', 'Back to households')}
               </button>
             )}
 
@@ -256,7 +256,7 @@ export default function ProfilesPage() {
               )}
 
               <div className="field">
-                <label htmlFor="household-firstname">Votre prénom</label>
+                <label htmlFor="household-firstname">{tr('Votre prénom', 'Your first name')}</label>
                 <input
                   id="household-firstname"
                   className="input"
@@ -269,12 +269,12 @@ export default function ProfilesPage() {
               </div>
 
               <div className="field">
-                <label htmlFor="household-name">Nom du foyer</label>
+                <label htmlFor="household-name">{tr('Nom du foyer', 'Household name')}</label>
                 <input
                   id="household-name"
                   className="input"
                   type="text"
-                  placeholder="Famille Moreau"
+                  placeholder={tr('Famille Moreau', 'The Moreau family')}
                   value={householdName}
                   onChange={(event) => setHouseholdName(event.target.value)}
                   required
@@ -283,26 +283,26 @@ export default function ProfilesPage() {
               </div>
 
               <div className="field">
-                <label htmlFor="household-place">Lieu principal (optionnel)</label>
+                <label htmlFor="household-place">{tr('Lieu principal (optionnel)', 'Main place (optional)')}</label>
                 <input
                   id="household-place"
                   className="input"
                   type="text"
-                  placeholder="Maison"
+                  placeholder={tr('Maison', 'House')}
                   value={placeName}
                   onChange={(event) => setPlaceName(event.target.value)}
                 />
               </div>
 
               <button type="submit" className="btn btn-primary" disabled={creatingHousehold}>
-                {creatingHousehold ? 'Création…' : 'Créer mon foyer'}
+                {creatingHousehold ? tr('Création…', 'Creating…') : tr('Créer mon foyer', 'Create my household')}
               </button>
             </form>
           </>
           )
         ) : (
           <>
-            <h1>Qui entre ?</h1>
+            <h1>{tr('Qui entre ?', 'Who is signing in?')}</h1>
 
         {pinError !== null && (
           <p role="alert" className="form-error" style={{ marginTop: 12 }}>
@@ -330,11 +330,11 @@ export default function ProfilesPage() {
                   <br />
                   <span className="profile-role">
                     {roleLabel(profile.role)}
-                    {profile.hasPin ? ' · code PIN' : ''}
+                    {profile.hasPin ? ` · ${tr('code PIN', 'PIN')}` : ''}
                   </span>
                 </span>
                 {profile.id === activeProfileId && (
-                  <Check className="profile-check" size={20} aria-label="Profil actif" />
+                  <Check className="profile-check" size={20} aria-label={tr('Profil actif', 'Active profile')} />
                 )}
               </button>
 
@@ -345,7 +345,7 @@ export default function ProfilesPage() {
                   noValidate
                 >
                   <div className="field">
-                    <label htmlFor={`pin-${profile.id}`}>Code PIN de {profile.name}</label>
+                    <label htmlFor={`pin-${profile.id}`}>{tr('Code PIN de', 'PIN for')} {profile.name}</label>
                     <input
                       id={`pin-${profile.id}`}
                       className="input input--pin"
@@ -360,7 +360,7 @@ export default function ProfilesPage() {
                     />
                   </div>
                   <button type="submit" className="btn btn-primary" disabled={busyId !== null}>
-                    {busyId === profile.id ? 'Vérification…' : 'Entrer'}
+                    {busyId === profile.id ? tr('Vérification…', 'Checking…') : tr('Entrer', 'Enter')}
                   </button>
                 </form>
               )}
@@ -380,7 +380,7 @@ export default function ProfilesPage() {
                   setCreateError(null)
                 }}
               >
-                <Plus size={14} aria-hidden="true" /> Enfant
+                <Plus size={14} aria-hidden="true" /> {tr('Enfant', 'Child')}
               </button>
               <button
                 type="button"
@@ -391,7 +391,7 @@ export default function ProfilesPage() {
                   setCreateError(null)
                 }}
               >
-                <Plus size={14} aria-hidden="true" /> Conjoint
+                <Plus size={14} aria-hidden="true" /> {tr('Conjoint', 'Partner')}
               </button>
             </div>
 
@@ -408,7 +408,7 @@ export default function ProfilesPage() {
                 noValidate
               >
                 <div className="field">
-                  <label htmlFor="child-name">Prénom de l’enfant</label>
+                  <label htmlFor="child-name">{tr('Prénom de l’enfant', 'Child’s first name')}</label>
                   <input
                     id="child-name"
                     className="input"
@@ -436,7 +436,7 @@ export default function ProfilesPage() {
               {t('profiles.pinNote')}
             </p>
                 <button type="submit" className="btn btn-secondary" disabled={creating}>
-                  {creating ? 'Création…' : 'Ajouter l’enfant'}
+                  {creating ? tr('Création…', 'Creating…') : tr('Ajouter l’enfant', 'Add child')}
                 </button>
               </form>
             )}
@@ -448,7 +448,7 @@ export default function ProfilesPage() {
                 noValidate
               >
                 <div className="field">
-                  <label htmlFor="partner-name">Prénom du conjoint</label>
+                  <label htmlFor="partner-name">{tr('Prénom du conjoint', 'Partner’s first name')}</label>
                   <input
                     id="partner-name"
                     className="input"
@@ -459,7 +459,7 @@ export default function ProfilesPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="partner-email">E-mail du conjoint</label>
+                  <label htmlFor="partner-email">{tr('E-mail du conjoint', 'Partner’s e-mail')}</label>
                   <input
                     id="partner-email"
                     className="input"
@@ -471,7 +471,7 @@ export default function ProfilesPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="partner-password">Mot de passe (8 caractères minimum)</label>
+                  <label htmlFor="partner-password">{tr('Mot de passe (8 caractères minimum)', 'Password (at least 8 characters)')}</label>
                   <input
                     id="partner-password"
                     className="input"
@@ -484,7 +484,7 @@ export default function ProfilesPage() {
                   />
                 </div>
                 <button type="submit" className="btn btn-secondary" disabled={creating}>
-                  {creating ? 'Création…' : 'Ajouter le conjoint'}
+                  {creating ? tr('Création…', 'Creating…') : tr('Ajouter le conjoint', 'Add partner')}
                 </button>
               </form>
             )}
@@ -495,7 +495,7 @@ export default function ProfilesPage() {
 
         <div style={{ marginTop: 20 }}>
           <button type="button" className="btn btn-secondary" onClick={() => void logout()}>
-            <LogOut size={18} aria-hidden="true" /> Se déconnecter
+            <LogOut size={18} aria-hidden="true" /> {tr('Se déconnecter', 'Sign out')}
           </button>
         </div>
       </div>

@@ -1,0 +1,44 @@
+<h2>{{ 'my_space.title'|trans }} (Super Admin)</h2>
+
+<div class="admin-grid">
+    {% for item in itemList %}
+        <div class="admin-card">
+            <div class="admin-card__label">{{ item.name }}</div>
+            <div class="admin-card__value">{{ item.getType()|default('—') }}</div>
+        </div>
+    {% endfor %}
+</div>
+
+<h2>{{ 'my_space.global_stats'|trans }}</h2>
+
+<div class="admin-grid">
+    <div class="admin-card"><div class="admin-card__label">{{ 'admin.metric.households'|trans }}</div><div class="admin-card__value">{{ households }}</div></div>
+    <div class="admin-card"><div class="admin-card__label">{{ 'admin.metric.users'|trans }}</div><div class="admin-card__value">{{ users }}</div></div>
+    <div class="admin-card"><div class="admin-card__label">{{ 'admin.metric.members'|trans }}</div><div class="admin-card__value">{{ memberCount }}</div></div>
+    <div class="admin-card"><div class="admin-card__label">{{ 'admin.metric.items'|trans }}</div><div class="admin-card__value">{{ itemCount }}</div></div>
+</div>
+
+<h2>{{ 'my_space.recent_activity'|trans }}</h2>
+
+{% if recentActivity is empty %}
+    <p class="empty">{{ 'admin.empty.activity'|trans }}</p>
+{% else %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>{{ 'admin.table.date'|trans }}</th>
+                <th>{{ 'admin.table.actor'|trans }}</th>
+                <th>{{ 'admin.table.action'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in recentActivity %}
+                <tr>
+                    <td data-label="{{ 'admin.table.date'|trans }}" class="mono">{{ entry.createdAt|date('Y-m-d H:i') }}</td>
+                    <td data-label="{{ 'admin.table.actor'|trans }}">{{ entry.actorUser ? entry.actorUser.email : (entry.actorProfile ? entry.actorProfile.name : '—') }}</td>
+                    <td data-label="{{ 'admin.table.action'|trans }}">{{ ('admin.action.' ~ entry.action)|trans }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

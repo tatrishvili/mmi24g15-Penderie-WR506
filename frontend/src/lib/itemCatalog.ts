@@ -51,12 +51,13 @@ export const isClothing = (type: string) =>
 
 /**
  * Bilingual fallback used by components that have not been migrated to
- * translation keys yet. Picks French unless the document language is English.
+ * translation keys yet. Picks French only for French; every other locale
+ * falls back to English (Georgian legacy screens are reviewed separately).
  */
 export const itemText = (fr: string, en: string): string =>
-  typeof document !== 'undefined' && document.documentElement.lang.toLowerCase().startsWith('en')
-    ? en
-    : fr
+  typeof document !== 'undefined' && document.documentElement.lang.toLowerCase().startsWith('fr')
+    ? fr
+    : en
 
 export const itemTypeLabel = (type: ItemType): string => {
   const key = `itemTypes.${type}`

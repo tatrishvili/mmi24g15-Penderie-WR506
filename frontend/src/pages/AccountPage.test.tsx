@@ -79,9 +79,24 @@ describe('AccountPage', () => {
       'href',
       '/scanner',
     )
-    expect(screen.getByRole('link', { name: /Mon dressing/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Mon dressing/ })).toHaveAttribute('href', '/dressing')
+    expect(screen.queryByRole('link', { name: 'Administration' })).not.toBeInTheDocument()
+  })
+
+  it('shows the administration link only for super administrators', async () => {
+    stubFetch((url) =>
+      url.endsWith('/api/auth/me')
+        ? {
+            ...ME,
+            body: { ...ME.body, user: { ...ME.body.user, isSuperAdmin: true } },
+          }
+        : { status: 404, body: {} },
+    )
+    renderAccount()
+
+    expect(await screen.findByRole('link', { name: 'Administration' })).toHaveAttribute(
       'href',
-      '/dressing',
+      '/admin',
     )
   })
 

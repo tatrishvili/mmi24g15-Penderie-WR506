@@ -1,4 +1,5 @@
 import { api } from './client.ts'
+import { t } from '../i18n/copy.ts'
 
 export interface Collection {
   id: string
@@ -22,6 +23,7 @@ export interface Share {
   itemId: number
   itemName: string
   revoked: boolean
+  moderationDisabled: boolean
   verifiedOnly: boolean
   expiresAt: string
   createdAt: string
@@ -34,7 +36,7 @@ export interface Loan {
   borrower: string
   isOwner: boolean
   status: 'pending' | 'accepted' | 'active' | 'returned' | 'declined'
-  dueAt: string
+  dueAt: string | null
   message: string
   requestedAt: string
   acceptedAt: string | null
@@ -74,29 +76,37 @@ export const collectionItem = (id: string, itemId: number, remove = false) =>
 export const setVisibility = (id: number, visibility: string) =>
   api(`/api/social/items/${id}/visibility`, { method: 'PUT', body: { visibility } })
 export const listShares = () => api<{ shares: Share[] }>('/api/social/shares')
-export const createShare = (id: number, verifiedOnly: boolean, approved: boolean) =>
+export const createShare = (
+  id: number,
+  verifiedOnly: boolean,
+  approved: boolean,
+  recipientId?: number,
+) =>
   api<{ id: number; path: string; expiresAt: string }>(`/api/social/items/${id}/shares`, {
     method: 'POST',
-    body: { verifiedOnly, approved },
+    body: {
+      verifiedOnly,
+      approved,
+      ...(recipientId === undefined ? {} : { recipientId }),
+    },
   })
 export const revokeShare = (id: number) =>
   api<void>(`/api/social/shares/${id}`, { method: 'DELETE' })
 export const getShared = (token: string) => api<{ item: SharedItem }>(`/api/social/shared/${token}`)
+export const reportSharedItem = (token: string, body: { reason: string; details: string }) =>
+  api<{ id: number; status: 'pending' }>(`/api/social/shared/${token}/reports`, {
+    method: 'POST',
+    body,
+  })
 export const listLoans = () => api<{ loans: Loan[] }>('/api/social/loans')
-export const requestLoan = (token: string, dueAt: string, message: string) =>
+export const requestLoan = (token: string, dueAt: string | null, message: string) =>
   api<{ loan: Loan }>(`/api/social/shared/${token}/loans`, {
     method: 'POST',
     body: { dueAt, message },
   })
 export const transitionLoan = (id: number, action: string) =>
   api<{ loan: Loan }>(`/api/social/loans/${id}/${action}`, { method: 'POST' })
-export const loanLabel: Record<Loan['status'], string> = {
-  pending: 'En attente',
-  accepted: 'Accepté · À remettre',
-  active: 'Prêt en cours',
-  returned: 'Retourné',
-  declined: 'Refusé',
-}
+export const loanLabel = (status: Loan['status']): string => t(`loans.status.${status}`)
 
 export type CollectionAudience = 'personal' | 'friends' | 'followers' | 'app'
 export interface CollectionPresentation {

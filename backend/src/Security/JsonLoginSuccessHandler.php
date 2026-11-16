@@ -38,6 +38,9 @@ final class JsonLoginSuccessHandler implements AuthenticationSuccessHandlerInter
         $user = $token->getUser();
         \assert($user instanceof User);
 
+        $user->markLogin();
+        $this->em->flush();
+
         $members = $this->em->getRepository(HouseholdMember::class)->findBy(['user' => $user], ['id' => 'ASC']);
         $households = array_map(
             static fn (HouseholdMember $member): array => AuthResponse::householdPayload($member->getHousehold()),

@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import OnboardingFoot from '../components/OnboardingFoot.tsx'
+import LanguageSwitcher from '../components/LanguageSwitcher.tsx'
 import buddie from '../images/icons/home_page_buddie.svg'
 import { t, tArray } from '../i18n/copy.ts'
 
@@ -14,6 +15,7 @@ const BOTTOM_PATH =
 export default function Home() {
   return (
     <section className="welcome">
+      <LanguageSwitcher compact className="welcome__language" />
       <svg
         className="welcome__bg"
         viewBox={BG_VIEWBOX}

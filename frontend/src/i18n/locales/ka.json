@@ -5,6 +5,31 @@
   "common": {
     "notifications": "შეტყობინებები"
   },
+  "notifications": {
+    "loan": {
+      "title": {
+        "loan_request": "ახალი სესხის მოთხოვნა",
+        "loan_accepted": "სესხის მოთხოვნა მიღებულია",
+        "loan_declined": "სესხის მოთხოვნა უარყოფილია",
+        "loan_handover": "ნივთი გადაცემულია",
+        "loan_returned": "ნივთი დაბრუნებულია"
+      },
+      "message": {
+        "loan_request": "{{borrower}}-ს სურს ისესხოს „{{item}}“.",
+        "loan_accepted": "{{owner}}-მა დააკმაყოფილა თქვენი „{{item}}“-ის სესხების მოთხოვნა.",
+        "loan_declined": "{{owner}}-მა უარყო თქვენი „{{item}}“-ის სესხების მოთხოვნა.",
+        "loan_handover": "{{owner}} ადასტურებს, რომ გადმოგცათ „{{item}}“.",
+        "loan_returned": "{{owner}} ადასტურებს „{{item}}“-ის დაბრუნებას."
+      },
+      "status": "სტატუსი: {{status}}",
+      "dueAt": "სასურველი დაბრუნების თარიღი: {{date}}.",
+      "borrowerMessage": "შეტყობინება: {{message}}",
+      "accept": "მოთხოვნის მიღება",
+      "decline": "მოთხოვნის უარყოფა",
+      "view": "სესხის ნახვა",
+      "unavailable": "ეს სესხი აღარ არის ხელმისაწვდომი."
+    }
+  },
   "nav": {
     "main": "მთავარი ნავიგაცია",
     "feed": "სიახლეები",
@@ -26,7 +51,7 @@
     "tagline": "დაამატეთ ყველა თქვენი ტანსაცმელი, აქსესუარი და ნივთი. დაასკანირეთ, მოაწყვეთ და იპოვეთ ყველაფერი ერთი შახედვით.",
     "next": "შემდეგი",
     "signIn": "შესვლა",
-    "stepLabel": "ნაბიჯი 1 / 4"
+    "stepLabel": "ნაბიჯი 1 \/ 4"
   },
   "login": {
     "title": "შესვლა",
@@ -117,8 +142,8 @@
     "profilesCount_other": "{{count}} პროფილი",
     "placesCount_one": "{{count}} ადგილი",
     "placesCount_other": "{{count}} ადგილი",
-    "membersSection": "ოჯახის წევრები",
-    "membersTitle": "წევრები",
+    "membersSection": "ოჯახის პროფილები",
+    "membersTitle": "პროფილები",
     "pinSuffix": " · PIN კოდი",
     "scanAction": "ნივთის სკანირება",
     "wardrobeAction": "ჩემი გარდерობა",
@@ -127,43 +152,366 @@
     "languageTitle": "ენა",
     "languageDescription": "აირჩიეთ აპლიკაციის ენა. თქვენი არჩევანი შენახული იქნება ამ მოწყობილობაზე."
   },
+  "mySpaceDashboard": {
+    "title": "ჩემი სივრცე",
+    "subtitle": "თქვენი ოჯახის ნივთებისა და სესხების მიმოხილვა.",
+    "open": "ჩემი სივრცის ნახვა",
+    "loading": "სივრცე იტვირთება…",
+    "close": "დეტალების დახურვა",
+    "childHubLink": "ჩემი კოლექციებისა და ოჯახის გაზიარებების გახსნა",
+    "cards": {
+      "items": "ნივთები",
+      "itemsDescription": "ოჯახში თქვენთვის ხელმისაწვდომი ნივთები",
+      "places": "ადგილები",
+      "placesDescription": "შენახვის ადგილები და ოთახები",
+      "household": "ოჯახი",
+      "householdDescription": "პროფილები და შესვლის ანგარიშები ცალ-ცალკეა",
+      "loans": "მიმდინარე სესხები",
+      "loansDescription": "ამჟამად გასესხებული ნივთები"
+    },
+    "details": {
+      "items": { "title": "ჩემი ნივთები" },
+      "places": { "title": "ჩემი ადგილები" },
+      "household": {
+        "title": "ჩემი ოჯახი",
+        "profiles": "ოჯახის პროფილები",
+        "members": "ანგარიშები, რომლებითაც შესვლა შეიძლება"
+      },
+      "loans": { "title": "მიმდინარე სესხები" }
+    },
+    "items": {
+      "empty": "თქვენი გარდერობი პირველ ნივთს ელოდება.",
+      "noPlace": "ადგილი მითითებული არ არის"
+    },
+    "places": {
+      "empty": "დაამატეთ ადგილი, რომ ნივთები უფრო მარტივად იპოვოთ.",
+      "noRooms": "ოთახები ჯერ არ არის.",
+      "roomCount_one": "{{count}} ნივთი",
+      "roomCount_other": "{{count}} ნივთი"
+    },
+    "profiles": {
+      "empty": "პროფილები ჯერ არ არის.",
+      "itemCount_one": "{{count}} ნივთი",
+      "itemCount_other": "{{count}} ნივთი"
+    },
+    "members": {
+      "empty": "შესვლის ანგარიში ჯერ არ არის.",
+      "never": "შესვლა დაფიქსირებული არ არის"
+    },
+    "loans": {
+      "empty": "მიმდინარე სესხები არ არის. გასესხებული ნივთები აქ გამოჩნდება.",
+      "borrower": "მსესხებელი: {{name}}",
+      "since": "{{date}}-დან",
+      "markReturned": "დაბრუნებულად მონიშვნა",
+      "returning": "მუშავდება…"
+    },
+    "sale": {
+      "title": "გასაყიდი / იშვიათად გამოყენებული",
+      "unavailable": "გაყიდვისა და ბოლო გამოყენების აღრიცხვა მომავალ განახლებაში იქნება ხელმისაწვდომი."
+    },
+    "shares": {
+      "title": "აქტიური გაზიარებები",
+      "empty": "აქტიური გაზიარებები არ არის. მათი მართვა აქ შეგეძლებათ.",
+      "active": "გაზიარებული ბმული",
+      "expires": "ვადა: {{date}}",
+      "revoke": "ბმულის გაუქმება",
+      "revoking": "უქმდება…"
+    },
+    "comments": {
+      "title": "მიღებული კომენტარები",
+      "unavailable": "მიღებული კომენტარები აქ გამოჩნდება, როცა ეს ფუნქცია დაემატება."
+    },
+    "incomplete": {
+      "title": "შესავსები ნივთები",
+      "empty": "ყველაფერი მზადაა: ნივთებს ადგილი და ფოტო აქვთ.",
+      "missingPlace": "დაამატეთ ადგილი",
+      "missingPhoto": "დაამატეთ ფოტო",
+      "open": "შევსება"
+    },
+    "activity": {
+      "title": "ჩემი ბოლო აქტივობა",
+      "empty": "ოჯახში მნიშვნელოვანი ცვლილებები აქ გამოჩნდება.",
+      "dismiss": "ჩემი აქტივობიდან ამოშლა: {{activity}}",
+      "changes": "შეცვლილი დეტალები: {{fields}}",
+      "fields": {
+        "name": "სახელი",
+        "type": "ტიპი",
+        "category": "კატეგორია",
+        "room": "ოთახი",
+        "storageLocation": "შენახვის ადგილი",
+        "author": "ავტორი",
+        "artist": "მხატვარი",
+        "publisher": "გამომცემელი",
+        "brand": "ბრენდი",
+        "color": "ფერი",
+        "size": "ზომა",
+        "material": "მასალა",
+        "condition": "მდგომარეობა",
+        "status": "სტატუსი",
+        "memory": "მოგონება",
+        "notes": "შენიშვნები"
+      },
+      "events": {
+        "item": {
+          "created": "{{actor}}-მა დაამატა „{{object}}“",
+          "updated": "{{actor}}-მა შეცვალა „{{object}}“",
+          "deleted": "{{actor}}-მა წაშალა „{{object}}“",
+          "photo": {
+            "created": "{{actor}}-მა „{{object}}“-ს ფოტო დაამატა",
+            "deleted": "{{actor}}-მა „{{object}}“-ის ფოტო წაშალა"
+          }
+        },
+        "household": {
+          "created": "{{actor}}-მა შექმნა ოჯახი „{{object}}“",
+          "updated": "{{actor}}-მა შეცვალა ოჯახი „{{object}}“",
+          "selected": "{{actor}}-მა აირჩია ოჯახი „{{object}}“"
+        },
+        "loan": {
+          "created": "{{actor}}-მა მოითხოვა „{{object}}“-ის სესხება",
+          "updated": "{{actor}}-მა განაახლა „{{object}}“-ის სესხი"
+        },
+        "share": {
+          "created": "{{actor}}-მა გააზიარა „{{object}}“",
+          "deleted": "{{actor}}-მა შეწყვიტა „{{object}}“-ის გაზიარება"
+        }
+      }
+    }
+  },
   "itemTypes": {
-    "pull": "Pull",
-    "tshirt": "T-shirt",
-    "chemise": "Chemise",
-    "blouse": "Blouse",
-    "polo": "Polo shirt",
-    "debardeur": "Débardeur",
-    "sweat": "Sweat",
-    "gilet": "Gilet",
-    "veste": "Veste",
-    "manteau": "Manteau",
-    "pantalon": "Pantalon",
-    "jean": "Jean",
-    "short": "Short",
-    "jupe": "Jupe",
-    "robe": "Robe",
-    "combinaison": "Combinaison",
-    "costume": "Costume",
-    "sous_vetement": "Sous-vêtement",
-    "chaussettes": "Chaussettes",
-    "pyjama": "Pyjama",
-    "maillot": "Maillot",
-    "sport": "Sport",
-    "chaussure": "Chaussures",
-    "sac": "Sac",
-    "ceinture": "Ceinture",
-    "chapeau": "Chapeau",
-    "écharpe": "Écharpe",
-    "gants": "Gants",
-    "bijou": "Bijou",
-    "livre": "Livre",
-    "vinyle": "Vinyle",
+    "pull": "პულოვერი",
+    "tshirt": "მაისური",
+    "chemise": "პერანგი",
+    "blouse": "ბლუზა",
+    "polo": "პოლო",
+    "debardeur": "მაისური უსახელო",
+    "sweat": "სვიტერი",
+    "gilet": "კარდიგანი",
+    "veste": "ქურთუკი",
+    "manteau": "პალტო",
+    "pantalon": "შარვალი",
+    "jean": "ჯინსი",
+    "short": "შორტი",
+    "jupe": "ქვედაკაბა",
+    "robe": "კაბა",
+    "combinaison": "კომბინეზონი",
+    "costume": "კოსტიუმი",
+    "sous_vetement": "საცვლელი",
+    "chaussettes": "წინდები",
+    "pyjama": "პიჟამა",
+    "maillot": "საცურაო კოსტიუმი",
+    "sport": "სპორტული ტანსაცმელი",
+    "chaussure": "ფეხსაცმელი",
+    "sac": "ჩანთა",
+    "ceinture": "ქამარი",
+    "chapeau": "ქუდი",
+    "écharpe": "შარფი",
+    "gants": "ხელთათმანები",
+    "bijou": "სამკაული \/ საათი",
+    "livre": "წიგნი",
+    "vinyle": "ვინილი",
     "cd": "CD",
-    "decoration": "Décoration",
-    "electronique": "Électronique",
-    "meuble": "Meuble",
-    "jouet": "Jouet",
-    "autre": "Autre objet"
+    "decoration": "დეკორაცია",
+    "electronique": "ელექტრონიკა",
+    "meuble": "ავეჯი",
+    "jouet": "სათამაშო",
+    "autre": "სხვა ნივთი"
+  },
+  "unexpectedError": "დაფიქსირდა მოულოდნელი შეცდომა.",
+  "profiles": {
+    "pinLabel": "PIN ამ მოწყობილობისთვის (არასავალდებულო)",
+    "pinNote": "ეს PIN იცავს პროფილის შეცვლას ამ მოწყობილობაზე. მისი გამოყენება სხვა მოწყობილობაზე შესვლისთვის შეუძლებელია."
+  },
+  "errors": {
+    "notFound": "ამ მომხმარებლის სახელით დადასტურებული ანგარიში ვერ მოიძებნა. შეამოწმეთ მართლწერა და სთხოვეთ მეგობარს ელფოსტის დადასტურება.",
+    "conflict": "ეს მოთხოვნა ან კავშირი უკვე არსებობს, ან აღარ არის ხელმისაწვდომი.",
+    "forbidden": "ეს მოქმედება მხოლოდ დადასტურებული ზრდასრული ანგარიშებისთვისაა.",
+    "invalid": "შეამოწმეთ შეყვანილი მომხმარებლის სახელი.",
+    "rateLimited": "ხანმოკლე დროში ძალიან ბევრი მოქმედება. ცოტა ხანს დაელოდეთ და სცადეთ თავიდან."
+  },
+  "rooms": {
+    "addRoom": "ოთახის დამატება",
+    "chooseRoom": "ოთახის არჩევა",
+    "customOption": "სხვა (მორგებული სახელი)",
+    "customNameLabel": "ოთახის მორგებული სახელი",
+    "customNamePlaceholder": "მაგ. სამკერვალო ოთახი",
+    "presets": [
+      "გასახდელი",
+      "მისაღები",
+      "საძინებელი",
+      "სამზარეულო",
+      "სააბაზანო",
+      "შესასვლელი",
+      "საოფისე",
+      "გარაჟი",
+      "სარდაფი",
+      "სხვენი",
+      "სარეცხი ოთახი"
+    ]
+  },
+  "onboard": {
+    "next": "შემდეგი",
+    "signIn": "შესვლა",
+    "organise": {
+      "titleLine": "ყველაფერი თავის ადგილზე",
+      "introLines": [
+        "იპოვეთ ყოველი ტანსაცმელი და ნივთი მარტივად",
+        "ოთახების, ადამიანებისა და",
+        "ადგილების მიხედვით ორგანიზებული შენახვის წყალობით"
+      ],
+      "tabs": ["ოთახები", "ადამიანები", "ადგილები"],
+      "rooms": ["გარდერობი", "საძინებელი", "საოფისე", "მისაღები", "გარაჟი", "სამზარეულო"],
+      "stepLabel": "ნაბიჯი 2 \/ 4"
+    },
+    "lend": {
+      "titleLines": ["გაასესხეთ ნივთები", "დავიწყების გარეშე"],
+      "itemName": "ბეჟის ქურთუკი",
+      "status": "გასესხებულია",
+      "since": "12 სექტემბრიდან",
+      "borrower": "სოფო",
+      "chips": ["ზომა S", "შესანიშნავ მდგომარეობაში"],
+      "bodyLines": [
+        "ყოველთვის ვიცი, ვის აქვს ჩემი ნივთები.",
+        "მიიღეთ მოთხოვნები საყვარელი ადამიანებისგან და",
+        "ყოველთვის შეინახეთ თქვენი სესხების ისტორია."
+      ],
+      "timeline": ["მოთხოვნა მიღებულია", "დადასტურებულია", "გასესხებულია"],
+      "stepLabel": "ნაბიჯი 3 \/ 4"
+    },
+    "look": {
+      "titleLines": ["ახალი ლუქები", "ყოველდღე"],
+      "bodyLines": [
+        "Penderie გეხმარებათ შექმნათ კომბინაციები, რომლებიც ერგება",
+        "თქვენს სტილს, ამინდსა და განწყობას."
+      ],
+      "temperature": "18°",
+      "today": "დღეს",
+      "like": "მომწონს",
+      "skip": "ჩემთვის არ არის",
+      "caption": "აირჩიეთ სტილი, რომელიც ყველაზე მეტად გერგებათ",
+      "stepLabel": "ნაბიჯი 4 \/ 4"
+    }
+  },
+  "friends": {
+    "title": "მეგობრები",
+    "tagline": "თქვენი ნდობის წრე",
+    "followers": "გამომწერები",
+    "following": "გამოწერილი",
+    "addTitle": "მეგობრის დამატება",
+    "addDescription": "შეიყვანეთ მისი მომხმარებლის სახელი (ჩანს „ჩემს ანგარიშში“, არა ელფოსტა). გამოიწერეთ პირდაპირ ან გაგზავნეთ მეგობრობის მოთხოვნა: მოთხოვნა დაუყოვნებლივ მიჰყვება მას, და მეგობრები გახდებით, თუ ის დათანხმდება. მისი ელფოსტა უნდა იყოს დადასტურებული.",
+    "usernameLabel": "მომხმარებლის სახელი",
+    "seeTheFeed": "ლენტის ნახვა",
+    "usernamePlaceholder": "მაგ. camille_92",
+    "send": "მოთხოვნის გაგზავნა",
+    "follow": "გამოწერა",
+    "followed": "ახლა გამოწერილი ხართ ამ ანგარიშზე.",
+    "noFollowers": "ჯერ არავინ გამოგწერიათ.",
+    "noFollowing": "ჯერ არავის გამოგიწერიათ.",
+    "unfollow": "გამოწერის გაუქმება",
+    "sending": "იგზავნება…",
+    "sent": "მოთხოვნა გაიგზავნა.",
+    "incoming": "მიღებული მოთხოვნები",
+    "noIncoming": "ჯერ არ მიგიღიათ მოთხოვნები.",
+    "outgoing": "გაგზავნილი მოთხოვნები",
+    "noOutgoing": "მოლოდინში მოთხოვნები არ არის.",
+    "mine": "ჩემი მეგობრები",
+    "noFriends": "მეგობრები აქ გამოჩნდებიან მას შემდეგ, რაც დათანხმდებიან.",
+    "accept": "მოთხოვნის მიღება",
+    "decline": "მოთხოვნის უარყოფა",
+    "cancel": "მოთხოვნის გაუქმება",
+    "remove": "მეგობრის წაშლა",
+    "adultOnly": "მეგობრობის მოთხოვნები მხოლოდ ზრდასრულ ანგარიშებს ეხება.",
+    "loading": "იტვირთება…",
+    "connections": "ჩემი კავშირები",
+    "myProfile": "ჩემი პროფილი",
+    "manage": "მართვა",
+    "requests": "მოთხოვნები",
+    "friendsLabel": "მეგობრები"
+  },
+  "items": {
+    "condition": {
+      "neuf": "ახალი",
+      "comme_neuf": "თითქმის ახალი",
+      "tres_bon": "ძალიან კარგ მდგომარეობაში",
+      "bon": "კარგ მდგომარეობაში",
+      "a_reparer": "შესაკეთებელი",
+      "abime": "დაზიანებული"
+    },
+    "status": {
+      "disponible": "ხელმისაწვდომი",
+      "loue": "გასესხებულია",
+      "vendu": "გაყიდული",
+      "donne": "გაჩუქებული",
+      "archive": "არქივში"
+    }
+  },
+  "loans": {
+    "status": {
+      "pending": "მოლოდინში",
+      "accepted": "მიღებული · გადასაცემი",
+      "active": "გასესხებულია",
+      "returned": "დაბრუნებული",
+      "declined": "უარყოფილი"
+    }
+  },
+  "sharedItemReport": {
+    "open": "ამ გაზიარების გასაჩივრება",
+    "title": "გაზიარებული ნივთის გასაჩივრება",
+    "privacy": "საჩივარი მხოლოდ ამ გაზიარებულ ბმულს ეხება. ნივთის პირადი დეტალები არ გამჟღავნდება.",
+    "reason": "მიზეზი",
+    "reasons": {
+      "inappropriate": "შეუსაბამო შინაარსი",
+      "misleading": "შეცდომაში შემყვანი პრეზენტაცია",
+      "copyright": "საავტორო უფლებები",
+      "other": "სხვა"
+    },
+    "details": "დამატებითი ინფორმაცია (არასავალდებულო, მაქსიმუმ 500 სიმბოლო)",
+    "submit": "საჩივრის გაგზავნა",
+    "sending": "იგზავნება…",
+    "cancel": "გაუქმება",
+    "sent": "გმადლობთ. თქვენი საჩივარი განხილვისთვის გაიგზავნა.",
+    "disabledAfterReport": "საჩივრის შემდეგ გამორთულია"
+  },
+  "api": {
+    "networkError": "სერვერთან დაკავშირება ვერ მოხერხდა. შეამოწმეთ კავშირი."
+  },
+  "my_space": {
+    "my_space": "მepisodio",
+    "my_space_saved": "ორჩეულია",
+    "my_space_household": "სახლის მართვა",
+    "my_space_child": "ბავშვი",
+    "my_space_pin_reset": "PIN აღარვა",
+    "my_space_restrictions": "რestr.",
+    "my_space_pin": "PIN",
+    "my_space_pin_note": "ეს PIN შე guarded.",
+    "my_space_members": " সদ disrupted",
+    "my_space_children": " disrupted",
+    "my_space_active_loans": " disrupted",
+    "my_space_items": " disrupted",
+    "my_space_item": " disrupted",
+    "my_space_loan": " disrupted",
+    "my_space_overdue": " disrupted",
+    "my_space_to_sell": " disrupted",
+    "my_space_unused": " disrupted",
+    "my_space_recent_activity": " disrupted",
+    "my_space_no_items": " disrupted",
+    "my_space_no_loans": " disrupted",
+    "my_space_no_children": " disrupted",
+    "my_space_no_members": " disrupted",
+    "my_space_no_activity": " disrupted",
+    "my_space_recent_item_added": "Objet ajouté",
+    "my_space_recent_item_updated": "Objet modifié",
+    "my_space_recent_item_removed": "Objet retiré",
+    "my_space_recent_loan_started": "Prêt commencé",
+    "my_space_recent_loan_returned": "Prêt retourné",
+    "my_space.recent_share_created": "Partage créé",
+    "my_space.recent_share_removed": "Partage supprimé",
+    "my_space.items_for_sale": "À vendre",
+    "my_space.items_sold_and_unused": "En vente \/ non utilisés depuis",
+    "my_space.no_items_for_sale": "Aucun objet en vente",
+    "my_space.mark_as_returned": "Marquer comme rendu",
+    "my_space.active_shares": "Partages actifs",
+    "my_space.no_active_shares": "Aucun partage actif",
+    "my_space.received_comments": "Commentaires reçus",
+    "my_space.no_received_comments": "Aucun commentaire reçu"
   }
 }

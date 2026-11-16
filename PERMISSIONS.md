@@ -56,6 +56,9 @@ Capabilities are separate, explicit grants, for example:
 - A child may request an item/collection publication to named approved contacts; a responsible parent must approve the exact preview first. Child public/anonymous publication and capability grants remain unavailable.
 - When an adult shares a child-owned resource externally, require an explicit parent/guardian approval step showing exactly what will be visible.
 - The owner may revoke a share at any time. Revocation must block future requests even if the recipient previously opened the link.
+- A verified adult may report an active shared-item link. Reporting grants no new access to the source item. A super admin may disable only that reported link; restoration must recheck owner revocation, expiry and current item safety vetoes.
+- Admin report views are limited to the exact approved share presentation and report/account metadata. They must not return source-item photos, notes, memories, locations, addresses or unrelated items. A private source item is never exposed by the reporting workflow.
+- Account suspension/restoration is available only to `ROLE_SUPER_ADMIN`, requires CSRF protection and a reason, and records the decision in the audit log. A super admin cannot suspend themselves or the last enabled super admin. Adult `User` suspension does not suspend a household or a separate child principal.
 
 Email verification proves access to an email address; it does not prove legal age, identity, or that a person is trustworthy. 2FA is an additional account-security option, not a substitute for resource authorization. For a high-impact public publication, step-up authentication can be considered later; do not claim it exists until implemented.
 
@@ -65,6 +68,11 @@ The owner chooses one access mode for each link:
 
 1. **Anyone with the link:** no account is needed for read-only viewing. The high-entropy URL is a bearer credential: anyone who receives or is forwarded the URL can view the link's exact scope. This is not recipient identity verification.
 2. **Verified account required:** viewer must sign in to a Penderie account whose email is verified. The link still grants only its specific scope; the creator can separately choose whether it is restricted to a friend/recipient list.
+
+When an owner selects one accepted friend as a recipient, the link is restricted
+to that verified account. The application rechecks both the recipient identity
+and current friendship on every view, photo request, and loan request; forwarding
+the URL does not grant another person access.
 
 For both modes:
 

@@ -41,6 +41,7 @@ final class AuthResponse
             'email' => $user->getEmail(),
             'firstName' => $user->getFirstName(),
             'username' => $user->getUsername(),
+            'isSuperAdmin' => $user->isSuperAdmin(),
         ];
     }
 

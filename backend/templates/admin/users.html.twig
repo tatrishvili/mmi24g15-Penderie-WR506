@@ -1,0 +1,118 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_body %}
+    <h1>{{ 'admin.users.title'|trans }}</h1>
+    <p class="admin-subtitle">{{ 'admin.users.subtitle'|trans }}</p>
+
+    <section class="admin-panel">
+        <form class="admin-period" method="get" style="padding: 16px 16px 0">
+            <label>
+                {{ 'admin.users.search'|trans }}
+                <input type="search" name="q" value="{{ filters.q }}" maxlength="100">
+            </label>
+            <label>
+                {{ 'admin.users.filterStatus'|trans }}
+                <select name="status">
+                    {% for value in ['all', 'enabled', 'suspended'] %}
+                        <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ ('admin.users.status.' ~ value)|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                {{ 'admin.users.sort'|trans }}
+                <select name="sort">
+                    {% for value in ['created', 'email', 'lastLogin'] %}
+                        <option value="{{ value }}" {% if filters.sort == value %}selected{% endif %}>{{ ('admin.users.sortBy.' ~ value)|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                {{ 'admin.users.direction'|trans }}
+                <select name="direction">
+                    {% for value in ['asc', 'desc'] %}
+                        <option value="{{ value }}" {% if filters.direction == value %}selected{% endif %}>{{ ('admin.users.directionValue.' ~ value)|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="submit">{{ 'admin.users.apply'|trans }}</button>
+        </form>
+
+        <p class="empty">{{ 'admin.users.results'|trans }} <span data-admin-number="{{ total }}">{{ total }}</span></p>
+        {% if users is empty %}
+            <p class="empty">{{ 'admin.empty.users'|trans }}</p>
+        {% else %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>{{ 'admin.table.email'|trans }}</th>
+                        <th>{{ 'admin.table.verified'|trans }}</th>
+                        <th>{{ 'admin.table.role'|trans }}</th>
+                        <th>{{ 'admin.table.status'|trans }}</th>
+                        <th>{{ 'admin.table.lastLogin'|trans }}</th>
+                        <th>{{ 'admin.table.created'|trans }}</th>
+                        <th>{{ 'admin.table.actions'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td data-label="{{ 'admin.table.email'|trans }}">{{ user.email }}</td>
+                            <td data-label="{{ 'admin.table.verified'|trans }}">{{ user.emailVerified ? 'admin.yes'|trans : 'admin.no'|trans }}</td>
+                            <td data-label="{{ 'admin.table.role'|trans }}">{% if user.superAdmin %}<span class="admin-badge">{{ 'admin.role.super'|trans }}</span>{% else %}{{ 'admin.role.user'|trans }}{% endif %}</td>
+                            <td data-label="{{ 'admin.table.status'|trans }}">
+                                {% if user.enabled %}
+                                    <span class="admin-badge admin-badge--enabled">{{ 'admin.users.status.enabled'|trans }}</span>
+                                {% else %}
+                                    <span class="admin-badge admin-badge--suspended">{{ 'admin.users.status.suspended'|trans }}</span>
+                                    {% if activeSuspensions[user.id] is defined %}
+                                        <span class="muted">{{ ('admin.user.reason.' ~ activeSuspensions[user.id].reason)|trans }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td data-label="{{ 'admin.table.lastLogin'|trans }}" class="mono">{{ user.lastLoginAt ? user.lastLoginAt|date('Y-m-d H:i') : '—' }}</td>
+                            <td data-label="{{ 'admin.table.created'|trans }}" class="mono">{{ user.createdAt|date('Y-m-d') }}</td>
+                            <td data-label="{{ 'admin.table.actions'|trans }}">
+                                <div class="admin-actions">
+                                    {% if user.enabled %}
+                                        {% if user.id != app.user.id and (not user.superAdmin or enabledSuperAdminCount > 1) %}
+                                            <form method="post" action="{{ path('admin_moderation_user_suspend', {id: user.id}) }}" data-admin-confirm="{{ 'admin.user.confirmSuspend'|trans }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('suspend-user-' ~ user.id) }}">
+                                                <label>
+                                                    {{ 'admin.user.reason.label'|trans }}
+                                                    <select name="reason" required>
+                                                        {% for reason in ['abuse', 'policy', 'security', 'other'] %}
+                                                            <option value="{{ reason }}">{{ ('admin.user.reason.' ~ reason)|trans }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </label>
+                                                <button class="admin-button admin-button--danger" type="submit">{{ 'admin.user.suspend'|trans }}</button>
+                                            </form>
+                                        {% elseif user.id == app.user.id %}
+                                            <span class="muted">{{ 'admin.user.selfProtected'|trans }}</span>
+                                        {% else %}
+                                            <span class="muted">{{ 'admin.user.lastAdminProtected'|trans }}</span>
+                                        {% endif %}
+                                    {% elseif activeSuspensions[user.id] is defined %}
+                                        <form method="post" action="{{ path('admin_moderation_user_restore', {id: user.id}) }}" data-admin-confirm="{{ 'admin.user.confirmRestore'|trans }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('restore-user-' ~ user.id) }}">
+                                            <button class="admin-button" type="submit">{{ 'admin.user.restore'|trans }}</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <nav class="admin-pagination" aria-label="{{ 'admin.users.pagination'|trans }}">
+                {% if page > 1 %}
+                    <a href="{{ path('admin_users', filters|merge({'page': page - 1})) }}">{{ 'admin.users.previous'|trans }}</a>
+                {% endif %}
+                <span>{{ 'admin.users.pageCount'|trans({'%page%': page, '%pages%': pages}) }}</span>
+                {% if page < pages %}
+                    <a href="{{ path('admin_users', filters|merge({'page': page + 1})) }}">{{ 'admin.users.next'|trans }}</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

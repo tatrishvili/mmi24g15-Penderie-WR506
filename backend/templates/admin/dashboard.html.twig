@@ -1,0 +1,233 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_body %}
+    <h1>{{ 'admin.dashboard.title'|trans }}</h1>
+    <p class="admin-subtitle">
+        <span class="admin-badge">{{ ('admin.scope.' ~ metrics.scope)|trans }}</span>
+        {% if metrics.householdName %}<span class="muted">— {{ metrics.householdName }}</span>{% endif %}
+        {% if metrics.trackingStartedAt %}
+            <span class="muted">— {{ 'admin.dashboard.trackingSince'|trans }}
+                <time data-admin-date="{{ metrics.trackingStartedAt|date('c') }}">{{ metrics.trackingStartedAt|date('Y-m-d H:i') }}</time>
+            </span>
+        {% endif %}
+    </p>
+    {% if metrics.activityStartedAt %}
+        <p class="muted">{{ 'admin.dashboard.activitySince'|trans }}
+            <time data-admin-date="{{ metrics.activityStartedAt }}">{{ metrics.activityStartedAt|date('Y-m-d H:i') }}</time>
+        </p>
+    {% endif %}
+
+    <form class="admin-period" method="get">
+        <label for="admin-period">{{ 'admin.dashboard.period'|trans }}</label>
+        <select id="admin-period" name="period" onchange="this.form.submit()">
+            {% for period in ['7d', '30d', '90d', 'all'] %}
+                <option value="{{ period }}" {% if metrics.period == period %}selected{% endif %}>{{ ('admin.period.' ~ period)|trans }}</option>
+            {% endfor %}
+        </select>
+        <noscript><button type="submit">{{ 'admin.dashboard.apply'|trans }}</button></noscript>
+    </form>
+
+    {% set cards = [
+        {key: 'users', label: 'admin.metric.users', value: metrics.users, description: 'admin.metricDescription.users'},
+        {key: 'members', label: 'admin.metric.members', value: metrics.members, description: 'admin.metricDescription.members'},
+        {key: 'items', label: 'admin.metric.items', value: metrics.items, description: 'admin.metricDescription.items'},
+        {key: 'activeLoans', label: 'admin.metric.activeLoans', value: metrics.activeLoans, description: 'admin.metricDescription.activeLoans'},
+        {key: 'visits30d', label: 'admin.metric.visits30d', value: metrics.visits30d, description: 'admin.metricDescription.visits'},
+        {key: 'uniqueVisitors30d', label: 'admin.metric.uniqueVisitors30d', value: metrics.uniqueVisitors30d, description: 'admin.metricDescription.uniqueVisitors'},
+        {key: 'signups30d', label: 'admin.metric.signups30d', value: metrics.signups30d, description: 'admin.metricDescription.signups'},
+        {key: 'activeUsers30d', label: 'admin.metric.activeUsers30d', value: metrics.activeUsers30d, description: 'admin.metricDescription.activeUsers'},
+        {key: 'unverified', label: 'admin.metric.unverified', value: metrics.unverified, description: 'admin.metricDescription.unverified'},
+        {key: 'scans', label: 'admin.metric.scans', value: metrics.scans, description: 'admin.metricDescription.scans'},
+        {key: 'shares', label: 'admin.metric.shares', value: metrics.shares, description: 'admin.metricDescription.shares'},
+        {key: 'childAccounts', label: 'admin.metric.childAccounts', value: metrics.childAccounts, description: 'admin.metricDescription.childAccounts'},
+        {key: 'performance', label: 'admin.metric.performance', value: metrics.performance.requests, description: 'admin.metricDescription.performance'|trans({'%average%': metrics.performance.averageMs, '%errors%': metrics.performance.errors})}
+    ] %}
+    {% if metrics.scope == 'global' %}
+        {% set cards = [{key: 'households', label: 'admin.metric.households', value: metrics.households, description: 'admin.metricDescription.households'}]|merge(cards) %}
+    {% endif %}
+
+    <div class="admin-grid">
+        {% for card in cards %}
+            <button class="admin-card" type="button" aria-haspopup="dialog"
+                    data-detail-url="{{ path('admin_metric_detail', {metric: card.key, period: metrics.period}) }}">
+                <span class="admin-card__label">{{ card.label|trans }}</span>
+                <span class="admin-card__value" data-admin-number="{{ card.value }}">{{ card.value }}</span>
+                <span class="admin-card__description">{{ card.key == 'performance' ? card.description : card.description|trans }}</span>
+            </button>
+        {% endfor %}
+    </div>
+
+    <dialog class="admin-dialog" id="metric-dialog" aria-labelledby="metric-dialog-title">
+        <div class="admin-dialog__header">
+            <h2 id="metric-dialog-title"></h2>
+            <button type="button" id="metric-dialog-close">{{ 'admin.dialog.close'|trans }}</button>
+        </div>
+        <div class="admin-dialog__content" id="metric-dialog-content" aria-live="polite"></div>
+    </dialog>
+    <span hidden id="metric-dialog-strings"
+          data-loading="{{ 'admin.dialog.loading'|trans }}"
+          data-error="{{ 'admin.dialog.error'|trans }}"
+          data-empty="{{ 'admin.dialog.empty'|trans }}"></span>
+
+    <section class="admin-panel">
+        <h2>{{ 'admin.dashboard.recent'|trans }} <a href="{{ path('admin_journal') }}">{{ 'admin.dashboard.allActivity'|trans }}</a></h2>
+        {% if metrics.recentActivity is empty %}
+            <p class="empty">{{ 'admin.empty.activity'|trans }}</p>
+        {% else %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>{{ 'admin.table.date'|trans }}</th>
+                        <th>{{ 'admin.table.actor'|trans }}</th>
+                        <th>{{ 'admin.table.action'|trans }}</th>
+                        <th>{{ 'admin.table.subject'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in metrics.recentActivity %}
+                        <tr>
+                            <td data-label="{{ 'admin.table.date'|trans }}" class="mono"><time data-admin-date="{{ entry.createdAt|date('c') }}">{{ entry.createdAt|date('Y-m-d H:i') }}</time></td>
+                            <td data-label="{{ 'admin.table.actor'|trans }}">{{ entry.actorUser ? entry.actorUser.email : (entry.actorProfile ? entry.actorProfile.name : '—') }}</td>
+                            <td data-label="{{ 'admin.table.action'|trans }}">{{ ('admin.action.' ~ entry.action)|trans }}</td>
+                            <td data-label="{{ 'admin.table.subject'|trans }}">{{ entry.subjectType ?: '—' }}{% if entry.subjectId %} #{{ entry.subjectId }}{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </section>
+
+    <script>
+        (() => {
+            const dialog = document.getElementById('metric-dialog');
+            const title = document.getElementById('metric-dialog-title');
+            const content = document.getElementById('metric-dialog-content');
+            const strings = document.getElementById('metric-dialog-strings').dataset;
+            const locale = document.documentElement.lang || 'fr';
+            const numberFormat = new Intl.NumberFormat(locale);
+            const dateTimeFormat = new Intl.DateTimeFormat(locale, {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+                timeZone: 'Europe/Paris'
+            });
+            const dayFormat = new Intl.DateTimeFormat(locale, {
+                day: 'numeric',
+                month: 'short',
+                timeZone: 'Europe/Paris'
+            });
+
+            function displayValue(value) {
+                if (typeof value === 'number') {
+                    return numberFormat.format(value);
+                }
+                if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+                    return dateTimeFormat.format(new Date(value));
+                }
+                if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                    return dayFormat.format(new Date(`${value}T12:00:00Z`));
+                }
+                return value === '' ? '—' : String(value);
+            }
+
+            function renderTable(detail) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'admin-dialog__table';
+                const table = document.createElement('table');
+                table.className = 'admin-table';
+                const head = document.createElement('thead');
+                const headRow = document.createElement('tr');
+                detail.columns.forEach((column) => {
+                    const cell = document.createElement('th');
+                    cell.scope = 'col';
+                    cell.textContent = column.label;
+                    headRow.append(cell);
+                });
+                head.append(headRow);
+                table.append(head);
+                const body = document.createElement('tbody');
+                detail.rows.forEach((row) => {
+                    const tableRow = document.createElement('tr');
+                    detail.columns.forEach((column) => {
+                        const cell = document.createElement('td');
+                        cell.textContent = displayValue(row[column.key]);
+                        tableRow.append(cell);
+                    });
+                    body.append(tableRow);
+                });
+                table.append(body);
+                wrapper.append(table);
+                return wrapper;
+            }
+
+            function renderChart(chart) {
+                const section = document.createElement('section');
+                section.className = 'admin-dialog__section';
+                const heading = document.createElement('h3');
+                heading.textContent = chart.title;
+                section.append(heading);
+                const list = document.createElement('div');
+                list.className = 'admin-chart';
+                const max = Math.max(1, ...chart.points.map((point) => point.value));
+                chart.points.forEach((point) => {
+                    const row = document.createElement('div');
+                    row.className = 'admin-chart__row';
+                    const label = document.createElement('span');
+                    label.textContent = displayValue(point.label);
+                    const bar = document.createElement('div');
+                    bar.className = 'admin-chart__bar';
+                    bar.setAttribute('aria-hidden', 'true');
+                    const fill = document.createElement('span');
+                    fill.style.width = `${Math.round((point.value / max) * 100)}%`;
+                    bar.append(fill);
+                    const value = document.createElement('span');
+                    value.textContent = numberFormat.format(point.value);
+                    row.append(label, bar, value);
+                    list.append(row);
+                });
+                section.append(list);
+                return section;
+            }
+
+            document.getElementById('metric-dialog-close').addEventListener('click', () => dialog.close());
+            document.querySelectorAll('[data-detail-url]').forEach((card) => {
+                card.addEventListener('click', async () => {
+                    content.replaceChildren();
+                    title.textContent = card.querySelector('.admin-card__label').textContent;
+                    const loading = document.createElement('p');
+                    loading.className = 'empty';
+                    loading.textContent = strings.loading;
+                    content.append(loading);
+                    dialog.showModal();
+                    try {
+                        const response = await fetch(card.dataset.detailUrl, {
+                            headers: {Accept: 'application/json'},
+                            credentials: 'same-origin'
+                        });
+                        if (!response.ok) {
+                            throw new Error(`Metric details request failed (${response.status}).`);
+                        }
+                        const detail = await response.json();
+                        title.textContent = detail.title;
+                        content.replaceChildren();
+                        detail.charts.forEach((chart) => content.append(renderChart(chart)));
+                        if (detail.columns.length > 0 && detail.rows.length > 0) {
+                            content.append(renderTable(detail));
+                        } else if (detail.charts.length === 0 || detail.charts.every((chart) => chart.points.length === 0)) {
+                            const empty = document.createElement('p');
+                            empty.className = 'empty';
+                            empty.textContent = strings.empty;
+                            content.append(empty);
+                        }
+                    } catch (error) {
+                        content.replaceChildren();
+                        const message = document.createElement('p');
+                        message.className = 'empty';
+                        message.textContent = strings.error;
+                        content.append(message);
+                        console.error(error);
+                    }
+                });
+            });
+        })();
+    </script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_body %}
+    <h1>{{ 'admin.reports.title'|trans }}</h1>
+    <p class="admin-subtitle">{{ 'admin.reports.subtitle'|trans }}</p>
+
+    <section class="admin-panel">
+        <form class="admin-period" method="get" style="padding: 16px 16px 0">
+            <label>
+                {{ 'admin.reports.filter'|trans }}
+                <select name="status">
+                    {% for value in ['pending', 'taken_down', 'resolved', 'all'] %}
+                        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ ('admin.report.status.' ~ value)|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="submit">{{ 'admin.reports.apply'|trans }}</button>
+        </form>
+
+        <p class="empty">{{ 'admin.reports.results'|trans }} <span data-admin-number="{{ total }}">{{ total }}</span></p>
+        {% if reports is empty %}
+            <p class="empty">{{ 'admin.empty.reports'|trans }}</p>
+        {% else %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>{{ 'admin.table.date'|trans }}</th>
+                        <th>{{ 'admin.table.reporter'|trans }}</th>
+                        <th>{{ 'admin.table.owner'|trans }}</th>
+                        <th>{{ 'admin.table.sharedItem'|trans }}</th>
+                        <th>{{ 'admin.table.reason'|trans }}</th>
+                        <th>{{ 'admin.table.status'|trans }}</th>
+                        <th>{{ 'admin.table.actions'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                        {% set presentation = report.share.presentation %}
+                        <tr>
+                            <td data-label="{{ 'admin.table.date'|trans }}" class="mono"><time data-admin-date="{{ report.createdAt|date('c') }}">{{ report.createdAt|date('Y-m-d H:i') }}</time></td>
+                            <td data-label="{{ 'admin.table.reporter'|trans }}">{{ report.reporter.email }}</td>
+                            <td data-label="{{ 'admin.table.owner'|trans }}">{{ report.share.owner.email }}</td>
+                            <td data-label="{{ 'admin.table.sharedItem'|trans }}">
+                                <strong>{{ presentation.name|default('—') }}</strong>
+                                {% if presentation.type|default(null) or presentation.color|default(null) %}
+                                    <div class="muted">{{ [presentation.type|default(null), presentation.color|default(null)]|filter(v => v)|join(' · ') }}</div>
+                                {% endif %}
+                            </td>
+                            <td data-label="{{ 'admin.table.reason'|trans }}">
+                                <strong>{{ ('admin.report.reason.' ~ report.reason)|trans }}</strong>
+                                {% if report.details %}
+                                    <div>{{ report.details }}</div>
+                                {% endif %}
+                            </td>
+                            <td data-label="{{ 'admin.table.status'|trans }}"><span class="admin-badge">{{ ('admin.report.status.' ~ report.status)|trans }}</span></td>
+                            <td data-label="{{ 'admin.table.actions'|trans }}">
+                                <div class="admin-actions">
+                                    {% if report.status == 'pending' %}
+                                        {% for decision in ['dismiss', 'take-down'] %}
+                                            <form method="post" action="{{ path('admin_moderation_report_decision', {id: report.id, decision: decision}) }}" data-admin-confirm="{{ ('admin.report.confirm.' ~ decision)|trans }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('report-' ~ decision ~ '-' ~ report.id) }}">
+                                                <input type="hidden" name="status" value="{{ status }}">
+                                                <button class="admin-button {{ decision == 'take-down' ? 'admin-button--danger' : '' }}" type="submit">{{ ('admin.report.action.' ~ decision)|trans }}</button>
+                                            </form>
+                                        {% endfor %}
+                                    {% elseif report.status == 'taken_down' %}
+                                        <form method="post" action="{{ path('admin_moderation_report_decision', {id: report.id, decision: 'restore'}) }}" data-admin-confirm="{{ 'admin.report.confirm.restore'|trans }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('report-restore-' ~ report.id) }}">
+                                            <input type="hidden" name="status" value="{{ status }}">
+                                            <button class="admin-button" type="submit">{{ 'admin.report.action.restore'|trans }}</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <nav class="admin-pagination" aria-label="{{ 'admin.reports.pagination'|trans }}">
+                {% if page > 1 %}
+                    <a href="{{ path('admin_moderation_reports', {'status': status, 'page': page - 1}) }}">{{ 'admin.reports.previous'|trans }}</a>
+                {% endif %}
+                <span>{{ 'admin.reports.pageCount'|trans({'%page%': page, '%pages%': pages}) }}</span>
+                {% if page < pages %}
+                    <a href="{{ path('admin_moderation_reports', {'status': status, 'page': page + 1}) }}">{{ 'admin.reports.next'|trans }}</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

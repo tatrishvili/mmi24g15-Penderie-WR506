@@ -3,10 +3,11 @@ import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ScanLine, Search } from 'lucide-react'
-import { listItems, updateItem } from '../api/items.ts'
+import { listItems } from '../api/items.ts'
 import { ApiError } from '../api/client.ts'
-import type { ItemStatus, ItemSummary } from '../types/item.ts'
+import type { ItemSummary } from '../types/item.ts'
 import { conditionLabel, statusLabel } from '../types/item.ts'
+import { itemText as tr } from '../lib/itemCatalog.ts'
 
 /**
  * "Mon dressing" — searchable list of the active foyer's items,
@@ -21,8 +22,6 @@ export default function ItemsPage() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [busyId, setBusyId] = useState<number | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(
     async (q: string, signal?: AbortSignal) => {
@@ -40,7 +39,11 @@ export default function ItemsPage() {
         setTotal(result.total)
       } catch (err) {
         if (signal?.aborted === true) return
-        setError(err instanceof ApiError ? err.message : 'Une erreur inattendue est survenue.')
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : tr('Une erreur inattendue est survenue.', 'Something unexpected happened.'),
+        )
       } finally {
         if (signal?.aborted !== true) setLoading(false)
       }
@@ -62,20 +65,6 @@ export default function ItemsPage() {
     void load(query.trim())
   }
 
-  async function changeStatus(item: ItemSummary, status: ItemStatus): Promise<void> {
-    setBusyId(item.id)
-    setActionError(null)
-
-    try {
-      await updateItem(item.id, { status })
-      await load(query.trim())
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Une erreur inattendue est survenue.')
-    } finally {
-      setBusyId(null)
-    }
-  }
-
   const thumb = (item: ItemSummary): string | null => {
     const primary = item.photos.find((photo) => photo.isPrimary) ?? item.photos[0]
     return primary?.url ?? null
@@ -83,35 +72,43 @@ export default function ItemsPage() {
 
   return (
     <div className="auth-page">
-      <p className="auth-tagline">Tout ce que vous possédez, au même endroit.</p>
+      <p className="auth-tagline">
+        {tr('Tout ce que vous possédez, au même endroit.', 'Everything you own, in one place.')}
+      </p>
 
       <div className="auth-card">
-        <h1>{searchParams.get('status') === 'archive' ? 'Articles archivés' : 'Mon dressing'}</h1>
+        <h1>
+          {searchParams.get('status') === 'archive'
+            ? tr('Articles archivés', 'Archived items')
+            : tr('Mon dressing', 'My wardrobe')}
+        </h1>
         <div className="design-inline-links">
           <Link
             to={searchParams.get('status') === 'archive' ? '/dressing' : '/dressing?status=archive'}
           >
-            {searchParams.get('status') === 'archive' ? 'Mon dressing actif' : 'Voir les archives'}
+            {searchParams.get('status') === 'archive'
+              ? tr('Mon dressing actif', 'Active wardrobe')
+              : tr('Voir les archives', 'View archive')}
           </Link>
-          <Link to="/articles/nouveau">Ajouter manuellement</Link>
-          {!child && <Link to="/prets">Mes prêts</Link>}
+          <Link to="/articles/nouveau">{tr('Ajouter manuellement', 'Add manually')}</Link>
+          {!child && <Link to="/prets">{tr('Mes prêts', 'My loans')}</Link>}
         </div>
 
         <form className="auth-form" onSubmit={onSearch} noValidate>
           <div className="field">
-            <label htmlFor="items-search">Rechercher</label>
+            <label htmlFor="items-search">{tr('Rechercher', 'Search')}</label>
             <input
               id="items-search"
               className="input"
               type="search"
-              placeholder="Pull noir, Zara…"
+              placeholder={tr('Pull noir, Zara…', 'Black sweater, Zara…')}
               autoComplete="off"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
           <button type="submit" className="btn btn-secondary" disabled={loading}>
-            <Search size={18} aria-hidden="true" /> Rechercher
+            <Search size={18} aria-hidden="true" /> {tr('Rechercher', 'Search')}
           </button>
         </form>
 
@@ -121,23 +118,23 @@ export default function ItemsPage() {
           </p>
         )}
 
-        {actionError !== null && (
-          <p role="alert" className="form-error" style={{ marginTop: 12 }}>
-            {actionError}
-          </p>
-        )}
-
         {loading ? (
-          <p className="auth-sub">Chargement…</p>
+          <p className="auth-sub">{tr('Chargement…', 'Loading…')}</p>
         ) : items.length === 0 ? (
           <>
             <p className="auth-sub">
               {total === 0
-                ? 'Votre dressing est encore vide. Scannez votre premier article !'
-                : 'Aucun article ne correspond à cette recherche.'}
+                ? tr(
+                    'Votre dressing est encore vide. Scannez votre premier article !',
+                    'Your wardrobe is still empty. Scan your first item!',
+                  )
+                : tr(
+                    'Aucun article ne correspond à cette recherche.',
+                    'No item matches this search.',
+                  )}
             </p>
             <Link className="btn btn-primary" to="/scanner">
-              <ScanLine size={18} aria-hidden="true" /> Scanner un article
+              <ScanLine size={18} aria-hidden="true" /> {tr('Scanner un article', 'Scan an item')}
             </Link>
           </>
         ) : (
@@ -167,7 +164,7 @@ export default function ItemsPage() {
                     <br />
                     <span className="profile-role">
                       {item.room === null
-                        ? 'Emplacement inconnu'
+                        ? tr('Emplacement inconnu', 'Unknown location')
                         : [
                             item.room.place.name,
                             item.room.name,
@@ -185,32 +182,31 @@ export default function ItemsPage() {
                     <span className="item-status" data-status={item.status}>
                       {statusLabel(item.status)}
                     </span>
-                    {!child && item.canEdit !== false && item.status === 'disponible' && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-inline"
-                        disabled={busyId === item.id}
-                        onClick={() => void changeStatus(item, 'loue')}
-                      >
-                        Prêter
-                      </button>
-                    )}
-                    {!child && item.canEdit !== false && item.status === 'loue' && (
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-inline"
-                        disabled={busyId === item.id}
-                        onClick={() => void changeStatus(item, 'disponible')}
-                      >
-                        Récupérer
-                      </button>
-                    )}
+                    {!child &&
+                      item.ownerProfile.role !== 'child' &&
+                      item.canEdit !== false &&
+                      item.status === 'disponible' && (
+                        <Link
+                          className="btn btn-secondary btn-inline"
+                          to={`/articles/${item.id}/partager?purpose=loan`}
+                        >
+                          {tr('Proposer un prêt', 'Offer a loan')}
+                        </Link>
+                      )}
+                    {!child &&
+                      item.ownerProfile.role !== 'child' &&
+                      item.canEdit !== false &&
+                      item.status === 'loue' && (
+                        <Link className="btn btn-primary btn-inline" to="/prets">
+                          {tr('Voir le prêt', 'View loan')}
+                        </Link>
+                      )}
                   </span>
                 </li>
               ))}
             </ul>
             <Link className="btn btn-primary" to="/scanner">
-              <ScanLine size={18} aria-hidden="true" /> Scanner un article
+              <ScanLine size={18} aria-hidden="true" /> {tr('Scanner un article', 'Scan an item')}
             </Link>
           </>
         )}

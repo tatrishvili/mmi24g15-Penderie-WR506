@@ -144,8 +144,8 @@ export function ItemForm({
         frame="160:264"
         household
         className="item-location-page"
-        title="Lieu de rangement"
-        subtitle="Vous pourrez le modifier plus tard."
+        title={itemText('Lieu de rangement', 'Storage location')}
+        subtitle={itemText('Vous pourrez le modifier plus tard.', 'You can change it later.')}
         footer={
           <>
             <button
@@ -154,7 +154,7 @@ export function ItemForm({
               form="item-location-form"
               disabled={busy}
             >
-              {busy ? 'Enregistrement…' : 'Enregistrer l’article'}
+              {busy ? itemText('Enregistrement…', 'Saving…') : itemText('Enregistrer l’article', 'Save item')}
             </button>
             <button
               className="design-link"
@@ -162,7 +162,7 @@ export function ItemForm({
               disabled={busy}
               onClick={() => save(true)}
             >
-              Je le rangerai plus tard
+              {itemText('Je le rangerai plus tard', 'I will store it later')}
             </button>
           </>
         }
@@ -175,7 +175,7 @@ export function ItemForm({
             save()
           }}
         >
-          <DesignField label="Foyer">
+          <DesignField label={itemText('Foyer', 'Household')}>
             <select
               value={place?.id ?? ''}
               onChange={(e) => {
@@ -184,7 +184,7 @@ export function ItemForm({
                 setPrecise('')
               }}
             >
-              <option value="">Pas encore rangé</option>
+              <option value="">{itemText('Pas encore rangé', 'Not stored yet')}</option>
               {places.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -192,7 +192,7 @@ export function ItemForm({
               ))}
             </select>
           </DesignField>
-          <DesignField label="Pièce">
+          <DesignField label={itemText('Pièce', 'Room')}>
             <select
               value={values.roomId ?? ''}
               onChange={(e) => {
@@ -204,7 +204,7 @@ export function ItemForm({
                 setPrecise('')
               }}
             >
-              <option value="">Pas encore rangé / inconnu</option>
+              <option value="">{itemText('Pas encore rangé / inconnu', 'Not stored / unknown')}</option>
               {place?.rooms.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
@@ -212,7 +212,7 @@ export function ItemForm({
               ))}
             </select>
           </DesignField>
-          <DesignField label="Rangement">
+          <DesignField label={itemText('Rangement', 'Storage')}>
             <select
               value={root?.id ?? ''}
               onChange={(e) => {
@@ -220,7 +220,7 @@ export function ItemForm({
                 setPrecise('')
               }}
             >
-              <option value="">Sans rangement précis</option>
+              <option value="">{itemText('Sans rangement précis', 'No specific storage')}</option>
               {roots.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -228,7 +228,7 @@ export function ItemForm({
               ))}
             </select>
           </DesignField>
-          <DesignField label="Emplacement précis (optionnel)">
+          <DesignField label={itemText('Emplacement précis (optionnel)', 'Exact location (optional)')}>
             <select
               value={
                 precise ||
@@ -242,7 +242,7 @@ export function ItemForm({
                 )
               }}
             >
-              <option value="">Aucun emplacement supplémentaire</option>
+              <option value="">{itemText('Aucun emplacement supplémentaire', 'No extra location')}</option>
               {children.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
@@ -252,20 +252,20 @@ export function ItemForm({
           </DesignField>
           <DesignNotice>
             <strong>
-              <FigmaGlyph name="locationHeading" /> {place?.name ?? 'Lieu non défini'}{' '}
+              <FigmaGlyph name="locationHeading" /> {place?.name ?? itemText('Lieu non défini', 'Place not set')}{' '}
               {room ? `› ${room.name}` : ''}
             </strong>
             <p>
-              {root?.name ?? 'Sans rangement'}{' '}
+              {root?.name ?? itemText('Sans rangement', 'No storage')}{' '}
               {precise ? `› ${children.find((s) => String(s.id) === precise)?.label ?? ''}` : ''}
             </p>
           </DesignNotice>
           <div className="design-inline-links">
             <button type="button" onClick={() => setStep('details')}>
-              Modifier l’article
+              {itemText('Modifier l’article', 'Edit item')}
             </button>
             <Link to="/foyer/rangement/ajouter" target="_blank" rel="noopener">
-              Ajouter un rangement (nouvel onglet)
+              {itemText('Ajouter un rangement (nouvel onglet)', 'Add storage (new tab)')}
             </Link>
           </div>
         </DesignForm>
@@ -277,11 +277,11 @@ export function ItemForm({
       frame="160:241"
       household
       className="item-details-form"
-      title={editing ? 'Modifier l’article' : 'Nouvel article'}
-      subtitle="Vérifiez les informations détectées."
+      title={editing ? itemText('Modifier l’article', 'Edit item') : itemText('Nouvel article', 'New item')}
+      subtitle={itemText('Vérifiez les informations détectées.', 'Check the detected information.')}
       footer={
         <button className="btn btn-primary" type="submit" form="item-details-form">
-          Choisir l’emplacement
+          {itemText('Choisir l’emplacement', 'Choose location')}
         </button>
       }
     >
@@ -296,17 +296,17 @@ export function ItemForm({
           <label className="item-photo-picker">
             <span className="item-photo-picker__image">
               {values.photos[0] ? (
-                <img src={values.photos[0]} alt="Article photographié" />
+                <img src={values.photos[0]} alt={itemText('Article photographié', 'Photographed item')} />
               ) : (
                 <img className="item-photo-picker__symbol" src={itemSymbol} alt="" />
               )}
             </span>
-            <strong>Photo de l’article</strong>
+            <strong>{itemText('Photo de l’article', 'Item photo')}</strong>
             <input
               type="file"
               accept="image/*"
               className="sr-only"
-              aria-label="Ajouter une photo de l’article"
+              aria-label={itemText('Ajouter une photo de l’article', 'Add an item photo')}
               onChange={(e) => {
                 const f = e.target.files?.[0]
                 e.target.value = ''
@@ -334,17 +334,17 @@ export function ItemForm({
             </div>
           )}
         </div>
-        <DesignField label="Nom de l'article">
+        <DesignField label={itemText('Nom de l\'article', "Item name")}>
           <input
             id="item-name"
             required
             maxLength={255}
             value={values.name}
             onChange={(e) => patch('name', e.target.value)}
-            placeholder="Ex. Pull noir"
+            placeholder={itemText('Ex. Pull noir', 'E.g. Black sweater')}
           />
         </DesignField>
-        <DesignField label="Type">
+        <DesignField label={itemText('Type', 'Type')}>
           <select
             id="item-type"
             value={values.type}
@@ -396,7 +396,7 @@ export function ItemForm({
           </>
         )}
         {!isBook(values.type) && !isMusic(values.type) && (
-          <DesignField label="Couleur">
+          <DesignField label={itemText('Couleur', 'Colour')}>
             <input
               value={values.color}
               onChange={(e) => patch('color', e.target.value)}
@@ -433,14 +433,14 @@ export function ItemForm({
               onChange={(e) => patch('category', e.target.value)}
             />
           </DesignField>
-          <DesignField label="Notes privées">
+          <DesignField label={itemText('Notes privées', 'Private notes')}>
             <textarea
               value={values.notes}
               onChange={(e) => patch('notes', e.target.value)}
               maxLength={2000}
             />
           </DesignField>
-          <DesignField label="Souvenir">
+          <DesignField label={itemText('Souvenir', 'Memory')}>
             <textarea
               value={values.memory}
               onChange={(e) => patch('memory', e.target.value)}
@@ -448,13 +448,13 @@ export function ItemForm({
             />
           </DesignField>
         </details>
-        <DesignField label="Propriétaire">
+        <DesignField label={itemText('Propriétaire', 'Owner')}>
           <select
             disabled={editing || auth.activeProfile?.role === 'child'}
             value={values.ownerProfileId ?? ''}
             onChange={(e) => patch('ownerProfileId', Number(e.target.value))}
           >
-            <option value="">Profil actif</option>
+            <option value="">{itemText('Profil actif', 'Active profile')}</option>
             {auth.profiles.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -464,7 +464,7 @@ export function ItemForm({
         </DesignField>
         <ErrorMessage error={error} />
         <button className="design-link design-back" type="button" onClick={onClose}>
-          Annuler
+          {itemText('Annuler', 'Cancel')}
         </button>
       </DesignForm>
     </DesignPage>

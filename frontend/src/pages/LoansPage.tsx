@@ -1,7 +1,10 @@
 import { errorText } from '../lib/errors.ts'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import * as social from '../api/social.ts'
+import i18n from '../i18n/config.ts'
+import { itemText as tr } from '../lib/itemCatalog.ts'
 import { useAuth } from '../auth/useAuth.ts'
 import {
   DesignPage,
@@ -15,12 +18,12 @@ import {
 
 const dateLabel = (value: string | null) =>
   value
-    ? new Date(value).toLocaleDateString('fr-FR', {
+    ? new Date(value).toLocaleDateString(i18n.language, {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
       })
-    : 'À confirmer'
+    : tr('À confirmer', 'To be confirmed')
 
 export default function LoansPage({ view }: { view: 'list' | 'request' | 'received' | 'detail' }) {
   const { id, token } = useParams()
@@ -92,7 +95,7 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
   const feedback = (
     <>
       <ErrorMessage error={error} />
-      {loading && <p role="status">Chargement…</p>}
+      {loading && <p role="status">{tr('Chargement…', 'Loading…')}</p>}
     </>
   )
 
@@ -101,8 +104,8 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
       <DesignPage
         frame={frame}
         className="social-loan-request"
-        title="Demander un emprunt"
-        subtitle="Une demande nécessite un accord"
+        title={tr('Demander un emprunt', 'Request a loan')}
+        subtitle={tr('Une demande nécessite un accord', 'A request needs approval')}
         footer={
           <button
             className="btn btn-primary"
@@ -110,7 +113,7 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
             form="loan-request"
             disabled={busy || !shared?.available}
           >
-            {busy ? 'Envoi…' : 'Envoyer la demande'}
+            {busy ? tr('Envoi…', 'Sending…') : tr('Envoyer la demande', 'Send request')}
           </button>
         }
       >
@@ -120,7 +123,7 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
             <DesignRow
               icon={icon('imgIconCamera')}
               title={shared.name}
-              detail={`Propriétaire · @${shared.owner}`}
+              detail={`${tr('Propriétaire', 'Owner')} · @${shared.owner}`}
               to={`/partage/${token}`}
             />
             <DesignForm
@@ -129,17 +132,21 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
                 e.preventDefault()
                 void run(async () => {
                   if (!token) return
-                  const d = await social.requestLoan(token, due, message)
+                  const d = await social.requestLoan(token, due || null, message)
                   navigate(`/prets/${d.loan.id}`)
                 })
               }}
             >
-              <DesignField label="Date de retour souhaitée">
+              <DesignField
+                label={tr(
+                  'Date de retour souhaitée (facultative)',
+                  'Requested return date (optional)',
+                )}
+              >
                 <span className="loan-date">
                   {icon('imgIconCalendar')}
                   <input
-                    required
-                    aria-label="Choisir une date"
+                    aria-label={tr('Choisir une date', 'Choose a date')}
                     type="date"
                     min={today}
                     value={due}
@@ -147,21 +154,28 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
                   />
                 </span>
               </DesignField>
-              <DesignField label="Message facultatif">
+              <DesignField label={tr('Message facultatif', 'Optional message')}>
                 <textarea
                   rows={4}
                   maxLength={2000}
-                  placeholder="Bonjour, puis-je emprunter cet appareil pour le week-end ?"
+                  placeholder={tr(
+                    'Bonjour, puis-je emprunter cet appareil pour le week-end ?',
+                    'Hello, may I borrow this device for the weekend?',
+                  )}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                 />
               </DesignField>
               <DesignRow
                 icon={icon('imgIconShield')}
-                title="Demande privée"
-                detail="Le propriétaire décide"
+                title={tr('Demande privée', 'Private request')}
+                detail={tr('Le propriétaire décide', 'The owner decides')}
               />
-              {!shared.available && <p role="status">Cet article n’est plus disponible.</p>}
+              {!shared.available && (
+                <p role="status">
+                  {tr('Cet article n’est plus disponible.', 'This item is no longer available.')}
+                </p>
+              )}
             </DesignForm>
           </>
         )}
@@ -174,22 +188,31 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
       <DesignPage
         frame={frame}
         className="social-loans"
-        title="Mes prêts"
-        subtitle="Suivre les objets prêtés ou empruntés"
+        title={tr('Mes prêts', 'My loans')}
+        subtitle={tr('Suivre les objets prêtés ou empruntés', 'Track lent and borrowed items')}
         footer={
           <Link
             className="btn btn-primary"
             to={search.get('demandes') ? '/prets' : '/prets?demandes=1'}
           >
-            {search.get('demandes') ? 'Voir tous les prêts' : 'Voir toutes les demandes'}
+            {search.get('demandes')
+              ? tr('Voir tous les prêts', 'See all loans')
+              : tr('Voir toutes les demandes', 'See all requests')}
           </Link>
         }
       >
         {feedback}
         {!loading && !visible.length && (
           <p>
-            Aucun prêt {search.get('demandes') ? 'en attente' : 'pour le moment'}. Les demandes
-            reçues et envoyées apparaîtront ici.
+            {search.get('demandes')
+              ? tr(
+                  'Aucun prêt en attente. Les demandes reçues et envoyées apparaîtront ici.',
+                  'No pending loans. Received and sent requests will appear here.',
+                )
+              : tr(
+                  'Aucun prêt pour le moment. Les demandes reçues et envoyées apparaîtront ici.',
+                  'No loans yet. Received and sent requests will appear here.',
+                )}
           </p>
         )}
         {visible.map((l) => (
@@ -203,15 +226,15 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
                   : 'imgIconCamera',
             )}
             title={l.itemName}
-            detail={`${l.isOwner ? l.borrower : l.owner} · ${social.loanLabel[l.status]}`}
+            detail={`${l.isOwner ? l.borrower : l.owner} · ${social.loanLabel(l.status)}`}
             to={l.isOwner && l.status === 'pending' ? `/prets/${l.id}/demande` : `/prets/${l.id}`}
           />
         ))}
         {loans.some((l) => l.isOwner && l.status === 'active') && (
           <DesignRow
             icon={icon('imgIconClock')}
-            title="Retour à confirmer"
-            detail="Vérifier l’article et confirmer"
+            title={tr('Retour à confirmer', 'Return to confirm')}
+            detail={tr('Vérifier l’article et confirmer', 'Check the item and confirm')}
             to={`/prets/${loans.find((l) => l.isOwner && l.status === 'active')?.id}`}
           />
         )}
@@ -224,21 +247,23 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
       <DesignPage
         frame={frame}
         className="social-loan-received"
-        title="Demande reçue"
-        subtitle="Accepter ou refuser un emprunt"
+        title={tr('Demande reçue', 'Request received')}
+        subtitle={tr('Accepter ou refuser un emprunt', 'Accept or decline a loan')}
       >
         {feedback}
-        {!loading && !loan && <p>Demande introuvable.</p>}
+        {!loading && !loan && <p>{tr('Demande introuvable.', 'Request not found.')}</p>}
         {loan && (
           <>
             <DesignRow
               icon={icon('imgIconUser')}
               title={loan.borrower}
-              detail={`Souhaite emprunter votre ${loan.itemName}`}
+              detail={`${tr('Souhaite emprunter votre', 'Wants to borrow your')} ${loan.itemName}`}
             />
             <DesignNotice>
-              <h2>Retour souhaité : {dateLabel(loan.dueAt)}</h2>
-              <p>{loan.message || 'Aucun message.'}</p>
+              <h2>
+                {tr('Retour souhaité', 'Requested return')} : {dateLabel(loan.dueAt)}
+              </h2>
+              <p>{loan.message || tr('Aucun message.', 'No message.')}</p>
             </DesignNotice>
             {loan.isOwner && loan.status === 'pending' ? (
               <div className="social-loan-received__actions">
@@ -247,20 +272,25 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
                   disabled={busy}
                   onClick={() => transition('accept')}
                 >
-                  Accepter
+                  {tr('Accepter', 'Accept')}
                 </button>
                 <button
                   className="btn btn-secondary"
                   disabled={busy}
                   onClick={() => transition('decline')}
                 >
-                  Refuser
+                  {tr('Refuser', 'Decline')}
                 </button>
               </div>
             ) : (
-              <p>{social.loanLabel[loan.status]}</p>
+              <p>{social.loanLabel(loan.status)}</p>
             )}
-            <small>L’accord ne confirme pas encore la remise physique.</small>
+            <small>
+              {tr(
+                'L’accord ne confirme pas encore la remise physique.',
+                'Approval does not confirm the physical handover yet.',
+              )}
+            </small>
           </>
         )}
       </DesignPage>
@@ -270,8 +300,8 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
     <DesignPage
       frame={frame}
       className="social-loan-detail"
-      title="Détail du prêt"
-      subtitle="Retour et historique de l’objet"
+      title={tr('Détail du prêt', 'Loan details')}
+      subtitle={tr('Retour et historique de l’objet', 'Return and item history')}
       footer={
         loan && (
           <>
@@ -281,7 +311,7 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
                 disabled={busy}
                 onClick={() => transition('handover')}
               >
-                Confirmer la remise
+                {tr('Confirmer la remise', 'Confirm handover')}
               </button>
             )}
             {loan.isOwner && ['active', 'accepted'].includes(loan.status) && (
@@ -290,49 +320,55 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
                 disabled={busy}
                 onClick={() => transition('return')}
               >
-                Confirmer le retour
+                {tr('Confirmer le retour', 'Confirm return')}
               </button>
             )}
             <Link className="design-link" to="/prets">
-              Mes prêts
+              {tr('Mes prêts', 'My loans')}
             </Link>
           </>
         )
       }
     >
       {feedback}
-      {!loading && !loan && <p>Prêt introuvable.</p>}
+      {!loading && !loan && <p>{tr('Prêt introuvable.', 'Loan not found.')}</p>}
       {loan && (
         <>
           <DesignRow
             icon={icon('imgIconCamera')}
             title={loan.itemName}
-            detail={`Avec ${loan.isOwner ? loan.borrower : loan.owner} · ${social.loanLabel[loan.status]}`}
+            detail={`${tr('Avec', 'With')} ${loan.isOwner ? loan.borrower : loan.owner} · ${social.loanLabel(loan.status)}`}
             to={loan.itemId ? `/articles/${loan.itemId}` : undefined}
           />
           <DesignRow
             icon={icon('imgIconClock')}
-            title="Demande acceptée"
+            title={tr('Demande acceptée', 'Request accepted')}
             detail={dateLabel(loan.acceptedAt)}
           />
           <DesignRow
             icon={icon('imgIconClock')}
-            title="Objet remis"
+            title={tr('Objet remis', 'Item handed over')}
             detail={dateLabel(loan.handedAt)}
           />
           <DesignRow
             icon={icon('imgIconClock')}
-            title="Retour prévu"
+            title={tr('Retour prévu', 'Expected return')}
             detail={dateLabel(loan.dueAt)}
           />
           <DesignRow
             icon={icon('imgIconShield')}
-            title={loan.returnedAt ? 'Réception confirmée' : 'Réception à confirmer'}
-            detail={loan.returnedAt ? dateLabel(loan.returnedAt) : 'Après restitution'}
+            title={
+              loan.returnedAt
+                ? tr('Réception confirmée', 'Receipt confirmed')
+                : tr('Réception à confirmer', 'Receipt to confirm')
+            }
+            detail={
+              loan.returnedAt ? dateLabel(loan.returnedAt) : tr('Après restitution', 'After return')
+            }
           />
           {loan.isOwner && loan.status === 'pending' && (
             <Link className="design-link" to={`/prets/${loan.id}/demande`}>
-              Répondre à la demande
+              {tr('Répondre à la demande', 'Answer the request')}
             </Link>
           )}
         </>
@@ -344,8 +380,17 @@ export default function LoansPage({ view }: { view: 'list' | 'request' | 'receiv
 export function SharedItemPage() {
   const { token } = useParams()
   const auth = useAuth()
+  const { t } = useTranslation()
   const [item, setItem] = useState<social.SharedItem | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('inappropriate')
+  const [reportDetails, setReportDetails] = useState('')
+  const [reportError, setReportError] = useState<string | null>(null)
+  const [reportSent, setReportSent] = useState(false)
+  const [reportBusy, setReportBusy] = useState(false)
+  const canReport =
+    auth.status === 'authenticated' && !auth.childAccount && auth.activeProfile?.role !== 'child'
   useEffect(() => {
     const meta = document.createElement('meta')
     meta.name = 'referrer'
@@ -370,16 +415,16 @@ export function SharedItemPage() {
     <DesignPage
       frame="165:308"
       className="social-item"
-      title={item?.name ?? 'Article partagé'}
-      subtitle="Présentation limitée · Lecture seule"
+      title={item?.name ?? tr('Article partagé', 'Shared item')}
+      subtitle={tr('Présentation limitée · Lecture seule', 'Limited view · Read only')}
       footer={
         auth.status === 'authenticated' && item?.available ? (
           <Link className="btn btn-primary" to={`/emprunter/${token}`}>
-            Demander un emprunt
+            {tr('Demander un emprunt', 'Request a loan')}
           </Link>
         ) : (
           <Link className="btn btn-secondary" to="/connexion" state={{ from: `/partage/${token}` }}>
-            Se connecter
+            {tr('Se connecter', 'Sign in')}
           </Link>
         )
       }
@@ -397,13 +442,86 @@ export function SharedItemPage() {
             </>
           </div>
           <DesignRow
-            title="Article"
+            title={tr('Article', 'Item')}
             detail={[item.type, item.color].filter(Boolean).join(' · ') || item.name}
           />
-          <DesignRow title="Partagé par" detail={`@${item.owner}`} />
+          <DesignRow title={tr('Partagé par', 'Shared by')} detail={`@${item.owner}`} />
           <DesignNotice>
-            Le lieu de rangement, l’adresse et les notes privées ne sont pas partagés.
+            {tr(
+              'Le lieu de rangement, l’adresse et les notes privées ne sont pas partagés.',
+              'Storage location, address and private notes are not shared.',
+            )}
           </DesignNotice>
+          {canReport && (
+            <section className="shared-item-report">
+              {!reportOpen ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setReportOpen(true)}
+                >
+                  {t('sharedItemReport.open')}
+                </button>
+              ) : reportSent ? (
+                <DesignNotice>
+                  <p role="status">{t('sharedItemReport.sent')}</p>
+                </DesignNotice>
+              ) : (
+                <DesignForm
+                  id="shared-item-report"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    if (!token || reportBusy) return
+                    setReportBusy(true)
+                    setReportError(null)
+                    void social
+                      .reportSharedItem(token, { reason: reportReason, details: reportDetails })
+                      .then(() => setReportSent(true))
+                      .catch((cause) => setReportError(errorText(cause)))
+                      .finally(() => setReportBusy(false))
+                  }}
+                >
+                  <h2>{t('sharedItemReport.title')}</h2>
+                  <p>{t('sharedItemReport.privacy')}</p>
+                  <ErrorMessage error={reportError} />
+                  <DesignField label={t('sharedItemReport.reason')}>
+                    <select
+                      required
+                      value={reportReason}
+                      onChange={(event) => setReportReason(event.target.value)}
+                    >
+                      {['inappropriate', 'misleading', 'copyright', 'other'].map((reason) => (
+                        <option key={reason} value={reason}>
+                          {t(`sharedItemReport.reasons.${reason}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </DesignField>
+                  <DesignField label={t('sharedItemReport.details')}>
+                    <textarea
+                      rows={3}
+                      maxLength={500}
+                      value={reportDetails}
+                      onChange={(event) => setReportDetails(event.target.value)}
+                    />
+                  </DesignField>
+                  <div className="shared-item-report__actions">
+                    <button className="btn btn-primary" type="submit" disabled={reportBusy}>
+                      {reportBusy ? t('sharedItemReport.sending') : t('sharedItemReport.submit')}
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      type="button"
+                      disabled={reportBusy}
+                      onClick={() => setReportOpen(false)}
+                    >
+                      {t('sharedItemReport.cancel')}
+                    </button>
+                  </div>
+                </DesignForm>
+              )}
+            </section>
+          )}
         </>
       )}
     </DesignPage>

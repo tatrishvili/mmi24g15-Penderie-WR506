@@ -91,6 +91,30 @@ Never ask the first adult to set or know another adult's password. The current �
 
 The app now implements direct follow/unfollow and follower/following lists alongside friend requests. Account search/discovery and blocking/reporting remain to be implemented. Apply the latest database migration before testing follows. See [FRIENDS_AND_FOLLOWERS.md](./FRIENDS_AND_FOLLOWERS.md) for the observed problems and acceptance checks.
 
+### Report a suspicious shared item — approved first release
+
+1. A signed-in, verified adult opens an active item share link and submits a
+   report with a reason. Reports are accepted for that link only; they do not
+   expose or grant access to the owner's source inventory.
+2. A super admin reviews the report in **Admin → Reports**. The queue shows the
+   reporter/owner account metadata, the report reason and only the limited
+   shared presentation (name, type and color), never photos or private fields.
+3. The admin may dismiss the report or temporarily take down that exact link.
+   Takedown is reversible and does not delete the source item or change other
+   links. The owner can create a new share after a takedown.
+4. Each report and decision is recorded in the append-only admin journal.
+
+### Restrict an account — approved first release
+
+1. In **Admin → Users**, search, status-filter, sort and page through adult login
+   accounts, then review the target's status.
+2. Choose a reason and confirm **Suspend**. The account is disabled, existing
+   sessions fail their next user refresh, and the reason/administrator/time are
+   recorded. The acting admin and the last enabled super admin cannot be
+   suspended.
+3. **Restore** is a separate confirmed and audited action. Items, memberships,
+   loans and audit history are retained. Permanent account deletion is deferred.
+
 ## 3. Sign in, switch profiles, and enforce permissions
 
 - Adults sign in with their own verified account. If multiple spaces are supported later, choose a space after sign-in.
@@ -101,6 +125,12 @@ The app now implements direct follow/unfollow and follower/following lists along
 - Signing out revokes the current session. Parents need a way to revoke a child's other sessions and reset the child's access.
 
 An item belonging to the same household does not automatically mean every household profile may see or edit it.
+
+### My space and recent activity
+
+- My space shows only data available to the signed-in account in its active household; a child sees only their own items and loans.
+- Activity entries identify the actor and object. Item edits may list changed field names, never private field values.
+- Dismissing an entry hides it only from that account's My space feed. It does not delete the append-only activity record used by the admin journal.
 
 ## 4. Add one item manually
 
@@ -170,14 +200,18 @@ When the user moves to another wardrobe or room, they must explicitly change the
 
 ## 8. Lend and return an item
 
-1. The authorized owner chooses **Lend** on an available item.
-2. Record the borrower, lent date, optional due date, condition before, and optional note.
-3. Create a loan-history record and make the item unavailable for another active loan.
+1. The authorized adult owner chooses **Offer a loan** on an available item, selects one accepted friend, and creates a verified-account link restricted to that friend.
+2. A verified adult requests the loan with an optional due date and message; the owner accepts or declines. A pending request does not reserve the item.
+3. Acceptance creates the active loan record and makes the item unavailable for another active loan. The owner separately confirms physical handover.
 4. Show open loans and who has each item.
-5. On return, record the returned date, optional condition after, and note.
-6. Close the loan and make the item available again unless another lifecycle action prevents it.
+5. On return, the owner confirms receipt; record the returned date and make the item available again unless another lifecycle action prevents it.
+
+Loan requests appear in the owner's Notifications inbox. Acceptance, refusal, handover, and return each notify the borrower there.
 
 An item may have many closed historical loans but at most one open loan. Do not store the entire loan as a mutable borrower text field or overwrite earlier loans.
+The current first release records the request, borrower, optional due date, owner decisions,
+handover, and return timestamps. Condition snapshots before/after lending and a return note
+are not yet persisted.
 
 ## 9. Share, sell, give away, and archive
 
@@ -307,6 +341,9 @@ identity; the private profile data remains saved. To publish a bio, separately
 enable **Afficher aussi ma bio sur mon profil Penderie** before saving.
 
 The five main tabs are **Fil**, **Dressing**, **Scanner**, **Foyer** and **Profil**.
+Adults open **Mon espace** from its shortcut inside **Profil** rather than a
+separate bottom-navigation tab. A child opens their own space from the
+**Mon espace** navigation item, which leads to `/enfant`.
 Use the profile counts for connections and the visible **Profil → Famille et profils**
 card for household members and child setup. **Profil → Plus → Changer de profil**
 opens existing profile management and trusted-device switching. Secure adult email

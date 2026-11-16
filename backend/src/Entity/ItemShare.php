@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'item_share')]
+#[ORM\Index(name: 'IDX_ITEM_SHARE_RECIPIENT', columns: ['recipient_id'])]
 class ItemShare
 {
     #[ORM\Id]
@@ -23,11 +24,18 @@ class ItemShare
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     public Item $item;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
+    public ?User $recipient = null;
+
     #[ORM\Column(length: 64, unique: true)]
     public string $tokenHash;
 
     #[ORM\Column]
     public bool $revoked = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    public bool $moderationDisabled = false;
 
     #[ORM\Column]
     public bool $verifiedOnly = false;

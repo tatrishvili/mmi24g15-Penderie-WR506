@@ -20,15 +20,15 @@ const ITEM_CONDITIONS = ['neuf', 'comme_neuf', 'tres_bon', 'bon', 'a_reparer', '
 function scanFailureMessage(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 503) {
-      return 'L’analyse photo gratuite est temporairement indisponible. Réessayez plus tard ou saisissez l’article manuellement.'
+      return itemText('L’analyse photo gratuite est temporairement indisponible. Réessayez plus tard ou saisissez l’article manuellement.', 'Free photo analysis is temporarily unavailable. Try again later or enter the item manually.')
     }
     if (error.status === 502) {
-      return 'Le service d’analyse photo ne répond pas. Réessayez plus tard ou saisissez l’article manuellement.'
+      return itemText('Le service d’analyse photo ne répond pas. Réessayez plus tard ou saisissez l’article manuellement.', 'The photo analysis service is not responding. Try again later or enter the item manually.')
     }
     return error.message
   }
 
-  return 'Une erreur inattendue est survenue pendant l’analyse. Vous pouvez saisir l’article manuellement.'
+  return itemText('Une erreur inattendue est survenue pendant l’analyse. Vous pouvez saisir l’article manuellement.', 'Something unexpected happened during analysis. You can enter the item manually.')
 }
 
 /**
@@ -66,7 +66,7 @@ export default function ScanPage() {
       video.srcObject = cameraStream
       void video.play().catch(() => {
         setCameraError(
-          'Impossible de démarrer l’aperçu caméra. Vérifiez les autorisations de votre navigateur.',
+          itemText('Impossible de démarrer l’aperçu caméra. Vérifiez les autorisations de votre navigateur.', 'Unable to start the camera preview. Check your browser permissions.'),
         )
       })
     }
@@ -89,7 +89,7 @@ export default function ScanPage() {
 
     if (navigator.mediaDevices?.getUserMedia === undefined) {
       setCameraError(
-        'Caméra indisponible dans ce navigateur. Utilisez une connexion sécurisée (HTTPS ou localhost) ou choisissez une photo.',
+        itemText('Caméra indisponible dans ce navigateur. Utilisez une connexion sécurisée (HTTPS ou localhost) ou choisissez une photo.', 'Camera unavailable in this browser. Use a secure connection (HTTPS or localhost) or choose a photo.'),
       )
       return
     }
@@ -112,10 +112,10 @@ export default function ScanPage() {
       const name = error instanceof DOMException ? error.name : ''
       setCameraError(
         name === 'NotAllowedError'
-          ? 'Autorisez l’accès à la caméra dans votre navigateur, puis réessayez.'
+          ? itemText('Autorisez l’accès à la caméra dans votre navigateur, puis réessayez.', 'Allow camera access in your browser, then try again.')
           : name === 'NotFoundError'
-            ? 'Aucune caméra n’a été détectée. Vous pouvez choisir une photo depuis votre galerie.'
-            : 'La caméra n’a pas pu démarrer. Vous pouvez choisir une photo depuis votre galerie.',
+            ? itemText('Aucune caméra n’a été détectée. Vous pouvez choisir une photo depuis votre galerie.', 'No camera was detected. You can choose a photo from your gallery.')
+            : itemText('La caméra n’a pas pu démarrer. Vous pouvez choisir une photo depuis votre galerie.', 'The camera could not start. You can choose a photo from your gallery.'),
       )
     } finally {
       if (requestId === cameraRequestIdRef.current) setCameraLoading(false)
@@ -154,7 +154,7 @@ export default function ScanPage() {
         window.speechSynthesis.cancel()
         window.speechSynthesis.speak(
           new SpeechSynthesisUtterance(
-            'Je ne distingue pas bien l’article. Placez-le en entier dans le cadre, sur un fond uni, puis reprenez la photo.',
+            itemText('Je ne distingue pas bien l’article. Placez-le en entier dans le cadre, sur un fond uni, puis reprenez la photo.', 'I cannot see the item clearly. Place it fully inside the frame on a plain background, then retake the photo.'),
           ),
         )
       }
@@ -174,7 +174,7 @@ export default function ScanPage() {
       await analyzeImage(await resizeToBase64(file))
     } catch {
       setScanError(
-        'La photo n’a pas pu être préparée. Choisissez une autre image ou saisissez l’article manuellement.',
+        itemText('La photo n’a pas pu être préparée. Choisissez une autre image ou saisissez l’article manuellement.', 'The photo could not be prepared. Choose another image or enter the item manually.'),
       )
     } finally {
       event.target.value = ''
@@ -184,7 +184,7 @@ export default function ScanPage() {
   function capturePhoto() {
     const video = videoRef.current
     if (video === null || video.videoWidth === 0 || video.videoHeight === 0) {
-      setCameraError('L’aperçu caméra n’est pas prêt. Patientez un instant et réessayez.')
+      setCameraError(itemText('L’aperçu caméra n’est pas prêt. Patientez un instant et réessayez.', 'The camera preview is not ready. Wait a moment and try again.'))
       return
     }
 
@@ -194,7 +194,7 @@ export default function ScanPage() {
     canvas.height = Math.round(video.videoHeight * scale)
     const context = canvas.getContext('2d')
     if (context === null) {
-      setCameraError('Impossible de capturer la photo sur cet appareil.')
+      setCameraError(itemText('Impossible de capturer la photo sur cet appareil.', 'Unable to capture the photo on this device.'))
       return
     }
 
@@ -283,7 +283,7 @@ export default function ScanPage() {
       navigate('/dressing')
     } catch (error) {
       setSaveError(
-        error instanceof ApiError ? error.message : 'Une erreur inattendue est survenue.',
+        error instanceof ApiError ? error.message : itemText('Une erreur inattendue est survenue.', 'Something unexpected happened.'),
       )
     } finally {
       setSaving(false)
@@ -356,7 +356,7 @@ export default function ScanPage() {
             <div
               className="design-chips scanner-design__types"
               role="radiogroup"
-              aria-label="Type d’article"
+              aria-label={itemText('Type d’article', 'Item type')}
             >
               {GARMENT_TYPES.map((type) => (
                 <button
@@ -371,7 +371,7 @@ export default function ScanPage() {
             </div>
             <div className={`scanner-design__preview scanner-design__preview--${guide}`}>
               {cameraStream && (
-                <video ref={videoRef} autoPlay muted playsInline aria-label="Aperçu de la caméra" />
+                <video ref={videoRef} autoPlay muted playsInline aria-label={itemText('Aperçu de la caméra', 'Camera preview')} />
               )}
               <ScanFrameOverlay type={guide} />
             </div>
@@ -413,7 +413,7 @@ export default function ScanPage() {
               type="file"
               accept="image/*"
               className="hidden"
-              aria-label="Choisir depuis la galerie"
+              aria-label={itemText('Choisir depuis la galerie', 'Choose from gallery')}
               onChange={(event) => void onFileSelected(event)}
             />
             <ErrorMessage error={scanError} />
@@ -423,7 +423,7 @@ export default function ScanPage() {
             {preview && (
               <img
                 src={preview}
-                alt={scanError ? 'Photo conservée pour la saisie manuelle' : 'Article photographié'}
+                alt={scanError ? itemText('Photo conservée pour la saisie manuelle', 'Photo kept for manual entry') : itemText('Article photographié', 'Photographed item')}
                 className="scanner-review-photo"
               />
             )}

@@ -13,6 +13,7 @@ use App\Entity\GuardianLink;
 use App\Entity\InboxNotification;
 use App\Entity\Item;
 use App\Entity\ItemPhoto;
+use App\Entity\Loan;
 use App\Entity\Profile;
 use App\Entity\User;
 use App\Service\ChildService;
@@ -213,6 +214,7 @@ final class ChildController extends AbstractController
     #[Route('/api/family/members', methods: ['GET'])]
     public function members(): Response
     {
+        $this->actor->requireAdultProfile();
         $profiles = $this->em->getRepository(Profile::class)->findBy(['household' => $this->actor->requireHousehold()], ['id' => 'ASC']);
 
         return $this->response(['members' => array_map(static fn (Profile $profile): array => ['id' => $profile->getId(), 'name' => $profile->getName(), 'role' => $profile->getRole()->value], $profiles)]);
@@ -365,6 +367,15 @@ final class ChildController extends AbstractController
                     if ($connection instanceof ChildConnection && $this->children->maySeeConnection($this->actor, $connection)) {
                         $detail = $this->children->connectionPayload($connection);
                     }
+                } elseif (\in_array($row->kind, ['loan_request', 'loan_accepted', 'loan_declined', 'loan_handover', 'loan_returned'], true)) {
+                    $loan = $this->em->getRepository(Loan::class)->find($row->referenceId);
+                    $user = $this->actor->tokenUser();
+                    if ($loan instanceof Loan && $user instanceof User) {
+                        $expectedRecipient = 'loan_request' === $row->kind ? $loan->owner : $loan->borrower;
+                        if ($expectedRecipient->getId() === $user->getId() && $recipient === 'adult:'.$user->getId()) {
+                            $detail = $this->loanNotificationPayload($loan, $user);
+                        }
+                    }
                 }
             } catch (\Symfony\Component\HttpKernel\Exception\HttpException) {
                 $detail = null;
@@ -388,6 +399,22 @@ final class ChildController extends AbstractController
         $this->em->flush();
 
         return $this->response(['read' => true]);
+    }
+
+    /** @return array<string, mixed> */
+    private function loanNotificationPayload(Loan $loan, User $viewer): array
+    {
+        return [
+            'id' => $loan->id,
+            'itemId' => $viewer->getId() === $loan->owner->getId() ? $loan->item?->getId() : null,
+            'itemName' => $loan->itemName,
+            'owner' => $loan->owner->getUsername(),
+            'borrower' => $loan->borrower->getUsername(),
+            'isOwner' => $viewer->getId() === $loan->owner->getId(),
+            'status' => $loan->status,
+            'message' => $loan->message,
+            'dueAt' => $loan->dueAt?->format('Y-m-d'),
+        ];
     }
 
     /** @return array<string, mixed> */

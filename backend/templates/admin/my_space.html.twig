@@ -1,0 +1,20 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_body %}
+    {% set scopeBadge %}
+        {% if isChild %}<span class="admin-badge admin-badge--child">{{ 'my_space.child'|trans }}</span>
+        {% elseif isAdult %}<span class="admin-badge admin-badge--adult">{{ 'my_space.adult'|trans }}</span>
+        {% else %}<span class="admin-badge admin-badge--super">{{ 'my_space.super_admin'|trans }}</span>
+        {% endif %}
+    {% endset %}
+
+    <h1>{{ 'my_space.title'|trans }} {{ scopeBadge }}</h1>
+
+    {% if isChild %}
+        {% include 'admin/my_space_child.html.twig' %}
+    {% elseif isAdult %}
+        {% include 'admin/my_space_adult.html.twig' %}
+    {% else %}
+        {% include 'admin/my_space_super.html.twig' %}
+    {% endif %}
+{% endblock %}

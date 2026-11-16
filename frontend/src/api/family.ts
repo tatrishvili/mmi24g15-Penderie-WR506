@@ -74,6 +74,13 @@ export interface NoticeDetail {
   id: number
   version?: number
   kind?: string
+  itemId?: number | null
+  itemName?: string
+  owner?: string
+  borrower?: string
+  isOwner?: boolean
+  message?: string
+  dueAt?: string | null
   childName?: string
   status?: string
   proposal?: Proposal

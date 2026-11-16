@@ -5,6 +5,31 @@
   "common": {
     "notifications": "Notifications"
   },
+  "notifications": {
+    "loan": {
+      "title": {
+        "loan_request": "New loan request",
+        "loan_accepted": "Loan request accepted",
+        "loan_declined": "Loan request declined",
+        "loan_handover": "Item handed over",
+        "loan_returned": "Item returned"
+      },
+      "message": {
+        "loan_request": "{{borrower}} wants to borrow “{{item}}”.",
+        "loan_accepted": "{{owner}} accepted your request to borrow “{{item}}”.",
+        "loan_declined": "{{owner}} declined your request to borrow “{{item}}”.",
+        "loan_handover": "{{owner}} confirmed handing over “{{item}}” to you.",
+        "loan_returned": "{{owner}} confirmed the return of “{{item}}”."
+      },
+      "status": "Status: {{status}}",
+      "dueAt": "Requested return date: {{date}}.",
+      "borrowerMessage": "Message: {{message}}",
+      "accept": "Accept request",
+      "decline": "Decline request",
+      "view": "View loan",
+      "unavailable": "This loan is no longer available."
+    }
+  },
   "nav": {
     "main": "Main navigation",
     "feed": "Feed",
@@ -22,10 +47,7 @@
     "child": "Child"
   },
   "home": {
-    "titleLines": [
-      "Welcome to",
-      "Penderie"
-    ],
+    "titleLines": ["Welcome to", "Penderie"],
     "tagline": "Add all your clothes, accessories and objects. Scan, organize, and find everything at a glance.",
     "next": "Next",
     "signIn": "Sign in",
@@ -51,10 +73,7 @@
     "childSignInNotice": "Children cannot sign in from another device yet. A parent can open their profile on an already signed-in device."
   },
   "register": {
-    "titleLines": [
-      "Create your",
-      "account"
-    ],
+    "titleLines": ["Create your", "account"],
     "intro": "Create your Penderie space and add your family members in a few clicks",
     "usernameLabel": "Username",
     "emailLabel": "E-mail",
@@ -74,10 +93,7 @@
     "unexpectedError": "Something unexpected happened."
   },
   "verify": {
-    "titleLines": [
-      "Check your",
-      "e-mail"
-    ],
+    "titleLines": ["Check your", "e-mail"],
     "sentLead": "A confirmation e-mail has been sent to:",
     "sentInstruction": "Click the link we sent you to activate your account.",
     "tokenNotice": "Confirm this address to create your account. Your password is never sent by e-mail.",
@@ -126,15 +142,141 @@
     "profilesCount_other": "{{count}} profiles",
     "placesCount_one": "{{count}} place",
     "placesCount_other": "{{count}} places",
-    "membersSection": "Household members",
-    "membersTitle": "Members",
+    "membersSection": "Household profiles",
+    "membersTitle": "Profiles",
     "pinSuffix": " · PIN code",
     "scanAction": "Scan an item",
     "wardrobeAction": "My wardrobe",
     "profilesAction": "Manage profiles",
     "logoutAction": "Sign out",
     "languageTitle": "Language",
-    "languageDescription": "Choose the language of the app. Your choice is saved on this device."
+    "languageDescription": "Choose the language of the app. Your choice is saved on this device.",
+    "adminLink": "Administration"
+  },
+  "mySpaceDashboard": {
+    "title": "My space",
+    "subtitle": "A clear view of your household items and loans.",
+    "open": "View my space",
+    "loading": "Loading your space…",
+    "close": "Close details",
+    "childHubLink": "Open my collections and family shares",
+    "cards": {
+      "items": "Items",
+      "itemsDescription": "Items visible in your household",
+      "places": "Places",
+      "placesDescription": "Places and rooms for your belongings",
+      "household": "Household",
+      "householdDescription": "Profiles and sign-in accounts, shown separately",
+      "loans": "Active loans",
+      "loansDescription": "Items currently on loan"
+    },
+    "details": {
+      "items": { "title": "My items" },
+      "places": { "title": "My places" },
+      "household": {
+        "title": "My household",
+        "profiles": "Household profiles",
+        "members": "Accounts that can sign in"
+      },
+      "loans": { "title": "Active loans" }
+    },
+    "items": {
+      "empty": "Your wardrobe is ready for its first item.",
+      "noPlace": "No place added"
+    },
+    "places": {
+      "empty": "Add a place to make your items easier to find.",
+      "noRooms": "No rooms yet.",
+      "roomCount_one": "{{count}} item",
+      "roomCount_other": "{{count}} items"
+    },
+    "profiles": {
+      "empty": "There are no profiles to show yet.",
+      "itemCount_one": "{{count}} item",
+      "itemCount_other": "{{count}} items"
+    },
+    "members": {
+      "empty": "No member account can sign in yet.",
+      "never": "No sign-in recorded"
+    },
+    "loans": {
+      "empty": "No active loans. Items you lend will appear here.",
+      "borrower": "Borrowed by {{name}}",
+      "since": "since {{date}}",
+      "markReturned": "Mark as returned",
+      "returning": "Updating…"
+    },
+    "sale": {
+      "title": "For sale / rarely used",
+      "unavailable": "Sale and last-used tracking will be available here in a future update."
+    },
+    "shares": {
+      "title": "Active shares",
+      "empty": "No active shares. You can manage them here.",
+      "active": "Shared link",
+      "expires": "Expires {{date}}",
+      "revoke": "Revoke link",
+      "revoking": "Revoking…"
+    },
+    "comments": {
+      "title": "Comments received",
+      "unavailable": "Comments you receive will appear here when that feature is available."
+    },
+    "incomplete": {
+      "title": "Items to complete",
+      "empty": "All set: your items have a place and a photo.",
+      "missingPlace": "Add a place",
+      "missingPhoto": "Add a photo",
+      "open": "Complete"
+    },
+    "activity": {
+      "title": "My recent activity",
+      "empty": "Important changes in your household will appear here.",
+      "dismiss": "Remove from my activity: {{activity}}",
+      "changes": "Details changed: {{fields}}",
+      "fields": {
+        "name": "name",
+        "type": "type",
+        "category": "category",
+        "room": "room",
+        "storageLocation": "storage",
+        "author": "author",
+        "artist": "artist",
+        "publisher": "publisher",
+        "brand": "brand",
+        "color": "color",
+        "size": "size",
+        "material": "material",
+        "condition": "condition",
+        "status": "status",
+        "memory": "memory",
+        "notes": "notes"
+      },
+      "events": {
+        "item": {
+          "created": "{{actor}} added “{{object}}”",
+          "updated": "{{actor}} updated “{{object}}”",
+          "deleted": "{{actor}} deleted “{{object}}”",
+          "photo": {
+            "created": "{{actor}} added a photo to “{{object}}”",
+            "deleted": "{{actor}} removed a photo from “{{object}}”"
+          }
+        },
+        "household": {
+          "created": "{{actor}} created the household “{{object}}”",
+          "updated": "{{actor}} updated the household “{{object}}”",
+          "selected": "{{actor}} selected the household “{{object}}”"
+        },
+        "loan": {
+          "created": "{{actor}} requested a loan for “{{object}}”",
+          "updated": "{{actor}} updated the loan for “{{object}}”"
+        },
+        "share": {
+          "created": "{{actor}} shared “{{object}}”",
+          "deleted": "{{actor}} stopped sharing “{{object}}”"
+        }
+      }
+    }
   },
   "itemTypes": {
     "pull": "Pull",
@@ -165,7 +307,7 @@
     "chapeau": "Hat",
     "écharpe": "Scarf",
     "gants": "Gloves",
-    "bijou": "Jewellery / watch",
+    "bijou": "Jewellery \/ watch",
     "livre": "Book",
     "vinyle": "Vinyl record",
     "cd": "CD",
@@ -253,51 +395,27 @@
         "thanks to storage organized by room,",
         "person and place"
       ],
-      "tabs": [
-        "Rooms",
-        "People",
-        "Places"
-      ],
-      "rooms": [
-        "Closet",
-        "Bedroom",
-        "Office",
-        "Living room",
-        "Garage",
-        "Kitchen"
-      ],
+      "tabs": ["Rooms", "People", "Places"],
+      "rooms": ["Closet", "Bedroom", "Office", "Living room", "Garage", "Kitchen"],
       "stepLabel": "Step 2 of 4"
     },
     "lend": {
-      "titleLines": [
-        "Lend your things",
-        "without ever forgetting"
-      ],
+      "titleLines": ["Lend your things", "without ever forgetting"],
       "itemName": "beige jacket",
       "status": "Lent",
       "since": "Since 12 September",
       "borrower": "Sophie",
-      "chips": [
-        "Size S",
-        "perfect condition"
-      ],
+      "chips": ["Size S", "perfect condition"],
       "bodyLines": [
         "I always know who owns my things.",
         "Receive requests from your loved ones and",
         "always keep a record of your loans."
       ],
-      "timeline": [
-        "Request received",
-        "Accepted",
-        "On loan"
-      ],
+      "timeline": ["Request received", "Accepted", "On loan"],
       "stepLabel": "Step 3 of 4"
     },
     "look": {
-      "titleLines": [
-        "New looks",
-        "every day"
-      ],
+      "titleLines": ["New looks", "every day"],
       "bodyLines": [
         "Penderie helps you create outfits that match",
         "your style, the weather and your mood."
@@ -309,5 +427,92 @@
       "caption": "Pick the style that suits you best",
       "stepLabel": "Step 4 of 4"
     }
+  },
+  "items": {
+    "condition": {
+      "neuf": "New",
+      "comme_neuf": "Like new",
+      "tres_bon": "Very good condition",
+      "bon": "Good condition",
+      "a_reparer": "Needs repair",
+      "abime": "Damaged"
+    },
+    "status": {
+      "disponible": "Available",
+      "loue": "On loan",
+      "vendu": "Sold",
+      "donne": "Given away",
+      "archive": "Archived"
+    }
+  },
+  "loans": {
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted · To hand over",
+      "active": "On loan",
+      "returned": "Returned",
+      "declined": "Declined"
+    }
+  },
+  "sharedItemReport": {
+    "open": "Report this share",
+    "title": "Report a shared item",
+    "privacy": "The report applies only to this shared link. Private item details are not disclosed.",
+    "reason": "Reason",
+    "reasons": {
+      "inappropriate": "Inappropriate content",
+      "misleading": "Misleading presentation",
+      "copyright": "Copyright",
+      "other": "Other"
+    },
+    "details": "Optional details (up to 500 characters)",
+    "submit": "Submit report",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "sent": "Thank you. Your report was sent for review.",
+    "disabledAfterReport": "Disabled after a report"
+  },
+  "api": {
+    "networkError": "Unable to reach the server. Check your connection."
+  },
+  "my_space": {
+    "my_space": "My space",
+    "my_space_saved": "Space saved",
+    "my_space_household": "Household management",
+    "my_space_child": "Child",
+    "my_space_pin_reset": "Reset PIN",
+    "my_space_restrictions": "Edit restrictions",
+    "my_space_pin": "PIN",
+    "my_space_pin_note": "This code protects profile switching on this device.",
+    "my_space_members": "Household members",
+    "my_space_children": "Child accounts",
+    "my_space_active_loans": "Active loans",
+    "my_space_items": "Items",
+    "my_space_item": "Item",
+    "my_space_loan": "Loan",
+    "my_space_overdue": "Overdue",
+    "my_space_to_sell": "For sale",
+    "my_space_unused": "Unused since",
+    "my_space_recent_activity": "Recent activity",
+    "my_space_no_items": "No items",
+    "my_space_no_loans": "No loans",
+    "my_space_no_children": "No child accounts",
+    "my_space_no_members": "No members",
+    "my_space_no_activity": "No activity",
+    "my_space_recent_item_added": "Item added",
+    "my_space_recent_item_updated": "Item updated",
+    "my_space_recent_item_removed": "Item removed",
+    "my_space_recent_loan_started": "Loan started",
+    "my_space_recent_loan_returned": "Loan returned",
+    "my_space.recent_share_created": "Share created",
+    "my_space.recent_share_removed": "Share removed",
+    "my_space.items_for_sale": "For sale",
+    "my_space.items_sold_and_unused": "For sale \/ unused for",
+    "my_space.no_items_for_sale": "No items for sale",
+    "my_space.mark_as_returned": "Mark as returned",
+    "my_space.active_shares": "Active shares",
+    "my_space.no_active_shares": "No active shares",
+    "my_space.received_comments": "Received comments",
+    "my_space.no_received_comments": "No received comments"
   }
 }

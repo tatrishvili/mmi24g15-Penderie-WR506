@@ -24,6 +24,10 @@ final class ItemService
 {
     private const MAX_PHOTOS_PER_ITEM = 6;
     private const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+    private const ACTIVITY_CHANGE_FIELDS = [
+        'name', 'type', 'category', 'room', 'storageLocation', 'author', 'artist', 'publisher',
+        'brand', 'color', 'size', 'material', 'condition', 'status', 'memory', 'notes',
+    ];
 
     /** @var array<string, string> */
     private const PHOTO_EXTENSIONS = [
@@ -124,6 +128,9 @@ final class ItemService
         $owner = $actor->profile() ?? $actor->requireAdultProfile();
         if (!$owner->isAdult() && null !== $dto->status && 'disponible' !== $dto->status) {
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Un enfant ne peut pas prêter ni céder un article.');
+        }
+        if (ItemStatus::Loue->value === $dto->status) {
+            throw new UnprocessableEntityHttpException('Utilisez le parcours de prêt pour enregistrer un article prêté.');
         }
 
         if (null !== $dto->ownerProfileId && $dto->ownerProfileId !== $owner->getId()) {
@@ -246,13 +253,16 @@ final class ItemService
         }
 
         if ($dto->has('status') && null !== $dto->status) {
-            $this->guardActiveLoan($item);
             $status = ItemStatus::tryFrom($dto->status);
 
             if (null === $status) {
                 throw new UnprocessableEntityHttpException('Invalid status.');
             }
+            if (ItemStatus::Loue === $status) {
+                throw new \Symfony\Component\HttpKernel\Exception\ConflictHttpException('Utilisez le parcours de prêt pour enregistrer un article prêté.');
+            }
 
+            $this->guardActiveLoan($item);
             $item->setStatus($status);
             if (ItemStatus::Archive === $status) {
                 $this->collectionSharing->revokeItem($item);
@@ -271,9 +281,15 @@ final class ItemService
         }
 
         $item->touch();
+        $unitOfWork = $this->em->getUnitOfWork();
+        $unitOfWork->computeChangeSet($this->em->getClassMetadata(Item::class), $item);
+        $changedFields = array_values(array_intersect(
+            self::ACTIVITY_CHANGE_FIELDS,
+            array_keys($unitOfWork->getEntityChangeSet($item)),
+        ));
         $this->em->flush();
 
-        return ['item' => self::itemPayload($item)];
+        return ['item' => self::itemPayload($item), 'changes' => $changedFields];
     }
 
     public function delete(Item $item): void

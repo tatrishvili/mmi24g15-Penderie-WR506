@@ -5,6 +5,31 @@
   "common": {
     "notifications": "Notifications"
   },
+  "notifications": {
+    "loan": {
+      "title": {
+        "loan_request": "Nouvelle demande de prêt",
+        "loan_accepted": "Demande de prêt acceptée",
+        "loan_declined": "Demande de prêt refusée",
+        "loan_handover": "Objet remis",
+        "loan_returned": "Objet rendu"
+      },
+      "message": {
+        "loan_request": "{{borrower}} souhaite emprunter « {{item}} ».",
+        "loan_accepted": "{{owner}} a accepté votre demande d’emprunt pour « {{item}} ».",
+        "loan_declined": "{{owner}} a refusé votre demande d’emprunt pour « {{item}} ».",
+        "loan_handover": "{{owner}} confirme vous avoir remis « {{item}} ».",
+        "loan_returned": "{{owner}} confirme le retour de « {{item}} »."
+      },
+      "status": "État : {{status}}",
+      "dueAt": "Retour souhaité le {{date}}.",
+      "borrowerMessage": "Message : {{message}}",
+      "accept": "Accepter la demande",
+      "decline": "Refuser la demande",
+      "view": "Voir le prêt",
+      "unavailable": "Ce prêt n’est plus disponible."
+    }
+  },
   "nav": {
     "main": "Navigation principale",
     "feed": "Fil",
@@ -22,10 +47,7 @@
     "child": "Enfant"
   },
   "home": {
-    "titleLines": [
-      "Bienvenue",
-      "chez Penderie"
-    ],
+    "titleLines": ["Bienvenue", "chez Penderie"],
     "tagline": "Ajoutez tous vos vêtements, accessoires et objets. Scannez, organisez, et retrouvez tout en un coup d’œil.",
     "next": "Suivant",
     "signIn": "Se connecter",
@@ -51,10 +73,7 @@
     "childSignInNotice": "Les enfants ne peuvent pas encore se connecter depuis un autre appareil. Un parent peut ouvrir leur profil sur un appareil déjà connecté."
   },
   "register": {
-    "titleLines": [
-      "Créez votre",
-      "compte"
-    ],
+    "titleLines": ["Créez votre", "compte"],
     "intro": "Créez votre espace Penderie et ajoutez les membres de votre famille en quelques clics",
     "usernameLabel": "Nom d’utilisateur",
     "emailLabel": "E-mail",
@@ -74,10 +93,7 @@
     "unexpectedError": "Une erreur inattendue est survenue."
   },
   "verify": {
-    "titleLines": [
-      "Vérifiez votre",
-      "e-mail"
-    ],
+    "titleLines": ["Vérifiez votre", "e-mail"],
     "sentLead": "Un e-mail de confirmation a été envoyé à :",
     "sentInstruction": "Cliquez sur le lien reçu pour activer votre compte.",
     "tokenNotice": "Confirmez cette adresse pour créer votre compte. Votre mot de passe n’est jamais envoyé par e-mail.",
@@ -126,15 +142,141 @@
     "profilesCount_other": "{{count}} profils",
     "placesCount_one": "{{count}} lieu",
     "placesCount_other": "{{count}} lieux",
-    "membersSection": "Membres du foyer",
-    "membersTitle": "Membres",
+    "membersSection": "Profils du foyer",
+    "membersTitle": "Profils",
     "pinSuffix": " · code PIN",
     "scanAction": "Scanner un article",
     "wardrobeAction": "Mon dressing",
     "profilesAction": "Gérer les profils",
     "logoutAction": "Se déconnecter",
     "languageTitle": "Langue",
-    "languageDescription": "Choisissez la langue de l’application. Votre choix est enregistré sur cet appareil."
+    "languageDescription": "Choisissez la langue de l’application. Votre choix est enregistré sur cet appareil.",
+    "adminLink": "Administration"
+  },
+  "mySpaceDashboard": {
+    "title": "Mon espace",
+    "subtitle": "Retrouvez les objets et les prêts de votre foyer.",
+    "open": "Voir mon espace",
+    "loading": "Chargement de votre espace…",
+    "close": "Fermer le détail",
+    "childHubLink": "Ouvrir mes collections et partages familiaux",
+    "cards": {
+      "items": "Objets",
+      "itemsDescription": "Les objets visibles dans votre foyer",
+      "places": "Lieux",
+      "placesDescription": "Vos lieux et pièces de rangement",
+      "household": "Foyer",
+      "householdDescription": "Profils et comptes, présentés séparément",
+      "loans": "Prêts en cours",
+      "loansDescription": "Les objets actuellement prêtés"
+    },
+    "details": {
+      "items": { "title": "Mes objets" },
+      "places": { "title": "Mes lieux" },
+      "household": {
+        "title": "Mon foyer",
+        "profiles": "Profils du foyer",
+        "members": "Comptes pouvant se connecter"
+      },
+      "loans": { "title": "Prêts en cours" }
+    },
+    "items": {
+      "empty": "Votre dressing est prêt à accueillir votre premier objet.",
+      "noPlace": "Lieu non renseigné"
+    },
+    "places": {
+      "empty": "Ajoutez un lieu pour mieux retrouver vos objets.",
+      "noRooms": "Aucune pièce pour le moment.",
+      "roomCount_one": "{{count}} objet",
+      "roomCount_other": "{{count}} objets"
+    },
+    "profiles": {
+      "empty": "Aucun profil à afficher pour le moment.",
+      "itemCount_one": "{{count}} objet",
+      "itemCount_other": "{{count}} objets"
+    },
+    "members": {
+      "empty": "Aucun compte de membre ne peut se connecter pour le moment.",
+      "never": "Aucune connexion enregistrée"
+    },
+    "loans": {
+      "empty": "Aucun prêt en cours. Vos objets prêtés apparaîtront ici.",
+      "borrower": "Emprunté par {{name}}",
+      "since": "depuis le {{date}}",
+      "markReturned": "Marquer comme rendu",
+      "returning": "Mise à jour…"
+    },
+    "sale": {
+      "title": "À vendre / peu utilisés",
+      "unavailable": "Le suivi des ventes et de la dernière utilisation sera bientôt disponible."
+    },
+    "shares": {
+      "title": "Partages actifs",
+      "empty": "Aucun partage actif. Vous pourrez les gérer ici.",
+      "active": "Lien partagé",
+      "expires": "Expire le {{date}}",
+      "revoke": "Révoquer le lien",
+      "revoking": "Révocation…"
+    },
+    "comments": {
+      "title": "Commentaires reçus",
+      "unavailable": "Les commentaires reçus apparaîtront ici lorsque cette fonctionnalité sera disponible."
+    },
+    "incomplete": {
+      "title": "Objets à compléter",
+      "empty": "Tout est en ordre : vos objets ont un lieu et une photo.",
+      "missingPlace": "Lieu à renseigner",
+      "missingPhoto": "Photo à ajouter",
+      "open": "Compléter"
+    },
+    "activity": {
+      "title": "Mon activité récente",
+      "empty": "Les changements importants de votre foyer apparaîtront ici.",
+      "dismiss": "Retirer de mon activité : {{activity}}",
+      "changes": "Détails modifiés : {{fields}}",
+      "fields": {
+        "name": "nom",
+        "type": "type",
+        "category": "catégorie",
+        "room": "pièce",
+        "storageLocation": "rangement",
+        "author": "auteur",
+        "artist": "artiste",
+        "publisher": "éditeur",
+        "brand": "marque",
+        "color": "couleur",
+        "size": "taille",
+        "material": "matière",
+        "condition": "état",
+        "status": "statut",
+        "memory": "souvenir",
+        "notes": "notes"
+      },
+      "events": {
+        "item": {
+          "created": "{{actor}} a ajouté « {{object}} »",
+          "updated": "{{actor}} a modifié « {{object}} »",
+          "deleted": "{{actor}} a supprimé « {{object}} »",
+          "photo": {
+            "created": "{{actor}} a ajouté une photo à « {{object}} »",
+            "deleted": "{{actor}} a retiré une photo de « {{object}} »"
+          }
+        },
+        "household": {
+          "created": "{{actor}} a créé le foyer « {{object}} »",
+          "updated": "{{actor}} a modifié le foyer « {{object}} »",
+          "selected": "{{actor}} a choisi le foyer « {{object}} »"
+        },
+        "loan": {
+          "created": "{{actor}} a demandé le prêt de « {{object}} »",
+          "updated": "{{actor}} a mis à jour le prêt de « {{object}} »"
+        },
+        "share": {
+          "created": "{{actor}} a partagé « {{object}} »",
+          "deleted": "{{actor}} a arrêté le partage de « {{object}} »"
+        }
+      }
+    }
   },
   "itemTypes": {
     "pull": "Pull",
@@ -162,10 +304,10 @@
     "chaussure": "Chaussures",
     "sac": "Sac",
     "ceinture": "Ceinture",
-    "chapeau": "Chapeau / bonnet",
+    "chapeau": "Chapeau \/ bonnet",
     "écharpe": "Écharpe",
     "gants": "Gants",
-    "bijou": "Bijou / montre",
+    "bijou": "Bijou \/ montre",
     "livre": "Livre",
     "vinyle": "Vinyle",
     "cd": "CD",
@@ -253,51 +395,27 @@
         "et chaque objet grâce à un rangement organisé",
         "par pièce, personne et emplacement."
       ],
-      "tabs": [
-        "Pièces",
-        "Personnes",
-        "Emplacement"
-      ],
-      "rooms": [
-        "Dressing",
-        "Chambre",
-        "Bureau",
-        "Salon",
-        "Garage",
-        "Cuisine"
-      ],
+      "tabs": ["Pièces", "Personnes", "Emplacement"],
+      "rooms": ["Dressing", "Chambre", "Bureau", "Salon", "Garage", "Cuisine"],
       "stepLabel": "Étape 2 sur 4"
     },
     "lend": {
-      "titleLines": [
-        "Prêtez vos affaires",
-        "sans jamais oublier"
-      ],
+      "titleLines": ["Prêtez vos affaires", "sans jamais oublier"],
       "itemName": "veste beige",
       "status": "Prêtée",
       "since": "Depuis le 12 septembre",
       "borrower": "Sophie",
-      "chips": [
-        "Taille S",
-        "état parfait"
-      ],
+      "chips": ["Taille S", "état parfait"],
       "bodyLines": [
         "Je sais toujours qui possède mes affaires.",
         "Recevez les demandes de vos proches et gardez",
         "toujours une trace de vos prêts."
       ],
-      "timeline": [
-        "Demande reçue",
-        "Accepté",
-        "En prêt"
-      ],
+      "timeline": ["Demande reçue", "Accepté", "En prêt"],
       "stepLabel": "Étape 3 sur 4"
     },
     "look": {
-      "titleLines": [
-        "Des looks",
-        "chaque jour"
-      ],
+      "titleLines": ["Des looks", "chaque jour"],
       "bodyLines": [
         "Penderie vous aide à créer des tenues adaptées",
         "à votre style, à la météo et à vos envies."
@@ -309,5 +427,92 @@
       "caption": "Choisissez le style qui vous correspond le mieux",
       "stepLabel": "Étape 4 sur 4"
     }
+  },
+  "items": {
+    "condition": {
+      "neuf": "Neuf",
+      "comme_neuf": "Comme neuf",
+      "tres_bon": "Très bon état",
+      "bon": "Bon état",
+      "a_reparer": "À réparer",
+      "abime": "Abîmé"
+    },
+    "status": {
+      "disponible": "Disponible",
+      "loue": "Prêté",
+      "vendu": "Vendu",
+      "donne": "Donné",
+      "archive": "Archivé"
+    }
+  },
+  "loans": {
+    "status": {
+      "pending": "En attente",
+      "accepted": "Accepté · À remettre",
+      "active": "Prêt en cours",
+      "returned": "Retourné",
+      "declined": "Refusé"
+    }
+  },
+  "sharedItemReport": {
+    "open": "Signaler ce partage",
+    "title": "Signaler un partage",
+    "privacy": "Le signalement concerne uniquement ce lien partagé. Le contenu privé de l’objet n’est pas communiqué.",
+    "reason": "Motif",
+    "reasons": {
+      "inappropriate": "Contenu inapproprié",
+      "misleading": "Présentation trompeuse",
+      "copyright": "Droits d’auteur",
+      "other": "Autre"
+    },
+    "details": "Précision facultative (500 caractères maximum)",
+    "submit": "Envoyer le signalement",
+    "sending": "Envoi…",
+    "cancel": "Annuler",
+    "sent": "Merci. Le signalement a été envoyé pour examen.",
+    "disabledAfterReport": "Désactivé après un signalement"
+  },
+  "api": {
+    "networkError": "Impossible de joindre le serveur. Vérifiez votre connexion."
+  },
+  "my_space": {
+    "my_space": "Mon espace",
+    "my_space_saved": "Espace enregistré",
+    "my_space_household": "Gestion du foyer",
+    "my_space_child": "Enfant",
+    "my_space_pin_reset": "Code PIN réinitialisé",
+    "my_space_restrictions": "Restrictions enfant",
+    "my_space_pin": "Code PIN",
+    "my_space_pin_note": "Ce code protège le changement de profil sur cet appareil.",
+    "my_space_members": "Membres du foyer",
+    "my_space_children": "Comptes enfant",
+    "my_space_active_loans": "Prêts en cours",
+    "my_space_items": "Objets",
+    "my_space_item": "Objet",
+    "my_space_loan": "Prêt",
+    "my_space_overdue": "En retard",
+    "my_space_to_sell": "En vente",
+    "my_space_unused": "Non utilisé depuis",
+    "my_space_recent_activity": "Activité récente",
+    "my_space_no_items": "Aucun objet",
+    "my_space_no_loans": "Aucun prêt",
+    "my_space_no_children": "Aucun compte enfant",
+    "my_space_no_members": "Aucun membre",
+    "my_space_no_activity": "Aucune activité",
+    "my_space_recent_item_added": "Objet ajouté",
+    "my_space_recent_item_updated": "Objet modifié",
+    "my_space_recent_item_removed": "Objet retiré",
+    "my_space_recent_loan_started": "Prêt commencé",
+    "my_space_recent_loan_returned": "Prêt retourné",
+    "my_space.recent_share_created": "Partage créé",
+    "my_space.recent_share_removed": "Partage supprimé",
+    "my_space.items_for_sale": "À vendre",
+    "my_space.items_sold_and_unused": "En vente \/ non utilisés depuis",
+    "my_space.no_items_for_sale": "Aucun objet en vente",
+    "my_space.mark_as_returned": "Marquer comme rendu",
+    "my_space.active_shares": "Partages actifs",
+    "my_space.no_active_shares": "Aucun partage actif",
+    "my_space.received_comments": "Commentaires reçus",
+    "my_space.no_received_comments": "Aucun commentaire reçu"
   }
 }

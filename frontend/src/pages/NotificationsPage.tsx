@@ -1,9 +1,12 @@
 import ChildSnapshotPreview from '../components/ChildSnapshotPreview.tsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import * as family from '../api/family.ts'
+import * as social from '../api/social.ts'
 import { useAuth } from '../auth/useAuth.ts'
 import { DesignPage, ErrorMessage } from '../components/DesignPage.tsx'
+import i18n from '../i18n/config.ts'
 import { errorText } from '../lib/errors.ts'
 import { itemText as t } from '../lib/itemCatalog.ts'
 
@@ -18,6 +21,7 @@ const decisionText = (status?: string) =>
   })[status ?? ''] ?? t('Indisponible', 'Unavailable')
 export default function NotificationsPage() {
   const auth = useAuth()
+  const { t: translate } = useTranslation()
   const [rows, setRows] = useState<family.Notification[]>([])
   const [unread, setUnread] = useState(0)
   const [before, setBefore] = useState<number | null>(null)
@@ -89,22 +93,88 @@ export default function NotificationsPage() {
       )}
       {rows.map((row) => {
         const detail = row.detail
+        const isLoan = row.kind.startsWith('loan_')
         const entries = detail?.proposal?.preview
           ? [detail.proposal.preview]
           : (detail?.proposal?.snapshot?.items ?? [])
         return (
           <article className="family-section" key={row.id}>
             <h2>
-              {row.kind === 'parent_invitation'
-                ? t('Invitation comme parent', 'Parent invitation')
-                : row.kind === 'connection'
-                  ? t('Demande de contact', 'Contact request')
-                  : row.kind === 'decision'
-                    ? t('Réponse à ta demande', 'Response to your request')
-                    : t('Demande de partage', 'Sharing request')}
+              {isLoan
+                ? translate(`notifications.loan.title.${row.kind}`)
+                : row.kind === 'parent_invitation'
+                  ? t('Invitation comme parent', 'Parent invitation')
+                  : row.kind === 'connection'
+                    ? t('Demande de contact', 'Contact request')
+                    : row.kind === 'decision'
+                      ? t('Réponse à ta demande', 'Response to your request')
+                      : t('Demande de partage', 'Sharing request')}
             </h2>
             {!row.read && <span className="family-badge">{t('Nouveau', 'New')}</span>}
-            {!detail ? (
+            {isLoan ? (
+              !detail ? (
+                <p>{translate('notifications.loan.unavailable')}</p>
+              ) : (
+                <>
+                  <p>
+                    {translate(`notifications.loan.message.${row.kind}`, {
+                      borrower: detail.borrower,
+                      owner: detail.owner,
+                      item: detail.itemName,
+                    })}
+                  </p>
+                  <p>
+                    {translate('notifications.loan.status', {
+                      status: translate(`loans.status.${detail.status}`),
+                    })}
+                  </p>
+                  {row.kind === 'loan_request' && detail.dueAt && (
+                    <p>
+                      {translate('notifications.loan.dueAt', {
+                        date: new Date(`${detail.dueAt}T12:00:00`).toLocaleDateString(
+                          i18n.language,
+                        ),
+                      })}
+                    </p>
+                  )}
+                  {row.kind === 'loan_request' && detail.message && (
+                    <p>
+                      {translate('notifications.loan.borrowerMessage', {
+                        message: detail.message,
+                      })}
+                    </p>
+                  )}
+                  <Link
+                    className="design-link"
+                    to={
+                      detail.isOwner && detail.status === 'pending'
+                        ? `/prets/${detail.id}/demande`
+                        : `/prets/${detail.id}`
+                    }
+                  >
+                    {translate('notifications.loan.view')}
+                  </Link>
+                  {row.kind === 'loan_request' && detail.isOwner && detail.status === 'pending' && (
+                    <div className="family-actions">
+                      <button
+                        className="btn btn-primary"
+                        disabled={busy}
+                        onClick={() => void run(() => social.transitionLoan(detail.id, 'accept'))}
+                      >
+                        {translate('notifications.loan.accept')}
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        disabled={busy}
+                        onClick={() => void run(() => social.transitionLoan(detail.id, 'decline'))}
+                      >
+                        {translate('notifications.loan.decline')}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )
+            ) : !detail ? (
               <p>
                 {t('Cette demande n’est plus accessible.', 'This request is no longer accessible.')}
               </p>

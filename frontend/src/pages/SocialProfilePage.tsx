@@ -1,4 +1,5 @@
-import { Pin } from 'lucide-react'
+import { LayoutDashboard, Pin } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { audienceLabel, collectionItemDetail } from '../lib/collectionAudience.ts'
 import { CollectionAudience, CollectionApproval } from '../components/CollectionAudience.tsx'
 import { itemText as t } from '../lib/itemCatalog.ts'
@@ -15,6 +16,7 @@ import type {
 import { listAllItems } from '../api/items.ts'
 import type { ItemSummary } from '../types/item.ts'
 import { resizeToBase64 } from '../lib/image.ts'
+import { useAuth } from '../auth/useAuth.ts'
 import {
   DesignPage,
   DesignRow,
@@ -51,6 +53,8 @@ export default function SocialProfilePage({
 }: {
   view: 'profile' | 'edit' | 'collections' | 'create' | 'showcase' | 'collection'
 }) {
+  const { t: translate } = useTranslation()
+  const { activeProfile } = useAuth()
   const { data, setData, error, setError } = useWorkspace()
   const navigate = useNavigate()
   const { collectionId } = useParams()
@@ -157,15 +161,15 @@ export default function SocialProfilePage({
       {notice && <p role="status">{notice}</p>}
     </>
   )
-  const load = !data && <p role="status">{error ? 'Données indisponibles.' : 'Chargement…'}</p>
+  const load = !data && <p role="status">{error ? t('Données indisponibles.', 'Data unavailable.') : t('Chargement…', 'Loading…')}</p>
 
   if (view === 'profile')
     return (
       <DesignPage
         frame={frame}
         className="social-profile"
-        title="Mon profil"
-        subtitle="Votre espace personnel"
+        title={t('Mon profil', 'My profile')}
+        subtitle={t('Votre espace personnel', 'Your personal space')}
       >
         {errors}
         {load}
@@ -174,17 +178,17 @@ export default function SocialProfilePage({
             <div className="social-profile__identity">
               <span className="social-avatar">
                 {data.profile.photo ? (
-                  <img src={data.profile.photo} alt="Votre photo" />
+                  <img src={data.profile.photo} alt={t('Votre photo', 'Your photo')} />
                 ) : (
                   icon('imgIconUser')
                 )}
-                <Link to="/profil/modifier" aria-label="Changer ma photo">
+                <Link to="/profil/modifier" aria-label={t('Changer ma photo', 'Change my photo')}>
                   {icon('imgIconCamera')}
                 </Link>
               </span>
               <div>
                 <h2>{data.profile.displayName}</h2>
-                <p>@{data.username ?? 'sans_identifiant'}</p>
+                <p>@{data.username ?? t('sans_identifiant', 'no_username')}</p>
               </div>
             </div>
             <nav className="profile-connections" aria-label={t('Mes relations', 'My connections')}>
@@ -211,7 +215,7 @@ export default function SocialProfilePage({
               </Link>
             </nav>
             <p className="social-profile__bio">
-              {data.profile.bio || 'Ajoutez quelques mots pour vous présenter.'}
+              {data.profile.bio || t('Ajoutez quelques mots pour vous présenter.', 'Add a few words to introduce yourself.')}
             </p>
             <Link className="btn btn-secondary" to="/profil/modifier">
               {t('Modifier mon profil', 'Edit profile')}
@@ -222,6 +226,14 @@ export default function SocialProfilePage({
               detail={t('Voir les membres et ajouter un enfant', 'View members and add a child')}
               to="/foyer/membres"
             />
+            {activeProfile?.role !== 'child' && (
+              <DesignRow
+                icon={<LayoutDashboard size={22} aria-hidden="true" />}
+                title={translate('mySpaceDashboard.title')}
+                detail={translate('mySpaceDashboard.subtitle')}
+                to="/my-space"
+              />
+            )}
             <section
               className="profile-collections"
               aria-label={t('Mes collections', 'My collections')}
@@ -357,15 +369,15 @@ export default function SocialProfilePage({
               </Link>
             </section>
             <details className="design-page-menu">
-              <summary>Plus</summary>
+              <summary>{t('Plus', 'More')}</summary>
               <div className="design-inline-links">
                 <Link to="/amis">{t('Amis et demandes', 'Friends and requests')}</Link>
                 <Link to="/profils">{t('Changer de profil', 'Switch profile')}</Link>
                 <Link to="/actualites">{t('Le fil Penderie', 'The Penderie feed')}</Link>
-                <Link to="/vitrine">Personnaliser ma vitrine</Link>
-                <Link to="/acces">Gérer les accès</Link>
-                <Link to="/prets">Mes prêts</Link>
-                <Link to="/compte">Mon compte</Link>
+                <Link to="/vitrine">{t('Personnaliser ma vitrine', 'Customize my showcase')}</Link>
+                <Link to="/acces">{t('Gérer les accès', 'Manage access')}</Link>
+                <Link to="/prets">{t('Mes prêts', 'My loans')}</Link>
+                <Link to="/compte">{t('Mon compte', 'My account')}</Link>
               </div>
             </details>
           </>
@@ -378,8 +390,8 @@ export default function SocialProfilePage({
       <DesignPage
         frame={frame}
         className="social-profile-edit"
-        title="Modifier mon profil"
-        subtitle="Photo, nom et présentation"
+        title={t('Modifier mon profil', 'Edit my profile')}
+        subtitle={t('Photo, nom et présentation', 'Photo, name and introduction')}
         footer={
           <button
             type="submit"
@@ -387,7 +399,7 @@ export default function SocialProfilePage({
             className="btn btn-primary"
             disabled={busy || !data}
           >
-            {busy ? 'Enregistrement…' : 'Enregistrer'}
+            {busy ? t('Enregistrement…', 'Saving…') : t('Enregistrer', 'Save')}
           </button>
         }
       >
@@ -416,18 +428,18 @@ export default function SocialProfilePage({
             <label className="social-avatar-picker">
               <span className="social-avatar">
                 {currentProfile.photo ? (
-                  <img src={currentProfile.photo} alt="Votre photo" />
+                  <img src={currentProfile.photo} alt={t('Votre photo', 'Your photo')} />
                 ) : (
                   icon('imgIconUser')
                 )}
                 <span className="social-avatar__camera">{icon('imgIconCamera')}</span>
               </span>
-              <strong>Changer ma photo</strong>
+              <strong>{t('Changer ma photo', 'Change my photo')}</strong>
               <input
                 type="file"
                 accept="image/*"
                 className="sr-only"
-                aria-label="Changer ma photo"
+                aria-label={t('Changer ma photo', 'Change my photo')}
                 onChange={(e) => {
                   const f = e.target.files?.[0]
                   if (f)
@@ -437,7 +449,7 @@ export default function SocialProfilePage({
                 }}
               />
             </label>
-            <DesignField label="Nom affiché">
+            <DesignField label={t('Nom affiché', 'Display name')}>
               <input
                 required
                 maxLength={100}
@@ -445,11 +457,11 @@ export default function SocialProfilePage({
                 onChange={(e) => setProfile({ ...currentProfile, displayName: e.target.value })}
               />
             </DesignField>
-            <DesignField label="Nom d’utilisateur">
+            <DesignField label={t('Nom d’utilisateur', 'Username')}>
               <input value={`@${data.username ?? ''}`} readOnly />
             </DesignField>
-            <p className="sr-only">Votre identifiant unique se gère dans Mon compte.</p>
-            <DesignField label="Bio">
+            <p className="sr-only">{t('Votre identifiant unique se gère dans Mon compte.', 'Your unique username is managed in My account.')}</p>
+            <DesignField label={t('Bio', 'Bio')}>
               <input
                 maxLength={500}
                 value={currentProfile.bio}
@@ -510,11 +522,11 @@ export default function SocialProfilePage({
       <DesignPage
         frame={frame}
         className="social-collections"
-        title="Mes collections"
-        subtitle="Organiser vos objets et créations"
+        title={t('Mes collections', 'My collections')}
+        subtitle={t('Organiser vos objets et créations', 'Organize your belongings and creations')}
         footer={
           <Link className="btn btn-primary" to="/collections/nouvelle">
-            Nouvelle collection
+            {t('Nouvelle collection', 'New collection')}
           </Link>
         }
       >
@@ -522,7 +534,7 @@ export default function SocialProfilePage({
         {load}
         <div className="design-grid">{data?.collections.map((c) => tile(c))}</div>
         {data && !data.collections.length && (
-          <p className="design-hint">Créez votre première collection pour regrouper vos objets.</p>
+          <p className="design-hint">{t('Créez votre première collection pour regrouper vos objets.', 'Create your first collection to group your belongings.')}</p>
         )}
         <Link className="btn btn-secondary" to="/communaute/collections">
           {t('Explorer les collections', 'Explore collections')}
@@ -541,8 +553,8 @@ export default function SocialProfilePage({
       <DesignPage
         frame={frame}
         className="social-collection-create"
-        title="Créer une collection"
-        subtitle="Regrouper sans déplacer les objets"
+        title={t('Créer une collection', 'Create a collection')}
+        subtitle={t('Regrouper sans déplacer les objets', 'Group without moving items')}
         footer={
           <button
             className="btn btn-primary"
@@ -550,7 +562,7 @@ export default function SocialProfilePage({
             form="collection-create"
             disabled={busy || !data || (chosenAudience !== 'personal' && !approved)}
           >
-            {busy ? 'Création…' : 'Créer la collection'}
+            {busy ? t('Création…', 'Creating…') : t('Créer la collection', 'Create collection')}
           </button>
         }
       >
@@ -565,19 +577,19 @@ export default function SocialProfilePage({
             })
           }}
         >
-          <DesignField label="Nom de la collection">
+          <DesignField label={t('Nom de la collection', 'Collection name')}>
             <input
               required
               maxLength={100}
-              placeholder="Ex. Mes vinyles préférés"
+              placeholder={t('Ex. Mes vinyles préférés', 'E.g. My favourite vinyl')}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </DesignField>
-          <DesignField label="Photo de couverture">
+          <DesignField label={t('Photo de couverture', 'Cover photo')}>
             <span className="collection-cover">
-              {cover ? <img src={cover} alt="Couverture choisie" /> : icon('imgIconCamera')}
-              <strong>Ajouter une couverture</strong>
+              {cover ? <img src={cover} alt={t('Couverture choisie', 'Selected cover')} /> : icon('imgIconCamera')}
+              <strong>{t('Ajouter une couverture', 'Add a cover')}</strong>
               <input
                 className="sr-only"
                 type="file"
@@ -619,16 +631,16 @@ export default function SocialProfilePage({
     return (
       <DesignPage
         frame={frame}
-        title={collection?.name ?? 'Collection'}
-        subtitle="Regrouper sans déplacer les objets"
+        title={collection?.name ?? t('Collection', 'Collection')}
+        subtitle={t('Regrouper sans déplacer les objets', 'Group without moving items')}
         footer={
           <Link className="btn btn-secondary" to="/collections">
-            Mes collections
+            {t('Mes collections', 'My collections')}
           </Link>
         }
       >
         {load}
-        {data && !collection && <p>Collection introuvable.</p>}
+        {data && !collection && <p>{t('Collection introuvable.', 'Collection not found.')}</p>}
         {collection && (
           <>
             <DesignNotice>
@@ -741,16 +753,16 @@ export default function SocialProfilePage({
                 {t('Voir la collection partagée', 'View shared collection')}
               </Link>
             )}
-            <h2>Articles de la collection</h2>
-            {collection.itemIds.length === 0 && <p>Aucun article pour le moment.</p>}
+            <h2>{t('Articles de la collection', 'Collection items')}</h2>
+            {collection.itemIds.length === 0 && <p>{t('Aucun article pour le moment.', 'No items yet.')}</p>}
             {items.map((item) => (
               <DesignRow
                 key={item.id}
                 title={item.name}
                 detail={
                   collection.itemIds.includes(item.id)
-                    ? 'Retirer de la collection'
-                    : 'Ajouter à la collection'
+                    ? t('Retirer de la collection', 'Remove from collection')
+                    : t('Ajouter à la collection', 'Add to collection')
                 }
                 icon={icon('imgIconDisc')}
                 selected={collection.itemIds.includes(item.id)}
@@ -769,7 +781,7 @@ export default function SocialProfilePage({
               />
             ))}
             <Link className="design-link" to="/dressing">
-              Ouvrir mon inventaire
+              {t('Ouvrir mon inventaire', 'Open my inventory')}
             </Link>
           </>
         )}
@@ -780,7 +792,7 @@ export default function SocialProfilePage({
     <DesignPage
       frame={frame}
       className="social-showcase"
-      title="Personnaliser ma vitrine"
+      title={t('Personnaliser ma vitrine', 'Customize my showcase')}
       subtitle={t('Organiser mes collections épinglées', 'Organize my pinned collections')}
       footer={
         <button
@@ -796,7 +808,7 @@ export default function SocialProfilePage({
             })
           }
         >
-          Enregistrer la vitrine
+          {t('Enregistrer la vitrine', 'Save showcase')}
         </button>
       }
     >
@@ -804,14 +816,14 @@ export default function SocialProfilePage({
       {load}
       <DesignRow
         icon={icon('imgIconEye')}
-        title="Aperçu de ma vitrine"
+        title={t('Aperçu de ma vitrine', 'My showcase preview')}
         detail={t(
           'Les visiteurs voient seulement les collections partagées avec eux',
           'Visitors only see collections shared with them',
         )}
         to="/profil"
       />
-      <h2>Éléments épinglés</h2>
+      <h2>{t('Éléments épinglés', 'Pinned items')}</h2>
       <div className="design-grid">
         {data?.collections
           .filter((c) => currentPins.includes(c.id))
@@ -820,7 +832,7 @@ export default function SocialProfilePage({
       </div>
       <DesignRow
         icon={icon('imgIconPin')}
-        title="Ajouter une épingle"
+        title={t('Ajouter une épingle', 'Add a pin')}
         detail={t('Choisir une collection', 'Choose a collection')}
         onClick={() => setChoosePin(!choosePin)}
       />
@@ -842,14 +854,14 @@ export default function SocialProfilePage({
             />
           ))}
           {data?.collections.length === 0 && (
-            <Link to="/collections/nouvelle">Créer une collection</Link>
+            <Link to="/collections/nouvelle">{t('Créer une collection', 'Create a collection')}</Link>
           )}
         </div>
       )}
       <DesignRow
         icon={icon('imgIconEdit')}
-        title="Réorganiser"
-        detail="Inverser l’ordre des épingles"
+        title={t('Réorganiser', 'Reorder')}
+        detail={t('Inverser l’ordre des épingles', 'Reverse the pin order')}
         onClick={() => setPins([...currentPins].reverse())}
       />
     </DesignPage>
