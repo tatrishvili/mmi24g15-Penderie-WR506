@@ -1,0 +1,34 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_body %}
+    <h1>{{ 'admin.households.title'|trans }}</h1>
+    <p class="admin-subtitle">{{ 'admin.households.subtitle'|trans }}</p>
+
+    <section class="admin-panel">
+        {% if households is empty %}
+            <p class="empty">{{ 'admin.empty.households'|trans }}</p>
+        {% else %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>{{ 'admin.table.name'|trans }}</th>
+                        <th>{{ 'admin.table.created'|trans }}</th>
+                        <th>{{ 'admin.table.members'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for household in households %}
+                        <tr>
+                            <td data-label="{{ 'admin.table.name'|trans }}"><strong>{{ household.name }}</strong><br><span class="mono muted">{{ household.slug }}</span></td>
+                            <td data-label="{{ 'admin.table.created'|trans }}" class="mono">{{ household.createdAt|date('Y-m-d') }}</td>
+                            <td data-label="{{ 'admin.table.members'|trans }}">
+                                {% set rows = members[household.id] %}
+                                {{ rows is empty ? '—' : rows|length }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </section>
+{% endblock %}

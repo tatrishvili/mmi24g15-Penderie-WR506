@@ -24,3 +24,7 @@ framework:
             policy: 'fixed_window'
             limit: 120
             interval: '1 minute'
+        analytics_visit:
+            policy: 'fixed_window'
+            limit: 60
+            interval: '1 minute'

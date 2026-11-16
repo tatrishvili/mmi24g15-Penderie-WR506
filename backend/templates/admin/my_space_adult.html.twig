@@ -1,0 +1,266 @@
+<h2>{{ 'my_space.my_collection'|trans }}</h2>
+
+{% if itemList is empty %}
+    <p class="empty">{{ 'my_space.no_items'|trans }}</p>
+{% else %}
+    <a href="{{ path('dressing') }}" style="color: inherit; text-decoration: none; width: 100%;">
+        <div class="admin-grid">
+            {% for item in itemList %}
+                <div class="admin-card">
+                    <div class="admin-card__label">{{ item.name }}</div>
+                    <div class="admin-card__value">{{ item.getType()|default('—') }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </a>
+{% endif %}
+
+<h2>{{ 'my_space.my_loans'|trans }}</h2>
+
+<div>
+    {% for loan in loanList %}
+        <div class="admin-grid admin-grid--small">
+            <div class="admin-card">
+                <div class="admin-card__label">{{ loan.item.name }}</div>
+                <div class="admin-card__value">{{ 'my_space.lent_to'|trans }}: {{ loan.borrower?.getEmail()|default('—') }}</div>
+            </div>
+{% if loan.isOverdue() %}
+                    <span class="admin-badge admin-badge--adult">{{ 'my_space.overdue'|trans }}</span>
+{% endif %}
+                    <form action="{{ path('loan_return', {'id': loan.id}) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="admin-link small">{{ 'my_space.mark_as_returned'|trans }}</button>
+                </form>
+</script>
+{% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+{% if loanCount > 0 %}
+    <p><strong>{{ 'my_space.active_loans'|trans }}:</strong> {{ loanCount }}</p>
+{% else %}
+    <p class="empty">{{ 'my_space.no_loans'|trans }}</p>
+{% endif %}
+
+<h2>{{ 'my_space.items_for_sale'|trans }}</h2>
+
+{% set itemsForSale = 0 %}
+{% set unusedItems = 0 %}
+{% for item in itemList %}
+    {% set itemStatus = item.getStatus()|default('')|lower %}
+    {% if itemStatus == 'a_vendre' %}
+        {% set itemsForSale = itemsForSale + 1 %}
+    {% elseif itemStatus == 'disponible' %}
+        {% set age = item.getAgeMonths()|default(0)|default(0) %}
+        {% if age > 6 %}
+            {% set unusedItems = unusedItems + 1 %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
+
+{% if itemsForSale > 0 or unusedItems > 0 %}
+    <p>{{ 'my_space.items_sold_and_unused'|trans }}: {{ itemsForSale + unusedItems }}</p>
+{% else %}
+    <p class="empty">{{ 'my_space.no_items_for_sale'|trans }}</p>
+{% endif %}
+
+<h2>{{ 'my_space.places'|trans }}</h2>
+
+{% set placesWithItems = [] %}
+{% for item in itemList %}
+    {% set room = item.getRoom()|default(null) %}
+    {% set storage = item.getStorageLocation()|default(null) %}
+    {% if room is not null or storage is not null %}
+        {% set placeKey = (room is not null ? 'room:' ~ room.getName() : 'storage:' ~ storage.getName()) %}
+        {% set existing = placesWithItems[placeKey]|default(0) %}
+        {% set placesWithItems[placeKey] = existing + 1 %}
+    {% endif %}
+{% endfor %}
+
+{% if placesWithItems is defined and (app.debug is defined and app.debug or placesWithItems|length > 0) %}
+    {% for placeKey|value in placesWithItems %}
+        {% set placeName = key is same as placeKey ? 'Pièce' : storage is defined ? 'Emplacement' : 'Pièce' %}
+        <p><strong>{{ placeKey|replace({'room:': '', 'storage:': '')|default('Lieu') }}:</strong> {{ value }}</p>
+    {% endfor %}
+{% else %}
+    <p class="empty">{{ 'my_space.no_places'|trans }}</p>
+{% endif %}
+
+<h2>{{ 'my_space.loans'|trans }}</h2>
+
+{% if canManageHousehold %}
+    <p><a href="{{ path('my_space_household_management') }}" class="admin-link">{{ 'my_space.manage_household'|trans }}</a></p>
+{% else %}
+    <p class="muted">{{ 'my_space.no_household'|trans }}</p>
+{% endif %}
+
+<h2>{{ 'my_space.child_accounts_overview'|trans }}</h2>
+
+{% if childAccountCount > 0 %}
+    <ul>
+        {% for child in childAccounts %}
+            <li>
+                {{ child.profile.name }} -
+                {{ 'my_space.pin_reset'|trans }} (
+                <a href="{{ path('my_space_child_pin_reset', {'childAccountId': child.id}) }}" class="admin-link small">↺</a>
+                ) -
+                {{ 'my_space.edit_restrictions'|trans }} (
+                <a href="{{ path('my_space_child_restrictions_edit', {'childAccountId': child.id}) }}" class="admin-link small">✎</a>
+                )
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="muted">{{ 'my_space.no_children'|trans }}</p>
+{% endif %}
+
+{% if not isChild %}
+    {% set shareCount = 0 %}
+    {% for item in itemList %}
+        {% set status = item.getStatus()|default('')|lower %}
+        {% if status == 'partage' %}
+            {% set shareCount = shareCount + 1 %}
+        {% endif %}
+    {% endfor %}
+    {% if shareCount > 0 %}
+        <h2>{{ 'my_space.active_shares'|trans }}</h2>
+        <p>{{ shareCount }} {{ 'my_space.shares'|trans }}</p>
+    {% else %}
+        <h2>{{ 'my_space.active_shares'|trans }}</h2>
+        <p class="muted">{{ 'my_space.no_active_shares'|trans }}</p>
+    {% endif %}
+
+    {% set commentCount = 0 %}
+    {% for item in itemList %}
+        {% set notes = item.getNotes()|default('')|split('
+') %}
+        {% for note in notes %}
+            {% if note|trim is not empty %}
+                {% set commentCount = commentCount + 1 %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    {% if commentCount > 0 %}
+        <h2>{{ 'my_space.received_comments'|trans }}</h2>
+        <p>{{ commentCount }} {{ 'my_space.comments'|trans }}</p>
+    {% else %}
+        <h2>{{ 'my_space.received_comments'|trans }}</h2>
+        <p class="muted">{{ 'my_space.no_received_comments'|trans }}</p>
+    {% endif %}
+{% endif %}
+
+<h3>{{ 'my_space.members'|trans }} {{ memberCount }}</h3>
+    <ul>
+        {% for member in members %}
+            <li>{{ member.user.getEmail()|default('—') }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="muted">{{ 'my_space.no_members'|trans }}</p>
+{% endif %}
+
+<h2>{{ 'my_space.recent_activity'|trans }}</h2>
+
+{% if recentActivity is empty %}
+    <p class="empty">{{ 'my_space.no_activity'|trans }}</p>
+{% else %}
+    <div class="admin-grid">
+        {% for entry in recentActivity %}
+            {% set actionKey = entry.action %}
+            {% set itemName = entry.metadata.name|default('')|e %}
+            {% set actorName = entry.actorProfile ? entry.actorProfile.name : '—'|e %}
+            {% set loanContext = entry.metadata.loanContext|default('')|e %}
+            {% switch actionKey %}
+                {% case 'item.created': %}
+                    {% if itemName is not empty %}
+                        <div class="admin-card admin-card--small">
+                            <div class="admin-card__label">{{ 'my_space.recent_item_added_by'|trans }} {{ actorName }}</div>
+                            <div class="admin-card__value">{{ 'my_space.recent_item_added'|trans }}: {{ itemName }}</div>
+                        </div>
+                    {% else %}
+                        <div class="admin-card admin-card--small muted">
+                            <div class="admin-card__label">{{ 'my_space.recent_item_added'|trans }}</div>
+                            <div class="admin-card__value">—</div>
+                        </div>
+                    {% endif %}
+                {% case 'item.updated': %}
+                    {% if itemName is not empty %}
+                        <div class="admin-card admin-card--small">
+                            <div class="admin-card__label">{{ 'my_space.recent_item_updated_by'|trans }} {{ actorName }}</div>
+                            <div class="admin-card__value">{{ 'my_space.recent_item_updated'|trans }}: {{ itemName }}</div>
+                        </div>
+                    {% else %}
+                        <div class="admin-card admin-card--small muted">
+                            <div class="admin-card__label">{{ 'my_space.recent_item_updated'|trans }}</div>
+                            <div class="admin-card__value">—</div>
+                        </div>
+                    {% endif %}
+                {% case 'item.deleted': %}
+                    {% if itemName is not empty %}
+                        <div class="admin-card admin-card--small">
+                            <div class="admin-card__label">{{ 'my_space.recent_item_removed_by'|trans }} {{ actorName }}</div>
+                            <div class="admin-card__value">{{ 'my_space.recent_item_removed'|trans }}: {{ itemName }}</div>
+                        </div>
+                    {% else %}
+                        <div class="admin-card admin-card--small muted">
+                            <div class="admin-card__label">{{ 'my_space.recent_item_removed'|trans }}</div>
+                            <div class="admin-card__value">—</div>
+                        </div>
+                    {% endif %}
+                {% case 'loan.created': %}
+                    {% if itemName is not empty %}
+                        <div class="admin-card admin-card--small">
+                            <div class="admin-card__label">{{ 'my_space.recent_loan_started_by'|trans }} {{ actorName }}</div>
+                            <div class="admin-card__value">{{ 'my_space.recent_loan_started'|trans }}: {{ itemName }}</div>
+                        </div>
+                    {% else %}
+                        <div class="admin-card admin-card--small muted">
+                            <div class="admin-card__label">{{ 'my_space.recent_loan_started'|trans }}</div>
+                            <div class="admin-card__value">—</div>
+                        </div>
+                    {% endif %}
+                {% case 'loan.returned': %}
+                    {% if itemName is not empty %}
+                        <div class="admin-card admin-card--small">
+                            <div class="admin-card__label">{{ 'my_space.recent_loan_returned_by'|trans }} {{ actorName }}</div>
+                            <div class="admin-card__value">{{ 'my_space.recent_loan_returned'|trans }}: {{ itemName }}</div>
+                        </div>
+                    {% else %}
+                        <div class="admin-card admin-card--small muted">
+                            <div class="admin-card__label">{{ 'my_space.recent_loan_returned'|trans }}</div>
+                            <div class="admin-card__value">—</div>
+                        </div>
+                    {% endif %}
+                {% case 'share.created': %}
+                    {% if itemName is not empty %}
+                        <div class="admin-card admin-card--small">
+                            <div class="admin-card__label">{{ 'my_space.recent_share_created_by'|trans }} {{ actorName }}</div>
+                            <div class="admin-card__value">{{ 'my_space.recent_share_created'|trans }}: {{ itemName }}</div>
+                        </div>
+                    {% else %}
+                        <div class="admin-card admin-card--small muted">
+                            <div class="admin-card__label">{{ 'my_space.recent_share_created'|trans }}</div>
+                            <div class="admin-card__value">—</div>
+                        </div>
+                    {% endif %}
+                {% case 'share.deleted': %}
+                    {% if itemName is not empty %}
+                        <div class="admin-card admin-card--small">
+                            <div class="admin-card__label">{{ 'my_space.recent_share_removed_by'|trans }} {{ actorName }}</div>
+                            <div class="admin-card__value">{{ 'my_space.recent_share_removed'|trans }}: {{ itemName }}</div>
+                        </div>
+                    {% else %}
+                        <div class="admin-card admin-card--small muted">
+                            <div class="admin-card__label">{{ 'my_space.recent_share_removed'|trans }}</div>
+                            <div class="admin-card__value">—</div>
+                        </div>
+                    {% endif %}
+                {% default: %}
+                    <div class="admin-card admin-card--small muted">
+                        <div class="admin-card__label">{{ actionKey|trans }}</div>
+                        <div class="admin-card__value">—</div>
+                    </div>
+            {% endswitch %}
+        {% endfor %}
+    </div>
+{% endif %}

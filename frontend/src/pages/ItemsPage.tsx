@@ -3,9 +3,9 @@ import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ScanLine, Search } from 'lucide-react'
-import { listItems, updateItem } from '../api/items.ts'
+import { listItems } from '../api/items.ts'
 import { ApiError } from '../api/client.ts'
-import type { ItemStatus, ItemSummary } from '../types/item.ts'
+import type { ItemSummary } from '../types/item.ts'
 import { conditionLabel, statusLabel } from '../types/item.ts'
 import { itemText as tr } from '../lib/itemCatalog.ts'
 
@@ -22,8 +22,6 @@ export default function ItemsPage() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [busyId, setBusyId] = useState<number | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(
     async (q: string, signal?: AbortSignal) => {
@@ -41,7 +39,11 @@ export default function ItemsPage() {
         setTotal(result.total)
       } catch (err) {
         if (signal?.aborted === true) return
-        setError(err instanceof ApiError ? err.message : tr('Une erreur inattendue est survenue.', 'Something unexpected happened.'))
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : tr('Une erreur inattendue est survenue.', 'Something unexpected happened.'),
+        )
       } finally {
         if (signal?.aborted !== true) setLoading(false)
       }
@@ -63,20 +65,6 @@ export default function ItemsPage() {
     void load(query.trim())
   }
 
-  async function changeStatus(item: ItemSummary, status: ItemStatus): Promise<void> {
-    setBusyId(item.id)
-    setActionError(null)
-
-    try {
-      await updateItem(item.id, { status })
-      await load(query.trim())
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : tr('Une erreur inattendue est survenue.', 'Something unexpected happened.'))
-    } finally {
-      setBusyId(null)
-    }
-  }
-
   const thumb = (item: ItemSummary): string | null => {
     const primary = item.photos.find((photo) => photo.isPrimary) ?? item.photos[0]
     return primary?.url ?? null
@@ -84,15 +72,23 @@ export default function ItemsPage() {
 
   return (
     <div className="auth-page">
-      <p className="auth-tagline">{tr('Tout ce que vous possédez, au même endroit.', 'Everything you own, in one place.')}</p>
+      <p className="auth-tagline">
+        {tr('Tout ce que vous possédez, au même endroit.', 'Everything you own, in one place.')}
+      </p>
 
       <div className="auth-card">
-        <h1>{searchParams.get('status') === 'archive' ? tr('Articles archivés', 'Archived items') : tr('Mon dressing', 'My wardrobe')}</h1>
+        <h1>
+          {searchParams.get('status') === 'archive'
+            ? tr('Articles archivés', 'Archived items')
+            : tr('Mon dressing', 'My wardrobe')}
+        </h1>
         <div className="design-inline-links">
           <Link
             to={searchParams.get('status') === 'archive' ? '/dressing' : '/dressing?status=archive'}
           >
-            {searchParams.get('status') === 'archive' ? tr('Mon dressing actif', 'Active wardrobe') : tr('Voir les archives', 'View archive')}
+            {searchParams.get('status') === 'archive'
+              ? tr('Mon dressing actif', 'Active wardrobe')
+              : tr('Voir les archives', 'View archive')}
           </Link>
           <Link to="/articles/nouveau">{tr('Ajouter manuellement', 'Add manually')}</Link>
           {!child && <Link to="/prets">{tr('Mes prêts', 'My loans')}</Link>}
@@ -122,20 +118,20 @@ export default function ItemsPage() {
           </p>
         )}
 
-        {actionError !== null && (
-          <p role="alert" className="form-error" style={{ marginTop: 12 }}>
-            {actionError}
-          </p>
-        )}
-
         {loading ? (
           <p className="auth-sub">{tr('Chargement…', 'Loading…')}</p>
         ) : items.length === 0 ? (
           <>
             <p className="auth-sub">
               {total === 0
-                ? tr('Votre dressing est encore vide. Scannez votre premier article !', 'Your wardrobe is still empty. Scan your first item!')
-                : tr('Aucun article ne correspond à cette recherche.', 'No item matches this search.')}
+                ? tr(
+                    'Votre dressing est encore vide. Scannez votre premier article !',
+                    'Your wardrobe is still empty. Scan your first item!',
+                  )
+                : tr(
+                    'Aucun article ne correspond à cette recherche.',
+                    'No item matches this search.',
+                  )}
             </p>
             <Link className="btn btn-primary" to="/scanner">
               <ScanLine size={18} aria-hidden="true" /> {tr('Scanner un article', 'Scan an item')}
@@ -186,26 +182,25 @@ export default function ItemsPage() {
                     <span className="item-status" data-status={item.status}>
                       {statusLabel(item.status)}
                     </span>
-                    {!child && item.canEdit !== false && item.status === 'disponible' && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-inline"
-                        disabled={busyId === item.id}
-                        onClick={() => void changeStatus(item, 'loue')}
-                      >
-                        {tr('Prêter', 'Lend')}
-                      </button>
-                    )}
-                    {!child && item.canEdit !== false && item.status === 'loue' && (
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-inline"
-                        disabled={busyId === item.id}
-                        onClick={() => void changeStatus(item, 'disponible')}
-                      >
-                        {tr('Récupérer', 'Mark returned')}
-                      </button>
-                    )}
+                    {!child &&
+                      item.ownerProfile.role !== 'child' &&
+                      item.canEdit !== false &&
+                      item.status === 'disponible' && (
+                        <Link
+                          className="btn btn-secondary btn-inline"
+                          to={`/articles/${item.id}/partager?purpose=loan`}
+                        >
+                          {tr('Proposer un prêt', 'Offer a loan')}
+                        </Link>
+                      )}
+                    {!child &&
+                      item.ownerProfile.role !== 'child' &&
+                      item.canEdit !== false &&
+                      item.status === 'loue' && (
+                        <Link className="btn btn-primary btn-inline" to="/prets">
+                          {tr('Voir le prêt', 'View loan')}
+                        </Link>
+                      )}
                   </span>
                 </li>
               ))}

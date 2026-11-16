@@ -293,6 +293,54 @@ describe('Approval inbox', () => {
     )
     expect(screen.queryByText('Décision enregistrée.')).not.toBeInTheDocument()
   })
+
+  it('shows incoming loan requests and lets the item owner accept them from the inbox', async () => {
+    let status = 'pending'
+    const calls: string[] = []
+    mount(<NotificationsPage />, (url) => {
+      if (url === '/api/social/loans/12/accept') {
+        calls.push(url)
+        status = 'accepted'
+        return { status: 200, body: { loan: {} } }
+      }
+      if (url === '/api/notifications')
+        return {
+          status: 200,
+          body: {
+            unread: 1,
+            nextBefore: null,
+            notifications: [
+              {
+                id: 21,
+                kind: 'loan_request',
+                read: false,
+                referenceId: 12,
+                createdAt: '',
+                detail: {
+                  id: 12,
+                  itemName: 'Appareil photo',
+                  owner: 'camille_test',
+                  borrower: 'noa_test',
+                  isOwner: true,
+                  status,
+                  message: 'Pour le week-end',
+                  dueAt: '2099-12-01',
+                },
+              },
+            ],
+          },
+        }
+      return bad
+    })
+
+    expect(await screen.findByText('Nouvelle demande de prêt')).toBeInTheDocument()
+    expect(screen.getByText('noa_test souhaite emprunter « Appareil photo ».')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Accepter la demande' }))
+
+    await waitFor(() => expect(calls).toEqual(['/api/social/loans/12/accept']))
+    expect(await screen.findByText('État : Accepté · À remettre')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Accepter la demande' })).not.toBeInTheDocument()
+  })
 })
 
 it('uses child username login rather than adult email login', async () => {

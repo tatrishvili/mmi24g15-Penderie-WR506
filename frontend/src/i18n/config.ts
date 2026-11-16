@@ -58,10 +58,21 @@ function applyLocale(value: string) {
 }
 
 applyLocale(initialLocale)
-i18n.on('languageChanged', applyLocale)
 
 export function setLocale(locale: Locale) {
   void i18n.changeLanguage(locale)
+
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = locale
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, locale)
+    } catch {
+      // Storage can be unavailable in private browsing contexts.
+    }
+  }
 }
 
 export default i18n

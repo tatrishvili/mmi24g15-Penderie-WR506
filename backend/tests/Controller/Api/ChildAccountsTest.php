@@ -72,6 +72,39 @@ final class ChildAccountsTest extends ApiTestCase
         self::assertSame(401, self::api(self::freshClient(), 'POST', '/api/auth/child-login', ['username' => $kid['username'], 'password' => self::PASSWORD])->getStatusCode());
     }
 
+    public function testChildCanDismissOnlyTheirOwnActivityEntries(): void
+    {
+        $parent = static::createClient();
+        self::registerHousehold($parent);
+        $kid = $this->setupChild($parent);
+        $this->item($parent, 'Parent jacket');
+        $child = $this->childLogin($kid['username']);
+        $ownItem = $this->item($child, 'My book');
+
+        $parentActivity = self::decoded(self::api($parent, 'GET', '/api/me/space'))['activity'];
+        $parentItemEvents = array_values(array_filter(
+            $parentActivity,
+            static fn (array $activity): bool => 'item.created' === $activity['action']
+                && 'Parent jacket' === $activity['objectName'],
+        ));
+        self::assertCount(1, $parentItemEvents);
+
+        $childActivity = self::decoded(self::api($child, 'GET', '/api/me/space'))['activity'];
+        $childItemEvents = array_values(array_filter(
+            $childActivity,
+            static fn (array $activity): bool => 'item.created' === $activity['action']
+                && 'My book' === $activity['objectName'],
+        ));
+        self::assertCount(1, $childItemEvents);
+        self::assertSame($ownItem['id'], $childItemEvents[0]['itemId']);
+        self::assertTrue($childItemEvents[0]['canEdit']);
+        $childEventId = $childItemEvents[0]['id'];
+        $parentEventId = $parentItemEvents[0]['id'];
+
+        self::assertSame(204, self::api($child, 'DELETE', '/api/me/space/activity/'.$childEventId)->getStatusCode());
+        self::assertSame(404, self::api($child, 'DELETE', '/api/me/space/activity/'.$parentEventId)->getStatusCode());
+    }
+
     public function testRepeatedRoomsAndSharedBedroomsDoNotGrantInventoryAccess(): void
     {
         $parent = static::createClient();

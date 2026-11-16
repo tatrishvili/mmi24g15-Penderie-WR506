@@ -91,18 +91,23 @@ final class ItemController extends AbstractController
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Cette action est réservée aux adultes.');
         }
 
-        $this->items->update($item, UpdateItemDto::fromArray($body), $this->actor);
+        $updated = $this->items->update($item, UpdateItemDto::fromArray($body), $this->actor);
+        $request->attributes->set('activityChanges', $updated['changes']);
 
         return new JsonResponse(['item' => ItemService::payloadFor($this->actor, $item)]);
     }
 
     #[Route('/{id}', name: 'api_items_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
-    public function delete(int $id): JsonResponse
+    public function delete(int $id, Request $request): JsonResponse
     {
         if (false === $this->actor->profile()?->isAdult()) {
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('La suppression définitive est réservée aux adultes.');
         }
         $item = $this->items->findManagedHouseholdItem($this->actor, $id);
+        $request->attributes->set('activityObject', [
+            'objectName' => $item->getName(),
+            'ownerProfileId' => $item->getOwnerProfile()->getId(),
+        ]);
         $this->items->delete($item);
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);

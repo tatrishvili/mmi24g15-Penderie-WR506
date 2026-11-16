@@ -36,8 +36,8 @@ class Loan
     #[ORM\Column(type: 'text')]
     public string $message;
 
-    #[ORM\Column(type: 'date_immutable')]
-    public \DateTimeImmutable $dueAt;
+    #[ORM\Column(type: 'date_immutable', nullable: true)]
+    public ?\DateTimeImmutable $dueAt;
 
     #[ORM\Column]
     public \DateTimeImmutable $requestedAt;
@@ -51,7 +51,7 @@ class Loan
     #[ORM\Column(nullable: true)]
     public ?\DateTimeImmutable $returnedAt = null;
 
-    public function __construct(Item $item, User $owner, User $borrower, \DateTimeImmutable $dueAt, string $message)
+    public function __construct(Item $item, User $owner, User $borrower, ?\DateTimeImmutable $dueAt, string $message)
     {
         $this->item = $item;
         $this->itemName = $item->getName();

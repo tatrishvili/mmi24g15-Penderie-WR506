@@ -3,6 +3,7 @@ import FamilyAccountsPage from './pages/FamilyAccountsPage.tsx'
 import ChildHubPage from './pages/ChildHubPage.tsx'
 import ChildPasswordPage from './pages/ChildPasswordPage.tsx'
 import NotificationsPage from './pages/NotificationsPage.tsx'
+import { useTranslation } from 'react-i18next'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext.tsx'
 import { ProtectedRoute } from './auth/ProtectedRoute.tsx'
@@ -10,6 +11,7 @@ import SocialFeedPage from './pages/SocialFeedPage.tsx'
 import CommunityCollectionsPage from './pages/CommunityCollectionsPage.tsx'
 import AppShell from './components/AppShell.tsx'
 import AccountPage from './pages/AccountPage.tsx'
+import MySpacePage from './pages/MySpacePage.tsx'
 import FriendsPage from './pages/FriendsPage.tsx'
 import Home from './pages/Home.tsx'
 import ItemsPage from './pages/ItemsPage.tsx'
@@ -25,10 +27,14 @@ import ItemDetailPage, { AccessPage } from './pages/ItemDetailPage.tsx'
 import ItemEditorPage from './pages/ItemEditorPage.tsx'
 import LoansPage, { SharedItemPage } from './pages/LoansPage.tsx'
 import VerifyEmailPage from './pages/VerifyEmailPage.tsx'
+import { VisitBeacon } from './components/VisitBeacon.tsx'
 
 function App() {
+  useTranslation()
+
   return (
     <BrowserRouter>
+      <VisitBeacon />
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -128,6 +134,7 @@ function App() {
             />
             <Route path="/prets/:id" element={<LoansPage key="detail" view="detail" />} />
             <Route path="/compte" element={<AccountPage />} />
+            <Route path="/my-space" element={<MySpacePage />} />
             <Route path="/scanner" element={<ScanPage />} />
             <Route path="/dressing" element={<ItemsPage />} />
             <Route path="/lieux" element={<PlacesPage />} />

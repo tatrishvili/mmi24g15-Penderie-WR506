@@ -16,10 +16,10 @@ security:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
         main:
-            pattern: ^/api
+            pattern: ^/(api|admin)
             stateless: false
             provider: app_user_provider
-            entry_point: App\Security\ApiEntryPoint
+            entry_point: App\Security\AppEntryPoint
 
             custom_authenticators:
                 - App\Security\ChildLoginAuthenticator
@@ -43,8 +43,10 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
+        - { path: ^/admin, roles: ROLE_USER }
         - { path: '^/api/social/shared/[a-f0-9]+(/photo)?$', roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/health, roles: PUBLIC_ACCESS }
+        - { path: ^/api/analytics/visit$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/resend-verification, roles: PUBLIC_ACCESS }

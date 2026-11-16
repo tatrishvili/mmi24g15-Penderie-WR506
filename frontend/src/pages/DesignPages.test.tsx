@@ -8,7 +8,7 @@ import CommunityCollectionsPage from './CommunityCollectionsPage.tsx'
 import SocialProfilePage from './SocialProfilePage.tsx'
 import ItemDetailPage, { AccessPage } from './ItemDetailPage.tsx'
 import ItemEditorPage from './ItemEditorPage.tsx'
-import LoansPage from './LoansPage.tsx'
+import LoansPage, { SharedItemPage } from './LoansPage.tsx'
 import ScanPage from './ScanPage.tsx'
 import { ItemForm } from './ItemFormPage.tsx'
 import type { ReactNode } from 'react'
@@ -112,6 +112,77 @@ afterEach(() => {
 })
 
 describe('Current Figma page families', () => {
+  it('lets a signed-in adult report a shared item and submits the selected reason', async () => {
+    let payload: Record<string, unknown> = {}
+    mount(<SharedItemPage />, '/partage/share-token', '/partage/:token', (url, init) => {
+      if (url.endsWith('/reports') && init?.method === 'POST') {
+        payload = jsonBody(init)
+        return { status: 201, body: { id: 1, status: 'pending' } }
+      }
+      if (url.endsWith('/api/social/shared/share-token'))
+        return {
+          status: 200,
+          body: {
+            item: {
+              name: 'Appareil photo',
+              type: 'appareil',
+              color: 'Noir',
+              photoUrl: null,
+              owner: 'marie',
+              available: true,
+            },
+          },
+        }
+      return response(url)
+    })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Signaler ce partage' }))
+    fireEvent.change(screen.getByLabelText('Motif'), { target: { value: 'copyright' } })
+    fireEvent.change(screen.getByLabelText(/Précision facultative/), {
+      target: { value: 'Cette présentation est copiée.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer le signalement' }))
+
+    await waitFor(() =>
+      expect(payload).toEqual({ reason: 'copyright', details: 'Cette présentation est copiée.' }),
+    )
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Merci. Le signalement a été envoyé pour examen.',
+    )
+  })
+
+  it('does not expose the report action to a child session', async () => {
+    mount(<SharedItemPage />, '/partage/share-token', '/partage/:token', (url) => {
+      if (url.endsWith('/api/auth/me'))
+        return {
+          status: 200,
+          body: {
+            ...ME,
+            childAccount: { username: 'leo', mustChangePassword: false },
+            activeProfile: { ...ME.activeProfile, role: 'child' },
+          },
+        }
+      if (url.endsWith('/api/social/shared/share-token'))
+        return {
+          status: 200,
+          body: {
+            item: {
+              name: 'Appareil photo',
+              type: null,
+              color: null,
+              photoUrl: null,
+              owner: 'marie',
+              available: true,
+            },
+          },
+        }
+      return response(url)
+    })
+
+    await screen.findByRole('heading', { name: 'Appareil photo' })
+    expect(screen.queryByRole('button', { name: 'Signaler ce partage' })).not.toBeInTheDocument()
+  })
+
   it.each([
     ['create', 'Créer mon foyer'],
     ['members', 'Qui habite ici ?'],
@@ -159,6 +230,7 @@ describe('Current Figma page families', () => {
       'href',
       '/amis?liste=abonnements',
     )
+    expect(screen.getByRole('link', { name: /Mon espace/ })).toHaveAttribute('href', '/my-space')
     expect(screen.getByRole('link', { name: /Famille et profils/ })).toHaveAttribute(
       'href',
       '/foyer/membres',
@@ -335,6 +407,95 @@ describe('Current Figma page families', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Partager' }))
     await screen.findByDisplayValue(/\/partage\/unguessable/)
     expect(payload).toEqual({ approved: true, verifiedOnly: true })
+  })
+  it('requires verified-account access when creating a loan link', async () => {
+    let payload: unknown
+    mount(
+      <ItemDetailPage view="share" />,
+      '/articles/1?purpose=loan',
+      '/articles/:id',
+      (url, init?: RequestInit) => {
+        if (url === '/api/friends') {
+          return {
+            status: 200,
+            body: {
+              friends: [
+                {
+                  id: 2,
+                  user: {
+                    id: 22,
+                    username: 'sophie',
+                    firstName: 'Sophie',
+                  },
+                },
+              ],
+              incoming: [],
+              outgoing: [],
+              followers: [],
+              following: [],
+            },
+          }
+        }
+        if (url.endsWith('/shares') && init?.method === 'POST') {
+          payload = jsonBody(init)
+          return {
+            status: 201,
+            body: { path: '/partage/loan-link', id: 8, expiresAt: '2099-12-01' },
+          }
+        }
+        return response(url)
+      },
+    )
+    expect(await screen.findByRole('heading', { name: 'Préparer un prêt' })).toBeInTheDocument()
+    const createLoanLink = screen.getByRole('button', { name: 'Créer le lien de prêt' })
+    expect(createLoanLink).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: /Choisir mes amis/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Sophie/ }))
+    const verified = screen.getByRole('checkbox', { name: /Compte vérifié requis/ })
+    expect(verified).toBeChecked()
+    expect(verified).toBeDisabled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /J’approuve/ }))
+    fireEvent.click(createLoanLink)
+    await screen.findByDisplayValue(/\/partage\/loan-link/)
+    expect(payload).toEqual({ approved: true, verifiedOnly: true, recipientId: 22 })
+  })
+  it('submits a loan request without requiring a return date', async () => {
+    let payload: unknown
+    mount(
+      <LoansPage view="request" />,
+      '/emprunter/token',
+      '/emprunter/:token',
+      (url, init?: RequestInit) => {
+        if (url.endsWith('/loans') && init?.method === 'POST') {
+          payload = jsonBody(init)
+          return {
+            status: 201,
+            body: {
+              loan: {
+                id: 9,
+                itemId: null,
+                itemName: 'Appareil photo',
+                owner: 'marie',
+                borrower: 'sophie',
+                isOwner: false,
+                status: 'pending',
+                dueAt: null,
+                message: '',
+                requestedAt: '2099-11-10',
+                acceptedAt: null,
+                handedAt: null,
+                returnedAt: null,
+              },
+            },
+          }
+        }
+        return response(url)
+      },
+    )
+    await screen.findByRole('heading', { name: 'Demander un emprunt' })
+    expect(screen.getByLabelText('Choisir une date')).not.toBeRequired()
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer la demande' }))
+    await waitFor(() => expect(payload).toEqual({ dueAt: null, message: '' }))
   })
   it('does not create a collection when the backend rejects it', async () => {
     mount(<SocialProfilePage view="create" />, '/', '/', (url, init?: RequestInit) =>

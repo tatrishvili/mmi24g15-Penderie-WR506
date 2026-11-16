@@ -1,0 +1,57 @@
+{% set itemsCount = itemList|length %}
+{% set loanCount = loanList|length %}
+{% set childAccountCount = childAccountCount|default(0) %}
+
+<h2>{{ 'my_space.my_collection'|trans }}</h2>
+
+{% if itemsCount > 0 %}
+    <div class="admin-grid">
+        {% for item in itemList %}
+            <div class="admin-card">
+                <div class="admin-card__label">{{ item.name }}</div>
+                <div class="admin-card__value">{{ item.getType()|default('—') }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="empty">{{ 'my_space.no_items'|trans }}</p>
+{% endif %}
+
+<h2>{{ 'my_space.my_loans'|trans }}</h2>
+
+{% if loanCount > 0 %}
+    <div>
+        {% for loan in loanList %}
+            <div class="admin-grid admin-grid--small">
+                <div class="admin-card">
+                    <div class="admin-card__label">{{ loan.item.name }}</div>
+                    <div class="admin-card__value">{{ 'my_space.lent_to'|trans }}: {{ loan.borrower?.getEmail()|default('—') }}</div>
+                </div>
+                {% if loan.isOverdue() %}
+                    <span class="admin-badge admin-badge--child">{{ 'my_space.overdue'|trans }}</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="empty">{{ 'my_space.no_loans'|trans }}</p>
+{% endif %}
+
+<h2>{{ 'my_space.household'|trans }}</h2>
+
+{% if canManageHousehold %}
+    <p><a href="{{ path('my_space_household_management') }}" class="admin-link">{{ 'my_space.household_management'|trans }}</a></p>
+{% else %}
+    <p class="muted">{{ 'my_space.no_household'|trans }}</p>
+{% endif %}
+
+{% if childAccountCount > 0 %}
+    <h3>{{ 'my_space.child_accounts'|trans }} {{ childAccountCount }}</h3>
+    <ul>
+        {% for child in childAccounts %}
+            <li>{{ child.profile.name }} - {{ child.enabled ? 'active' : 'disabled' }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="muted">{{ 'my_space.no_children'|trans }}</p>
+{% endif %}

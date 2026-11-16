@@ -46,6 +46,7 @@ export default function AppNav() {
         '/vitrine',
         '/prets',
         '/acces',
+        '/my-space',
       ].some((path) => pathname === path || pathname.startsWith(path + '/')),
     },
   ]
@@ -71,7 +72,7 @@ export default function AppNav() {
               to: '/enfant',
               label: t('nav.mySpace'),
               Icon: UserRound,
-              active: pathname.startsWith('/enfant'),
+              active: pathname === '/enfant' || pathname.startsWith('/enfant/'),
             },
           ]
         : tabs

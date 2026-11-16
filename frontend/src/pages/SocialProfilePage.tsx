@@ -1,4 +1,5 @@
-import { Pin } from 'lucide-react'
+import { LayoutDashboard, Pin } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { audienceLabel, collectionItemDetail } from '../lib/collectionAudience.ts'
 import { CollectionAudience, CollectionApproval } from '../components/CollectionAudience.tsx'
 import { itemText as t } from '../lib/itemCatalog.ts'
@@ -15,6 +16,7 @@ import type {
 import { listAllItems } from '../api/items.ts'
 import type { ItemSummary } from '../types/item.ts'
 import { resizeToBase64 } from '../lib/image.ts'
+import { useAuth } from '../auth/useAuth.ts'
 import {
   DesignPage,
   DesignRow,
@@ -51,6 +53,8 @@ export default function SocialProfilePage({
 }: {
   view: 'profile' | 'edit' | 'collections' | 'create' | 'showcase' | 'collection'
 }) {
+  const { t: translate } = useTranslation()
+  const { activeProfile } = useAuth()
   const { data, setData, error, setError } = useWorkspace()
   const navigate = useNavigate()
   const { collectionId } = useParams()
@@ -222,6 +226,14 @@ export default function SocialProfilePage({
               detail={t('Voir les membres et ajouter un enfant', 'View members and add a child')}
               to="/foyer/membres"
             />
+            {activeProfile?.role !== 'child' && (
+              <DesignRow
+                icon={<LayoutDashboard size={22} aria-hidden="true" />}
+                title={translate('mySpaceDashboard.title')}
+                detail={translate('mySpaceDashboard.subtitle')}
+                to="/my-space"
+              />
+            )}
             <section
               className="profile-collections"
               aria-label={t('Mes collections', 'My collections')}

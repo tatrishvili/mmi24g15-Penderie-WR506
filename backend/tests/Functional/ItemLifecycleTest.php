@@ -16,21 +16,20 @@ final class ItemLifecycleTest extends ApiTestCase
 {
     private const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
-    public function testCreateWithPhotosAndStatusThenPatchEveryOptionalField(): void
+    public function testCreateWithPhotosThenPatchEveryOptionalField(): void
     {
         $client = static::createClient();
         self::registerHousehold($client);
 
         $created = self::api($client, 'POST', '/api/items', [
             'name' => 'Pull noir Zara',
-            'status' => 'loue',
             'condition' => 'tres_bon',
             'photos' => [self::PNG],
         ]);
 
         self::assertSame(Response::HTTP_CREATED, $created->getStatusCode());
         $item = self::decoded($created)['item'];
-        self::assertSame('loue', $item['status']);
+        self::assertSame('disponible', $item['status']);
 
         $shown = self::decoded(self::api($client, 'GET', '/api/items/'.$item['id']))['item'];
         self::assertCount(1, $shown['photos'], 'The photo must be stored and visible on the item.');
@@ -63,6 +62,21 @@ final class ItemLifecycleTest extends ApiTestCase
         self::assertSame('disponible', $updated['status']);
         self::assertSame('taille L', $updated['memory']);
         self::assertSame('manque un bouton', $updated['notes']);
+    }
+
+    public function testLoanedStatusCanOnlyBeSetThroughTheLoanWorkflow(): void
+    {
+        $client = static::createClient();
+        self::registerHousehold($client);
+
+        $created = self::api($client, 'POST', '/api/items', ['name' => 'Appareil photo', 'status' => 'loue']);
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $created->getStatusCode());
+
+        $item = self::decoded(self::api($client, 'POST', '/api/items', ['name' => 'Appareil photo']))['item'];
+        $patched = self::api($client, 'PATCH', '/api/items/'.$item['id'], ['status' => 'loue']);
+
+        self::assertSame(Response::HTTP_CONFLICT, $patched->getStatusCode());
+        self::assertSame('disponible', self::decoded(self::api($client, 'GET', '/api/items/'.$item['id']))['item']['status']);
     }
 
     public function testBookAndMusicMetadataRoundTripsAndCanBeCleared(): void

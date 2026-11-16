@@ -4,9 +4,12 @@ import { itemText } from '../lib/itemCatalog.ts'
 import FigmaGlyph from '../components/FigmaGlyph.tsx'
 import { errorText } from '../lib/errors.ts'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import * as friendsApi from '../api/friends.ts'
 import { deleteItem, getItem, updateItem } from '../api/items.ts'
 import * as social from '../api/social.ts'
+import type { FriendEntry } from '../types/friends.ts'
 import type { ItemSummary } from '../types/item.ts'
 import {
   DesignPage,
@@ -22,18 +25,25 @@ export default function ItemDetailPage({
   view: 'detail' | 'actions' | 'visibility' | 'share' | 'archive'
 }) {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const loanMode = searchParams.get('purpose') === 'loan'
   const { activeProfile } = useAuth()
   const child = activeProfile?.role === 'child'
   const navigate = useNavigate()
   const [item, setItem] = useState<ItemSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [verifiedOnly, setVerifiedOnly] = useState(false)
+  const [verifiedOnly, setVerifiedOnly] = useState(loanMode)
   const [approved, setApproved] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
   const [confirm, setConfirm] = useState<'archive' | 'delete' | null>(null)
   const [collections, setCollections] = useState<social.Collection[] | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [friends, setFriends] = useState<FriendEntry[]>([])
+  const [friendsLoaded, setFriendsLoaded] = useState(false)
+  const [friendsLoading, setFriendsLoading] = useState(false)
+  const [friendPickerOpen, setFriendPickerOpen] = useState(false)
+  const [selectedFriendId, setSelectedFriendId] = useState<number | null>(null)
   useEffect(() => {
     let live = true
     getItem(Number(id))
@@ -56,6 +66,7 @@ export default function ItemDetailPage({
     share: '165:235',
     archive: '165:544',
   }[view]
+  const selectedFriend = friends.find((friend) => friend.user.id === selectedFriendId)
   const icon = (name: string) => <FrameIcon frame={frame} name={name} />
   const run = async (action: () => Promise<void>) => {
     if (busy) return
@@ -71,6 +82,22 @@ export default function ItemDetailPage({
     }
   }
   const base = `/articles/${id}`
+  async function loadFriends(): Promise<void> {
+    setFriendsLoading(true)
+    setError(null)
+    try {
+      setFriends((await friendsApi.listFriends()).friends)
+      setFriendsLoaded(true)
+    } catch (cause) {
+      setError(errorText(cause))
+    } finally {
+      setFriendsLoading(false)
+    }
+  }
+  function toggleFriendPicker(): void {
+    setFriendPickerOpen((open) => !open)
+    if (!friendsLoaded && !friendsLoading) void loadFriends()
+  }
   const feedback = (
     <>
       <ErrorMessage error={error} />
@@ -236,7 +263,11 @@ export default function ItemDetailPage({
                   <DesignRow
                     key={c.id}
                     title={c.name}
-                    detail={c.itemIds.includes(item.id) ? itemText('Déjà dans cette collection', 'Already in this collection') : itemText('Ajouter', 'Add')}
+                    detail={
+                      c.itemIds.includes(item.id)
+                        ? itemText('Déjà dans cette collection', 'Already in this collection')
+                        : itemText('Ajouter', 'Add')
+                    }
                     disabled={busy}
                     onClick={() =>
                       void run(async () => {
@@ -248,7 +279,9 @@ export default function ItemDetailPage({
                   />
                 ))}
                 {collections.length === 0 && (
-                  <Link to="/collections/nouvelle">{itemText('Créer une collection', 'Create a collection')}</Link>
+                  <Link to="/collections/nouvelle">
+                    {itemText('Créer une collection', 'Create a collection')}
+                  </Link>
                 )}
               </div>
             )}
@@ -256,7 +289,10 @@ export default function ItemDetailPage({
               <DesignRow
                 icon={icon('imgIconPin')}
                 title={itemText('Épingler au profil', 'Pin to profile')}
-                detail={itemText('Choisir une collection dans la vitrine', 'Choose a collection in the showcase')}
+                detail={itemText(
+                  'Choisir une collection dans la vitrine',
+                  'Choose a collection in the showcase',
+                )}
                 to="/vitrine"
               />
             )}
@@ -303,25 +339,51 @@ export default function ItemDetailPage({
       <DesignPage
         frame={frame}
         className="social-share"
-        title={itemText('Partager un article', 'Share an item')}
-        subtitle={itemText('Partager sans révéler les détails privés', 'Share without revealing private details')}
+        title={
+          loanMode
+            ? itemText('Préparer un prêt', 'Prepare a loan')
+            : itemText('Partager un article', 'Share an item')
+        }
+        subtitle={itemText(
+          'Partager sans révéler les détails privés',
+          'Share without revealing private details',
+        )}
         footer={
           <button
             className="btn btn-primary"
-            disabled={!item || busy || !approved || !!shareUrl}
+            disabled={
+              !item || busy || !approved || !!shareUrl || (loanMode && selectedFriendId === null)
+            }
             onClick={() =>
               void run(async () => {
                 if (!item) return
-                const result = await social.createShare(item.id, verifiedOnly, approved)
+                const result = await social.createShare(
+                  item.id,
+                  loanMode || verifiedOnly || selectedFriendId !== null,
+                  approved,
+                  selectedFriendId ?? undefined,
+                )
                 setShareUrl(`${window.location.origin}${result.path}`)
               })
             }
           >
-            {busy ? itemText('Création…', 'Creating…') : itemText('Partager', 'Share')}
+            {busy
+              ? itemText('Création…', 'Creating…')
+              : loanMode
+                ? itemText('Créer le lien de prêt', 'Create loan link')
+                : itemText('Partager', 'Share')}
           </button>
         }
       >
         {feedback}
+        {loanMode && (
+          <DesignNotice>
+            {itemText(
+              'Seul un adulte avec un compte vérifié pourra demander le prêt. Le prêt sera enregistré et l’article réservé après votre acceptation.',
+              'Only an adult with a verified account can request the loan. The loan will be recorded and the item reserved after you accept.',
+            )}
+          </DesignNotice>
+        )}
         <DesignRow
           icon={icon('imgIconShirt')}
           title={item?.name ?? itemText('Article', 'Item')}
@@ -330,43 +392,101 @@ export default function ItemDetailPage({
         />
         <DesignRow
           icon={icon('imgIconUsers')}
-          title={itemText('Choisir mes amis', 'Choose my friends')}
-          detail={itemText('Envoyer aux destinataires choisis', 'Send to selected recipients')}
-          onClick={() =>
-            setNotice(
-              itemText('L’envoi à des amis précis nécessite encore des autorisations par destinataire. Aucun accès n’a été accordé.', 'Sending to specific friends still requires per-recipient permissions. No access was granted.'),
-            )
+          title={
+            selectedFriend
+              ? (selectedFriend.user.displayName ?? selectedFriend.user.firstName)
+              : itemText('Choisir mes amis', 'Choose my friends')
           }
+          detail={
+            selectedFriend
+              ? itemText('Lien réservé à cet ami', 'Link restricted to this friend')
+              : itemText('Choisir un ami déjà accepté', 'Choose an accepted friend')
+          }
+          selected={selectedFriend !== undefined}
+          disabled={!!shareUrl}
+          onClick={toggleFriendPicker}
         />
+        {friendPickerOpen && (
+          <section aria-label={itemText('Choisir un ami', 'Choose a friend')}>
+            <h2>{itemText('Mes amis', 'My friends')}</h2>
+            {friendsLoading ? (
+              <p role="status">{itemText('Chargement…', 'Loading…')}</p>
+            ) : friends.length === 0 ? (
+              <p>
+                {itemText(
+                  'Vous n’avez pas encore d’ami accepté.',
+                  'You do not have any accepted friends yet.',
+                )}{' '}
+                <Link to="/amis">{itemText('Ajouter un ami', 'Add a friend')}</Link>
+              </p>
+            ) : (
+              friends.map((friend) => (
+                <DesignRow
+                  key={friend.user.id}
+                  title={friend.user.displayName ?? friend.user.firstName}
+                  detail={
+                    friend.user.username
+                      ? `@${friend.user.username}`
+                      : itemText('Compte vérifié', 'Verified account')
+                  }
+                  selected={selectedFriendId === friend.user.id}
+                  disabled={!!shareUrl}
+                  onClick={() => {
+                    setSelectedFriendId(friend.user.id)
+                    setFriendPickerOpen(false)
+                  }}
+                />
+              ))
+            )}
+          </section>
+        )}
         <DesignRow
           icon={icon('imgIconLink')}
           title={itemText('Créer un lien', 'Create a link')}
-          detail={itemText('Lien privé · Lecture seule · 7 jours', 'Private link · Read only · 7 days')}
-          selected={verifiedOnly}
-          onClick={() => setVerifiedOnly(!verifiedOnly)}
+          detail={itemText(
+            'Lien privé · Lecture seule · 7 jours',
+            'Private link · Read only · 7 days',
+          )}
+          selected={loanMode || verifiedOnly || selectedFriend !== undefined}
+          onClick={
+            loanMode || selectedFriend !== undefined
+              ? undefined
+              : () => setVerifiedOnly(!verifiedOnly)
+          }
         />
         <label className="design-check">
           <input
             type="checkbox"
-            checked={verifiedOnly}
+            checked={loanMode || verifiedOnly || selectedFriend !== undefined}
+            disabled={loanMode || selectedFriend !== undefined}
             onChange={(e) => setVerifiedOnly(e.target.checked)}
           />
-          {itemText('Compte vérifié requis pour ouvrir le lien', 'Verified account required to open the link')}
+          {itemText(
+            'Compte vérifié requis pour ouvrir le lien',
+            'Verified account required to open the link',
+          )}
         </label>
         <DesignNotice>
           <h2>{itemText('Aperçu des informations visibles', 'Preview of visible information')}</h2>
           <ul>
             <li>
-              <FigmaGlyph name="shareCheck" /> {itemText('Photo, nom, type et couleur sélectionnés', 'Selected photo, name, type and colour')}
+              <FigmaGlyph name="shareCheck" />{' '}
+              {itemText(
+                'Photo, nom, type et couleur sélectionnés',
+                'Selected photo, name, type and colour',
+              )}
             </li>
             <li>
-              <FigmaGlyph name="shareCheck" /> {itemText('Pas de prix d’achat', 'No purchase price')}
+              <FigmaGlyph name="shareCheck" />{' '}
+              {itemText('Pas de prix d’achat', 'No purchase price')}
             </li>
             <li>
-              <FigmaGlyph name="shareCheck" /> {itemText('Pas de lieu exact ni adresse', 'No exact location or address')}
+              <FigmaGlyph name="shareCheck" />{' '}
+              {itemText('Pas de lieu exact ni adresse', 'No exact location or address')}
             </li>
             <li>
-              <FigmaGlyph name="shareCheck" /> {itemText('Pas de notes personnelles', 'No personal notes')}
+              <FigmaGlyph name="shareCheck" />{' '}
+              {itemText('Pas de notes personnelles', 'No personal notes')}
             </li>
           </ul>
           <p>
@@ -379,10 +499,19 @@ export default function ItemDetailPage({
             checked={approved}
             onChange={(e) => setApproved(e.target.checked)}
           />
-          {itemText('J’approuve ces informations. Le lien peut être transféré et des copies conservées.', 'I approve this information. The link can be forwarded and copies kept.')}
+          {itemText(
+            'J’approuve ces informations. Le lien peut être transféré et des copies conservées.',
+            'I approve this information. The link can be forwarded and copies kept.',
+          )}
         </label>
         {shareUrl && (
           <DesignNotice>
+            {selectedFriend && (
+              <p>
+                {itemText('Envoyez ce lien à', 'Send this link to')}{' '}
+                {selectedFriend.user.displayName ?? selectedFriend.user.firstName}.
+              </p>
+            )}
             <label>
               {itemText('Lien créé', 'Link created')}
               <input
@@ -404,7 +533,9 @@ export default function ItemDetailPage({
             >
               {itemText('Copier le lien', 'Copy link')}
             </button>
-            <Link to="/acces">{itemText('Gérer et révoquer les accès', 'Manage and revoke access')}</Link>
+            <Link to="/acces">
+              {itemText('Gérer et révoquer les accès', 'Manage and revoke access')}
+            </Link>
           </DesignNotice>
         )}
       </DesignPage>
@@ -415,7 +546,10 @@ export default function ItemDetailPage({
       frame={frame}
       className="social-archive"
       title={itemText('Archiver ou supprimer', 'Archive or delete')}
-      subtitle={itemText('Choisir une action réversible ou définitive', 'Choose a reversible or permanent action')}
+      subtitle={itemText(
+        'Choisir une action réversible ou définitive',
+        'Choose a reversible or permanent action',
+      )}
       footer={
         <Link className="btn btn-secondary" to={base}>
           {itemText('Annuler', 'Cancel')}
@@ -440,9 +574,15 @@ export default function ItemDetailPage({
         />
       )}
       <DesignNotice>
-        <h2>{icon('imgIconShield')}{itemText('Attention', 'Warning')}</h2>
+        <h2>
+          {icon('imgIconShield')}
+          {itemText('Attention', 'Warning')}
+        </h2>
         <p>
-          {itemText('Un prêt actif et les droits d’autres personnes doivent être traités avant la suppression.', 'An active loan and other people’s rights must be handled before deletion.')}
+          {itemText(
+            'Un prêt actif et les droits d’autres personnes doivent être traités avant la suppression.',
+            'An active loan and other people’s rights must be handled before deletion.',
+          )}
         </p>
       </DesignNotice>
       {confirm && (
@@ -459,8 +599,14 @@ export default function ItemDetailPage({
           </h2>
           <p>
             {confirm === 'archive'
-              ? itemText('Vous pourrez le restaurer. Ses partages deviendront inaccessibles.', 'You can restore it. Its shares will become inaccessible.')
-              : itemText('Les photos et les liens seront supprimés. Cette action ne peut pas être annulée.', 'Photos and links will be deleted. This action cannot be undone.')}
+              ? itemText(
+                  'Vous pourrez le restaurer. Ses partages deviendront inaccessibles.',
+                  'You can restore it. Its shares will become inaccessible.',
+                )
+              : itemText(
+                  'Les photos et les liens seront supprimés. Cette action ne peut pas être annulée.',
+                  'Photos and links will be deleted. This action cannot be undone.',
+                )}
           </p>
           <button
             className="btn btn-primary"
@@ -487,6 +633,7 @@ export default function ItemDetailPage({
 
 export function AccessPage() {
   const [now] = useState(() => Date.now())
+  const { t } = useTranslation()
   const [shares, setShares] = useState<social.Share[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<number | null>(null)
@@ -531,11 +678,13 @@ export function AccessPage() {
             icon={<FrameIcon frame="165:271" name="imgIconLink" />}
             title={s.itemName}
             detail={
-              inactive
-                ? itemText('Révoqué ou expiré', 'Revoked or expired')
-                : `${itemText('Lien privé', 'Private link')} · ${s.verifiedOnly ? itemText('Compte vérifié', 'Verified account') : itemText('Lecture seule', 'Read only')} · ${itemText('Révoquer', 'Revoke')}`
+              s.moderationDisabled
+                ? t('sharedItemReport.disabledAfterReport')
+                : inactive
+                  ? itemText('Révoqué ou expiré', 'Revoked or expired')
+                  : `${itemText('Lien privé', 'Private link')} · ${s.verifiedOnly ? itemText('Compte vérifié', 'Verified account') : itemText('Lecture seule', 'Read only')} · ${itemText('Révoquer', 'Revoke')}`
             }
-            disabled={inactive || busy !== null}
+            disabled={inactive || s.moderationDisabled || busy !== null}
             onClick={() => {
               setBusy(s.id)
               setError(null)
@@ -555,7 +704,12 @@ export function AccessPage() {
           <FrameIcon frame="165:271" name="imgIconShield" />
           {itemText('Révoquer un accès', 'Revoke access')}
         </h2>
-        <p>{itemText('Cela empêche les accès futurs, mais ne récupère pas les copies enregistrées.', 'This prevents future access but does not recover saved copies.')}</p>
+        <p>
+          {itemText(
+            'Cela empêche les accès futurs, mais ne récupère pas les copies enregistrées.',
+            'This prevents future access but does not recover saved copies.',
+          )}
+        </p>
       </DesignNotice>
     </DesignPage>
   )

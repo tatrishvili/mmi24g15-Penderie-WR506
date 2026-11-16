@@ -45,6 +45,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(options: ['default' => true])]
     private bool $emailVerified = true;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $enabled = true;
+
+    /** @var list<string> */
+    #[ORM\Column(type: 'json')]
+    private array $roles = [];
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastLoginAt = null;
+
     public function __construct(
         string $email,
         string $firstName,
@@ -104,6 +114,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->createdAt;
     }
 
+    public function getLastLoginAt(): ?\DateTimeImmutable
+    {
+        return $this->lastLoginAt;
+    }
+
+    public function markLogin(\DateTimeImmutable $at = new \DateTimeImmutable()): void
+    {
+        $this->lastLoginAt = $at;
+    }
+
     public function isEmailVerified(): bool
     {
         return $this->emailVerified;
@@ -112,6 +132,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmailVerified(bool $emailVerified): void
     {
         $this->emailVerified = $emailVerified;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): void
+    {
+        $this->enabled = $enabled;
     }
 
     public function getUserIdentifier(): string
@@ -124,7 +154,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getRoles(): array
     {
-        return ['ROLE_USER'];
+        $roles = $this->roles;
+        $roles[] = 'ROLE_USER';
+
+        return array_values(array_unique($roles));
+    }
+
+    /**
+     * @param list<string> $roles
+     */
+    public function setRoles(array $roles): void
+    {
+        $this->roles = array_values(array_unique(array_filter($roles, static fn (string $role): bool => str_starts_with($role, 'ROLE_'))));
+    }
+
+    public function promote(string $role): void
+    {
+        $this->setRoles([...$this->roles, $role]);
+    }
+
+    public function demote(string $role): void
+    {
+        $this->setRoles(array_values(array_filter($this->roles, static fn (string $current): bool => $current !== $role)));
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return \in_array('ROLE_SUPER_ADMIN', $this->roles, true);
     }
 
     public function getPassword(): string

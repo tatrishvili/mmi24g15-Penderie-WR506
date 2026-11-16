@@ -5,7 +5,7 @@ import { AuthProvider } from '../auth/AuthContext.tsx'
 import { ProtectedRoute } from '../auth/ProtectedRoute.tsx'
 import ItemsPage from '../pages/ItemsPage.tsx'
 import LoginPage from '../pages/LoginPage.tsx'
-import { jsonBody, stubFetch, unauthorized } from '../test/http.ts'
+import { stubFetch, unauthorized } from '../test/http.ts'
 
 const ITEM = {
   id: 1,
@@ -130,54 +130,63 @@ describe('ItemsPage', () => {
     expect(await screen.findByLabelText('E-mail')).toBeInTheDocument()
   })
 
-  it('lends an available item and marks it back as available when recovered', async () => {
-    const patches: { id: number; body: Record<string, unknown> }[] = []
-    let status: 'disponible' | 'loue' = 'disponible'
-
+  it('starts the verified loan workflow without changing item status directly', async () => {
+    const requests: { url: string; method: string }[] = []
     renderDressing((url, init) => {
+      requests.push({ url, method: init?.method ?? 'GET' })
       if (url.endsWith('/api/auth/me')) return ME
-      if (init?.method === 'PATCH' && /\/api\/items\/\d+$/.test(url)) {
-        const body = jsonBody(init)
-        patches.push({ id: Number(url.split('/').pop()), body })
-        status = body.status === 'loue' ? 'loue' : 'disponible'
-        return { status: 200, body: { item: { ...ITEM, status } } }
-      }
-      if (url.includes('/api/items')) {
-        return { status: 200, body: { items: [{ ...ITEM, status }], total: 1, page: 1, perPage: 20 } }
-      }
-      return { status: 404, body: {} }
-    })
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Prêter' }))
-
-    await screen.findByText('Prêté')
-    expect(patches).toHaveLength(1)
-    expect(patches[0]).toEqual({ id: 1, body: { status: 'loue' } })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Récupérer' }))
-
-    await screen.findByText('Disponible')
-    expect(patches).toHaveLength(2)
-    expect(patches[1].body).toEqual({ status: 'disponible' })
-  })
-
-  it('surfaces an API error when lending fails', async () => {
-    renderDressing((url, init) => {
-      if (url.endsWith('/api/auth/me')) return ME
-      if (init?.method === 'PATCH') {
-        return {
-          status: 403,
-          body: { error: { code: 'forbidden', message: 'Not allowed.' } },
-        }
-      }
       if (url.includes('/api/items')) {
         return { status: 200, body: { items: [ITEM], total: 1, page: 1, perPage: 20 } }
       }
       return { status: 404, body: {} }
     })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Prêter' }))
+    expect(await screen.findByRole('link', { name: 'Proposer un prêt' })).toHaveAttribute(
+      'href',
+      '/articles/1/partager?purpose=loan',
+    )
+    expect(requests.some((request) => request.method === 'PATCH')).toBe(false)
+  })
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Not allowed.')
+  it('links a loaned item to its persisted loan history instead of changing its status', async () => {
+    const requests: { url: string; method: string }[] = []
+    renderDressing((url, init) => {
+      requests.push({ url, method: init?.method ?? 'GET' })
+      if (url.endsWith('/api/auth/me')) return ME
+      if (url.includes('/api/items')) {
+        return {
+          status: 200,
+          body: { items: [{ ...ITEM, status: 'loue' }], total: 1, page: 1, perPage: 20 },
+        }
+      }
+      return { status: 404, body: {} }
+    })
+
+    expect(await screen.findByRole('link', { name: 'Voir le prêt' })).toHaveAttribute(
+      'href',
+      '/prets',
+    )
+    expect(requests.some((request) => request.method === 'PATCH')).toBe(false)
+  })
+
+  it('does not offer lending for a child-owned item', async () => {
+    renderDressing((url) => {
+      if (url.endsWith('/api/auth/me')) return ME
+      if (url.includes('/api/items')) {
+        return {
+          status: 200,
+          body: {
+            items: [{ ...ITEM, ownerProfile: { ...ITEM.ownerProfile, role: 'child' } }],
+            total: 1,
+            page: 1,
+            perPage: 20,
+          },
+        }
+      }
+      return { status: 404, body: {} }
+    })
+
+    await screen.findByText('Pull noir Zara')
+    expect(screen.queryByRole('link', { name: 'Proposer un prêt' })).not.toBeInTheDocument()
   })
 })

@@ -50,8 +50,8 @@ final class CurrentActor
     {
         $user = $this->tokenUser();
 
-        if (!$user instanceof User) {
-            throw new AccessDeniedHttpException('Only an account holder can perform this action.');
+        if (!$user instanceof User || !$user->isEnabled()) {
+            throw new AccessDeniedHttpException('Only an enabled account holder can perform this action.');
         }
 
         if ($this->isRestrictedProfile()) {

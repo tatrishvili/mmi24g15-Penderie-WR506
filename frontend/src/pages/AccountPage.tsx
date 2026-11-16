@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { LogOut, ScanLine, Shirt, UsersRound } from 'lucide-react'
+import { LogOut, ScanLine, Shirt, ShieldCheck, UsersRound } from 'lucide-react'
 import * as authApi from '../api/auth.ts'
 import { ApiError } from '../api/client.ts'
 import { useAuth } from '../auth/useAuth.ts'
 import { t } from '../i18n/copy.ts'
 import { roleLabel } from '../types/auth.ts'
 import { itemText as tr } from '../lib/itemCatalog.ts'
+import LanguageSwitcher from '../components/LanguageSwitcher.tsx'
 
 /**
  * "Mon compte" — every info about me in one place: account, foyer,
@@ -52,7 +53,8 @@ export default function AccountPage() {
           tr('Votre compte est prêt.', 'Your account is ready.')
         ) : (
           <>
-            {tr('Foyer', 'Household')} « {household.name} » — {tr('code', 'code')} : <strong>{household.slug}</strong>
+            {tr('Foyer', 'Household')} « {household.name} » — {tr('code', 'code')} :{' '}
+            <strong>{household.slug}</strong>
           </>
         )}
       </p>
@@ -81,12 +83,20 @@ export default function AccountPage() {
               <button type="submit" className="btn btn-primary" disabled={savingUsername}>
                 {savingUsername ? t('account.usernameSaving') : t('account.usernameSave')}
               </button>
-              {usernameError !== null && <p role="alert" className="form-error">{usernameError}</p>}
+              {usernameError !== null && (
+                <p role="alert" className="form-error">
+                  {usernameError}
+                </p>
+              )}
             </form>
           ) : (
             <p className="auth-sub">@{user.username}</p>
           )}
-          {usernameSuccess !== null && <p role="status" className="friend-success">{usernameSuccess}</p>}
+          {usernameSuccess !== null && (
+            <p role="status" className="friend-success">
+              {usernameSuccess}
+            </p>
+          )}
         </section>
 
         <section aria-label={tr('Mon e-mail', 'My e-mail')}>
@@ -97,7 +107,9 @@ export default function AccountPage() {
         <section aria-label={tr('Mon profil actif', 'My active profile')}>
           <h2 className="section-title">{tr('Profil actif', 'Active profile')}</h2>
           {activeProfile === null ? (
-            <p className="auth-sub">{tr('Aucun profil actif pour le moment.', 'No active profile yet.')}</p>
+            <p className="auth-sub">
+              {tr('Aucun profil actif pour le moment.', 'No active profile yet.')}
+            </p>
           ) : (
             <p className="auth-sub">
               <strong>{activeProfile.name}</strong> — {roleLabel(activeProfile.role)}
@@ -109,7 +121,9 @@ export default function AccountPage() {
           <h2 className="section-title">{tr('Foyer', 'Household')}</h2>
           {household === null ? (
             <p className="auth-sub">
-              {tr('Pas encore de foyer.', 'No household yet.')} <Link to="/profils">{tr('Créez votre foyer', 'Create your household')}</Link> {tr('pour commencer.', 'to get started.')}
+              {tr('Pas encore de foyer.', 'No household yet.')}{' '}
+              <Link to="/profils">{tr('Créez votre foyer', 'Create your household')}</Link>{' '}
+              {tr('pour commencer.', 'to get started.')}
             </p>
           ) : (
             <>
@@ -118,15 +132,16 @@ export default function AccountPage() {
                 {defaultPlace?.name ?? '—'}
               </p>
               <p className="auth-sub">
-                {profiles.length} {tr('profils', 'profiles')} · {places.length} {tr('lieux', 'places')}
+                {profiles.length} {tr('profils', 'profiles')} · {places.length}{' '}
+                {tr('lieux', 'places')}
               </p>
             </>
           )}
         </section>
 
         {profiles.length > 0 && (
-          <section aria-label={tr('Membres du foyer', 'Household members')}>
-            <h2 className="section-title">{tr('Membres', 'Members')}</h2>
+          <section aria-label={t('account.membersSection')}>
+            <h2 className="section-title">{t('account.membersTitle')}</h2>
             <ul className="profile-list">
               {profiles.map((profile) => (
                 <li key={profile.id} className="profile-row">
@@ -147,7 +162,16 @@ export default function AccountPage() {
           </section>
         )}
 
+        <section aria-label={t('account.languageTitle')}>
+          <h2 className="section-title">{t('account.languageTitle')}</h2>
+          <p className="auth-sub">{t('account.languageDescription')}</p>
+          <LanguageSwitcher />
+        </section>
+
         <div className="account-actions">
+          <Link className="btn btn-primary" to="/my-space">
+            {t('mySpaceDashboard.title')}
+          </Link>
           <Link className="btn btn-primary" to="/scanner">
             <ScanLine size={18} aria-hidden="true" /> {tr('Scanner un article', 'Scan an item')}
           </Link>
@@ -157,6 +181,11 @@ export default function AccountPage() {
           <Link className="btn btn-secondary" to="/profils">
             <UsersRound size={18} aria-hidden="true" /> {tr('Gérer les profils', 'Manage profiles')}
           </Link>
+          {user?.isSuperAdmin && (
+            <a className="btn btn-secondary" href="/admin">
+              <ShieldCheck size={18} aria-hidden="true" /> {t('account.adminLink')}
+            </a>
+          )}
           <button type="button" className="btn btn-secondary" onClick={() => void logout()}>
             <LogOut size={18} aria-hidden="true" /> {tr('Se déconnecter', 'Sign out')}
           </button>
